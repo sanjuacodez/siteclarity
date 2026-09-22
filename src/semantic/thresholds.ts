@@ -20,7 +20,22 @@ import type { Answer } from '../provider/types'
  * false positives appear.
  */
 
-/** A binary yes/no should be genuinely confident before it is acted on. */
+/**
+ * A binary yes/no should be genuinely confident before it is acted on.
+ *
+ * Swept against the 45-case corpus on 2026-09-23:
+ *
+ *   0.60 -> 40/45 (89%), 0 false positives
+ *   0.55 -> 40/45 (89%), 0 false positives
+ *   0.50 -> 40/45 (89%), 0 false positives
+ *   0.45 -> 41/45 (91%), 0 false positives
+ *
+ * Kept at 0.60 deliberately. Loosening by a quarter to gain a single case is a poor
+ * trade when 45 cases cannot certify that a looser bar stays free of false positives,
+ * and the two answers it would recover are ones the model itself was unsure about.
+ * A discarded uncertain answer costs a missed finding; a confident wrong one costs
+ * trust in the whole report.
+ */
 export const NOUL_THRESHOLD = 0.6
 
 /** An ordered rubric; neighbouring levels are a judgement call rather than an error. */

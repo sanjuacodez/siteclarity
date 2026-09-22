@@ -48,6 +48,8 @@ const WEAKENS_CONTENT: Record<string, true> = {
   vague_claim: true,
   vague_quantifiers: true,
   long_sentences: true,
+  claim_without_evidence: true,
+  evidence_too_far: true,
 }
 
 export function impactTier(checkId: string): ImpactTier {

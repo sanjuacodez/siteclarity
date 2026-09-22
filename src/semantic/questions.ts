@@ -8,18 +8,24 @@ import type { Question } from '../provider/types'
  * here needs free text.
  */
 
-export const QUESTION_CATALOGUE_VERSION = '0.2.0'
+export const QUESTION_CATALOGUE_VERSION = '0.3.0'
 
 /** Asked once per page, against page-scope state. */
 export const PAGE_QUESTIONS: Record<string, Question> = {
+  /**
+   * Calibration produced the corpus's only false positive here: given a page calling
+   * its product "ACP" and never expanding it, the model answered "clearly named" at
+   * 0.88. A consistently repeated token is not the same as an identifiable entity —
+   * an acronym nobody can expand connects the page to nothing. The criteria now say so.
+   */
   entity_clarity: {
     type: 'noul',
     instructions:
-      'The primary organisation, product or service this page is about is named explicitly.',
+      'A reader arriving cold could say what product, service or organisation this page is about.',
     criteria: {
-      true: 'A specific name is used, so a reader arriving cold knows who or what this is.',
+      true: 'A full name appears that identifies the subject — something you could search for and find.',
       false:
-        'The subject is referred to only obliquely — "we", "our platform", "the solution" — without naming it.',
+        'The subject is only "we", "our platform", "the solution", or an acronym that is never expanded. A repeated label is not a name if nothing says what it stands for.',
     },
   },
   purpose_clarity: {
@@ -79,23 +85,33 @@ export const SECTION_QUESTIONS: Record<string, Question> = {
       absent: 'No substantive answer is present, only framing or navigation.',
     },
   },
+  /**
+   * Calibration scored this 2/4 — the weakest question in the catalogue, and the one
+   * most visible to users, since it selects which suggestion they read.
+   *
+   * The failures were both option overlap rather than misunderstanding: it chose
+   * `add_a_number` for a trust claim wanting a named customer, and `give_an_example`
+   * for jargon needing a definition. Each option now says what makes it the answer AND
+   * what rules it out, because a Choice is only as good as the separation between its
+   * options.
+   */
   improvement_type: {
     type: 'choice',
     instructions:
-      'If one change were made to this text to make it more useful to a reader and more quotable by an answering system, which change would help most?',
+      'One change would help this text most. Which? Pick the single missing ingredient.',
     criteria: {
       add_a_number:
-        'It asserts scale, speed or quality without any figure. A number would make it checkable.',
-      state_the_limit:
-        'It describes only the happy path. Saying what it does not do, or who it is not for, would build more trust than more praise.',
+        'It claims a size, speed or amount but states no figure. THE MISSING THING IS A QUANTITY. Not this if the gap is trust or an undefined word.',
       cite_evidence:
-        'It makes a claim a reader would want proof of. A case study, benchmark, documentation link or named customer would support it.',
-      give_an_example:
-        'It stays abstract. A concrete example or use case would make it land.',
+        'It asks the reader to believe something about other people — who uses it, who trusts it, what results they got — with nobody named. THE MISSING THING IS AN ATTRIBUTABLE SOURCE: a named customer, a case study, a published result. Not this if a plain number would settle it.',
       define_the_term:
-        'It uses jargon or a product name a newcomer would not recognise, without explaining it.',
+        'It uses a product name, acronym or piece of jargon that a newcomer would not recognise, and never says what it means. THE MISSING THING IS A DEFINITION. Not this if the term is clear and only an illustration is missing.',
+      give_an_example:
+        'The terms are all understandable, but it stays abstract and never shows the thing in use. THE MISSING THING IS A CONCRETE SCENARIO. Not this if a word first needs defining.',
+      state_the_limit:
+        'It describes only what works, with no mention of who it is wrong for or what it cannot do. THE MISSING THING IS A BOUNDARY.',
       already_specific:
-        'The text is already concrete and checkable; no single change stands out.',
+        'Concrete, checkable and clear as written. No single change stands out.',
     },
   },
   promotional_intensity: {

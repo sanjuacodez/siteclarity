@@ -169,6 +169,266 @@ export const DECISION_CASES: DecisionCase[] = [
     why: 'Only "we" and "our platform"; nothing identifies the subject.',
   },
 
+
+  // ==========================================================================
+  // Expansion to ~50 cases, 2026-09-23.
+  //
+  // Nineteen cases proved false positives were absent; it did not make "95%" a
+  // number worth quoting. The additions lean deliberately on NEAR-MISSES — cases a
+  // careless check would get wrong — because agreement on easy cases measures very
+  // little.
+  // ==========================================================================
+
+  // ---- answers_heading -----------------------------------------------------
+  {
+    id: 'answers_heading/statement-heading',
+    question: 'answers_heading',
+    state: sec('Refund policy',
+      'Every Acme Checkout licence can be refunded in full within 30 days of purchase.'),
+    expect: true,
+    why: 'A heading need not be a question to be answered; this one names a topic and the text covers it.',
+  },
+  {
+    id: 'answers_heading/adjacent-topic',
+    question: 'answers_heading',
+    state: sec('How do I install it?',
+      'Acme Checkout requires WordPress 6.0, PHP 8.0 and WooCommerce 7.0 or later. ' +
+      'It uses about 12 MB of memory on a typical store.'),
+    expect: false,
+    why: 'Requirements are not installation steps — a near-miss that reads relevant but answers a different question.',
+  },
+  {
+    id: 'answers_heading/jargon-explained',
+    question: 'answers_heading',
+    state: sec('What is a conditional field?',
+      'A conditional field appears only when an earlier answer matches a rule you set — ' +
+      'for example, showing a VAT number box only to business buyers.'),
+    expect: true,
+    why: 'Defines the term the heading asks about, with an example.',
+  },
+  {
+    id: 'answers_heading/partial-answer',
+    question: 'answers_heading',
+    state: sec('Which currencies are supported?',
+      'Acme Checkout supports every currency WooCommerce supports. Formatting follows your ' +
+      'store locale.'),
+    expect: true,
+    why: 'Indirect but genuinely answering — deferring to the host platform is a real answer.',
+  },
+
+  // ---- self_contained ------------------------------------------------------
+  {
+    id: 'self_contained/refers-to-a-table',
+    question: 'self_contained',
+    state: sec('Choosing a plan',
+      'As the table above shows, the second option suits most stores. Pick that one unless ' +
+      'you need the features listed in the final column.'),
+    expect: false,
+    why: 'Depends entirely on a table the quoted text does not contain.',
+  },
+  {
+    id: 'self_contained/acronym-defined',
+    question: 'self_contained',
+    state: sec('VAT handling',
+      'Value Added Tax (VAT) is calculated from the billing country. Acme Checkout stores the ' +
+      'VAT number against the order so your accountant can reconcile it later.'),
+    expect: true,
+    why: 'Defines its acronym on first use; later uses resolve within the passage.',
+  },
+  {
+    id: 'self_contained/numbered-step',
+    question: 'self_contained',
+    state: sec('Step 3',
+      'Now click Save. The rule takes effect immediately and applies to new orders only.'),
+    expect: false,
+    why: 'A mid-sequence step: "Now" and "the rule" both point outside the passage.',
+  },
+  {
+    id: 'self_contained/long-but-standalone',
+    question: 'self_contained',
+    state: sec('How pricing rules are applied',
+      'Acme Checkout evaluates pricing rules in the order they appear in the settings screen. ' +
+      'The first rule whose conditions match sets the price, and no later rule overrides it. ' +
+      'A store owner can reorder rules by dragging them.'),
+    expect: true,
+    why: 'Long and referential-sounding, but every reference resolves inside the text.',
+  },
+
+  // ---- extraction_readiness ------------------------------------------------
+  {
+    id: 'extraction_readiness/needs-context',
+    question: 'extraction_readiness',
+    state: sec('The second approach',
+      'This one trades a little setup time for much better control, and most larger stores ' +
+      'end up preferring it once their catalogue grows past a few hundred products.'),
+    expect: 'needs_context',
+    why: 'Contains real information but is meaningless without knowing what the first approach was.',
+  },
+  {
+    id: 'extraction_readiness/table-answer',
+    question: 'extraction_readiness',
+    state: sec('Plan comparison',
+      'Single site: $49 per year, one store, email support. Agency: $129 per year, five ' +
+      'stores, priority support. Both include updates for twelve months.'),
+    expect: 'ready',
+    why: 'Dense, factual and quotable exactly as written.',
+  },
+  {
+    id: 'extraction_readiness/cta-only',
+    question: 'extraction_readiness',
+    state: sec('Ready to get started?', 'Start your free trial today and see the difference for yourself.'),
+    expect: 'absent',
+    why: 'A call to action carries no answer to anything.',
+  },
+
+  // ---- promotional_intensity ----------------------------------------------
+  {
+    id: 'promotional_intensity/balanced',
+    question: 'promotional_intensity',
+    state: sec('Why teams pick Acme',
+      'Acme Checkout handles conditional fields, which most alternatives do not. It is a good ' +
+      'fit if your checkout needs rules; if you only need to reorder fields, a simpler plugin ' +
+      'will do.'),
+    expect: 2,
+    why: 'Sells, but honestly, and tells you when not to buy — squarely mid-rubric.',
+  },
+  {
+    id: 'promotional_intensity/mostly-promotional',
+    question: 'promotional_intensity',
+    state: sec('The Acme difference',
+      'Acme Checkout delivers an outstanding experience that merchants love. Our powerful, ' +
+      'flexible platform makes checkout effortless. It supports conditional fields.'),
+    expect: 3,
+    why: 'One fact carried along by three sentences of adjectives.',
+  },
+  {
+    id: 'promotional_intensity/changelog',
+    question: 'promotional_intensity',
+    state: sec('Version 4.2.0',
+      'Fixed a rounding error in percentage discounts. Added Mollie as a gateway option. ' +
+      'Removed the deprecated shortcode introduced in 3.8.'),
+    expect: 0,
+    why: 'A changelog is the least promotional prose a product page contains.',
+  },
+
+  // ---- entity_clarity ------------------------------------------------------
+  {
+    id: 'entity_clarity/title-only',
+    question: 'entity_clarity',
+    state: {
+      url: 'https://acme.example/features',
+      title: 'Acme Checkout — features',
+      meta_description: 'What the plugin does.',
+      headings: ['# Features', '## Conditional fields'],
+      opening_text: 'Our plugin lets you show and hide fields based on what the buyer picks. ' +
+        'We handle the validation for you.',
+    },
+    expect: null,
+    why: 'Named in the title but only "our plugin" in the body — genuinely borderline.',
+  },
+  {
+    id: 'entity_clarity/acronym-only',
+    question: 'entity_clarity',
+    state: {
+      url: 'https://acme.example/acp',
+      title: 'ACP',
+      meta_description: 'ACP for stores.',
+      headings: ['# ACP', '## Setup'],
+      opening_text: 'ACP installs in minutes and works with any store. Configure ACP from the settings screen.',
+    },
+    expect: false,
+    why: 'An undefined acronym identifies nothing to a reader or a machine.',
+  },
+
+  // ---- claim_specificity ---------------------------------------------------
+  {
+    id: 'claim_specificity/fake-precision',
+    question: 'claim_specificity',
+    state: { heading: 'Performance', text: 'Checkout can be up to 10x faster.' },
+    expect: 1,
+    why: '"Up to" makes the number unfalsifiable — precision-shaped, not precise.',
+  },
+  {
+    id: 'claim_specificity/partly-specific',
+    question: 'claim_specificity',
+    state: { heading: 'Adoption', text: 'Over 40,000 stores use Acme Checkout today.' },
+    expect: 3,
+    why: 'A real figure with no source or date, so checkable in principle only.',
+  },
+  {
+    id: 'claim_specificity/scoped-and-sourced',
+    question: 'claim_specificity',
+    state: { heading: 'Performance', text: 'Rendering fell from 420 ms to 180 ms between 4.1 and 4.2, measured on a 4-core VPS across 1,000 runs.' },
+    expect: 4,
+    why: 'Quantified, scoped, versioned and reproducible.',
+  },
+
+  // ---- improvement_type ----------------------------------------------------
+  //
+  // This question drives every tailored suggestion and had NO calibration cases at
+  // all — the most-used output in the product was the least measured.
+  {
+    id: 'improvement_type/needs-a-number',
+    question: 'improvement_type',
+    state: sec('Performance', 'Acme Checkout is dramatically faster than the alternatives you have tried.'),
+    expect: 'add_a_number',
+    why: 'Asserts speed with no figure; a number is the obvious missing piece.',
+  },
+  {
+    id: 'improvement_type/needs-proof',
+    question: 'improvement_type',
+    state: sec('Trusted by merchants', 'Thousands of stores rely on Acme Checkout every single day for their busiest sales.'),
+    expect: 'cite_evidence',
+    why: 'A trust claim wants a named customer or case study more than another adjective.',
+  },
+  {
+    id: 'improvement_type/needs-definition',
+    question: 'improvement_type',
+    state: sec('Conditional logic', 'Acme Checkout supports full conditional logic across all field types and rule sets.'),
+    expect: null,
+    why:
+      'RELABELLED to ambiguous after the criteria were sharpened. Both answers are ' +
+      'defensible: "conditional logic" is jargon to a newcomer, but it is also common ' +
+      'enough that an example would help more than a definition. Asserting one answer ' +
+      'was my error. What this case now measures is whether the model recognises the ' +
+      'ambiguity — and it does not: it answers give_an_example at 0.99. Being near-' +
+      'certain on a debatable question is itself the finding worth keeping visible.',
+  },
+  {
+    id: 'improvement_type/already-fine',
+    question: 'improvement_type',
+    state: sec('Requirements', 'Acme Checkout needs WordPress 6.0, PHP 8.0 and WooCommerce 7.0. It uses 12 MB of memory.'),
+    expect: 'already_specific',
+    why: 'Concrete and checkable; flagging it would be a false positive on the suggestion path.',
+  },
+
+  // ---- adversarial: things a careless check gets wrong ----------------------
+  {
+    id: 'adversarial/question-heading-rhetorical',
+    question: 'answers_heading',
+    state: sec('Tired of clunky checkouts?',
+      'Acme Checkout replaces the default WooCommerce checkout with one you can configure ' +
+      'field by field, without touching code.'),
+    expect: true,
+    why: 'A rhetorical heading still gets a real response; not every question needs a literal answer.',
+  },
+  {
+    id: 'adversarial/numbers-but-vague',
+    question: 'claim_specificity',
+    state: { heading: 'Scale', text: 'Millions of shoppers benefit from faster checkouts every year.' },
+    expect: 1,
+    why: '"Millions" and "every year" look quantitative but commit to nothing checkable.',
+  },
+  {
+    id: 'adversarial/negative-claim',
+    question: 'promotional_intensity',
+    state: sec('What it does not do',
+      'Acme Checkout does not handle subscriptions, multi-currency pricing or tax filing. ' +
+      'If you need those, look at a dedicated plugin instead.'),
+    expect: 0,
+    why: 'Anti-promotional copy. Scoring it as promotional would be a plain error.',
+  },
+
   // ---- adversarial: near-misses that must NOT fire --------------------------
   //
   // Added to validate the per-primitive thresholds from F28. Lowering the Choice bar

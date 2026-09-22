@@ -9,6 +9,8 @@ import { runStaticChecks, type StaticResult } from '../static/structure/checks'
 import { STATIC_TEMPLATES } from '../static/structure/templates'
 import { runLanguageSignals, LANGUAGE_TEMPLATES } from '../static/language/signals'
 import { analyseBurial } from '../static/language/burial'
+import { findClaims, EVIDENCE_LABEL } from '../static/evidence/markers'
+import { EVIDENCE_TEMPLATES } from '../static/evidence/templates'
 import { excludedSections } from '../semantic/state'
 
 /**
@@ -107,6 +109,45 @@ export function assembleStaticFindings(doc: ExtractedDoc, pageUrl: string): Find
       priority: tpl.priority,
       confidence: 'high',
       highlights: [],
+      copySource: 'template',
+    })
+  }
+
+  // Module 2 — Evidence & Trust. Deterministic: find the claim, find the nearest
+  // evidence, measure the gap. Whether nearby evidence actually SUPPORTS the claim is
+  // a judgement and belongs to the model; proximity is not.
+  for (const claim of findClaims(doc, excludedSections(doc))) {
+    const isMissing = claim.evidence.length === 0
+    const tpl = isMissing
+      ? EVIDENCE_TEMPLATES.claim_without_evidence!
+      : claim.distance > 0
+        ? EVIDENCE_TEMPLATES.evidence_too_far!
+        : null
+    if (!tpl) continue // evidence sits in the claim itself — nothing to report
+
+    const evidence = verifyAll(
+      doc,
+      [makeEvidence(doc, claim.passage.id)].filter((e): e is NonNullable<typeof e> => e !== null),
+    )
+    if (evidence.length === 0) continue
+
+    const slots = {
+      what: claim.what,
+      distance: claim.distance,
+      evidence: claim.evidence.map((k) => EVIDENCE_LABEL[k]).join(' or ') || 'the proof',
+    }
+    out.push({
+      id: `${isMissing ? 'claim_without_evidence' : 'evidence_too_far'}:${claim.passage.id}`,
+      module: 'evidence_trust',
+      checkId: isMissing ? 'claim_without_evidence' : 'evidence_too_far',
+      observation: fill(tpl.observation, slots),
+      evidence,
+      whyItMatters: fill(tpl.whyItMatters, slots),
+      recommendedAction: fill(tpl.recommendedAction, slots),
+      affects: [{ pageUrl, sectionId: claim.passage.sectionId }],
+      priority: tpl.priority,
+      confidence: 'high',
+      highlights: claim.terms,
       copySource: 'template',
     })
   }

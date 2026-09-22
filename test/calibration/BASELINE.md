@@ -1,5 +1,71 @@
 # Decision-layer calibration baseline
 
+## 2026-09-23 · 45 cases · the honest number
+
+```
+Agreement        40/45  (89%)
+False positives  0
+Overconfident    1
+Input tokens     19,808
+```
+
+| Question | Agreement |
+| --- | --- |
+| answers_heading | 8/9 |
+| promotional_intensity | 8/8 |
+| entity_clarity | 4/4 |
+| self_contained | 6/7 |
+| extraction_readiness | 6/7 |
+| claim_specificity | 5/6 |
+| improvement_type | 3/4 |
+
+**Growing the corpus from 19 to 45 cases dropped the score from 95% to 84%, and
+surfaced a false positive.** That is the corpus doing its job. Nineteen cases were
+measuring mostly easy examples; the additions lean on near-misses, because agreement on
+easy cases measures very little. Two fixes then took it back to 89% with false
+positives at zero.
+
+### What the expansion found
+
+**`improvement_type` was the weakest question at 2/4 — and it is the most visible one**,
+because it selects which suggestion a user reads. Both failures were option overlap
+rather than misunderstanding: it chose `add_a_number` for a trust claim wanting a named
+customer, and `give_an_example` for jargon needing a definition. Each option now states
+what makes it the answer *and* what rules it out. 2/4 → 3/4.
+
+**The corpus's only false positive was in `entity_clarity`** — a page calling its product
+"ACP" and never expanding it was judged "clearly named" at 0.88. A consistently repeated
+token is not an identifiable entity. The criteria now say that explicitly, and
+`entity_clarity` went 3/4 → 4/4 with the false positive gone.
+
+That one mattered more than the score: `entity_clarity` is a tier-0 finding that blocks
+the whole page, so a confident wrong answer there is the most expensive mistake the
+product can make.
+
+### The threshold was swept, and deliberately not optimised
+
+| noul bar | agreement | false positives |
+| --- | --- | --- |
+| 0.60 | 40/45 (89%) | 0 |
+| 0.55 | 40/45 (89%) | 0 |
+| 0.50 | 40/45 (89%) | 0 |
+| 0.45 | 41/45 (91%) | 0 |
+
+Kept at **0.60**. Loosening by a quarter to gain one case is a poor trade when 45 cases
+cannot certify a looser bar stays clean, and the two answers it recovers are ones the
+model itself was unsure about. Tuning a threshold until the number looks better is how
+you fit to a corpus instead of measuring against it.
+
+### The five remaining failures
+
+1. **`extraction_readiness/buried`** — superseded. Burial is now measured deterministically (F29), so this is no longer a product gap; the case stays as a record of why.
+2. **`answers_heading/partial-answer`** and **`self_contained/numbered-step`** — both *correct in direction* but at 0.52 confidence, just under the bar. Discarded rather than wrong.
+3. **`claim_specificity/fake-precision`** — "up to 10x faster" scored 2.25 against a label of 1. Arguably my label is harsh; "up to" is unfalsifiable but does convey a ceiling.
+4. **`improvement_type/needs-definition`** — relabelled ambiguous, because both answers are genuinely defensible and asserting one was my error. The model answers at 0.99, so what it now measures is whether near-certainty on a debatable question shows up as overconfidence. It does.
+
+---
+
+
 ## F29 follow-up — burial moved out of the model
 
 The one case the model could never decide is now handled deterministically and removed
