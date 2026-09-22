@@ -14,6 +14,15 @@ export interface StaticTemplate {
 }
 
 export const STATIC_TEMPLATES: Record<string, StaticTemplate> = {
+  answer_buried_positional: {
+    priority: 'high',
+    pageLevel: false,
+    observation: '“{heading}” makes readers wade through {words} words before answering.',
+    whyItMatters:
+      'The answer is there, but it starts {words} words in. Readers scanning the page give up before reaching it, and AI tools quote whatever comes first — which here is preamble, not your answer.',
+    recommendedAction:
+      'Move the sentence that answers the heading to the top of the section, and put the background after it.',
+  },
   no_structured_data: {
     priority: 'medium',
     pageLevel: true,

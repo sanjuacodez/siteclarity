@@ -8,6 +8,7 @@ import { compareByImpact, countOccurrences, impactTier } from './impact'
 import { runStaticChecks, type StaticResult } from '../static/structure/checks'
 import { STATIC_TEMPLATES } from '../static/structure/templates'
 import { runLanguageSignals, LANGUAGE_TEMPLATES } from '../static/language/signals'
+import { analyseBurial } from '../static/language/burial'
 import { excludedSections } from '../semantic/state'
 
 /**
@@ -64,6 +65,47 @@ export function assembleStaticFindings(doc: ExtractedDoc, pageUrl: string): Find
       affects: [{ pageUrl }],
       priority: tpl.priority,
       confidence: 'high', // deterministic: no model judgement involved
+      highlights: [],
+      copySource: 'template',
+    })
+  }
+
+  // F29 — burial, measured rather than judged. The model was never confident about
+  // this, so it was always discarded; lexical overlap with the heading finds it exactly.
+  for (const section of doc.sections) {
+    if (excludedSections(doc).has(section.id)) continue
+    if (section.passageIds.length === 0) continue
+
+    const text = section.passageIds
+      .filter((id) => !doc.boilerplatePassageIds.has(id))
+      .map((id) => doc.passagesById.get(id)?.text ?? '')
+      .join(' ')
+
+    const burial = analyseBurial(section.heading, text)
+    if (!burial.buried) continue
+
+    const tpl = STATIC_TEMPLATES.answer_buried_positional!
+    const evidence = verifyAll(
+      doc,
+      section.passageIds
+        .slice(0, 1)
+        .map((id) => makeEvidence(doc, id))
+        .filter((e): e is NonNullable<typeof e> => e !== null),
+    )
+    if (evidence.length === 0) continue
+
+    const slots = { heading: section.heading ?? 'This section', words: burial.wordsBefore }
+    out.push({
+      id: `answer_buried_positional:${section.id}`,
+      module: 'ai_readiness',
+      checkId: 'answer_buried_positional',
+      observation: fill(tpl.observation, slots),
+      evidence,
+      whyItMatters: fill(tpl.whyItMatters, slots),
+      recommendedAction: fill(tpl.recommendedAction, slots),
+      affects: [{ pageUrl, sectionId: section.id }],
+      priority: tpl.priority,
+      confidence: 'high',
       highlights: [],
       copySource: 'template',
     })
@@ -194,7 +236,10 @@ function buildFinding(
  * produce two findings saying the same thing. Keep the higher-priority one.
  */
 const OVERLAP: Record<string, string[]> = {
-  answer_absent: ['heading_not_answered', 'needs_context', 'answer_buried'],
+  answer_absent: ['heading_not_answered', 'needs_context', 'answer_buried', 'answer_buried_positional'],
+  // The measured signal wins over the model's judgement of the same property: it is
+  // exact where the model was never confident (F29).
+  answer_buried_positional: ['answer_buried', 'needs_context'],
   answer_buried: ['needs_context'],
 }
 

@@ -29,6 +29,7 @@ const BLOCKS_SECTION: Record<string, true> = {
   answer_absent: true,
   heading_not_answered: true,
   answer_buried: true,
+  answer_buried_positional: true,
 }
 
 /** The answer survives but is harder to lift out cleanly. */

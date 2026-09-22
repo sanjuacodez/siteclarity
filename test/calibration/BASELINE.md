@@ -1,5 +1,35 @@
 # Decision-layer calibration baseline
 
+## F29 follow-up — burial moved out of the model
+
+The one case the model could never decide is now handled deterministically and removed
+from its responsibilities.
+
+`extraction_readiness` returned `"ready"` at 0.39 and `"buried"` at 0.34 across runs —
+never confident, so the pipeline always discarded it. Burial is a **positional**
+property, and position is what code is good at. The replacement uses lexical overlap:
+a heading names what a section is about, so the sentence that addresses it reuses the
+heading's words. Find the first such sentence; everything before it is preamble.
+
+Measured behaviour:
+
+| Page type | Result |
+| --- | --- |
+| cloudflare.com, acowebs.com, example.com | 0 findings — short marketing sections genuinely do not bury answers |
+| a real long-form article | 2 of 11 eligible sections, at 144 and 28 words of preamble |
+
+Selective rather than silent, and it reports the actual number of words a reader must
+wade through instead of a judgement. It costs nothing, needs no key, and runs with the
+decision layer switched off.
+
+Where it deliberately says nothing: sections under three sentences (cannot bury
+anything), headings with fewer than two topic words (nothing to measure overlap
+against), and sections that never address their heading at all — that is
+`answer_absent`, a different finding, and the model judges it well.
+
+---
+
+
 ## 2026-09-23 (later) · after F27 and F28 · 19 cases
 
 ```
