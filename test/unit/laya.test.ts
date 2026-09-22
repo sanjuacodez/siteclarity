@@ -15,7 +15,7 @@ describe('Laya adapter', () => {
     vi.stubGlobal('fetch', f)
     await new LayaBackend({ baseUrl: 'https://laya.example.com/' }).decide(req)
 
-    const [url, init] = f.mock.calls[0] as [string, RequestInit]
+    const [url, init] = f.mock.calls[0] as unknown as [string, RequestInit]
     expect(url).toBe('https://laya.example.com/ai/run')   // not /v1/systemone
     const body = JSON.parse(String(init.body))
     expect(body.input.state).toEqual(req.state)           // the wrapper Jev does not use
@@ -33,12 +33,12 @@ describe('Laya adapter', () => {
     const f = reply({ answers: {} })
     vi.stubGlobal('fetch', f)
     await new LayaBackend({ baseUrl: 'https://l.test' }).decide(req)
-    expect(JSON.parse(String((f.mock.calls[0] as [string, RequestInit])[1].body)).model).toBe('laya')
+    expect(JSON.parse(String((f.mock.calls[0] as unknown as [string, RequestInit])[1].body)).model).toBe('laya')
 
     const g = reply({ answers: {} })
     vi.stubGlobal('fetch', g)
     await new LayaBackend({ baseUrl: 'https://l.test', model: 'laya/multilingual' }).decide(req)
-    expect(JSON.parse(String((g.mock.calls[0] as [string, RequestInit])[1].body)).model).toBe('laya/multilingual')
+    expect(JSON.parse(String((g.mock.calls[0] as unknown as [string, RequestInit])[1].body)).model).toBe('laya/multilingual')
   })
 
   it('reports an oversized state plainly — Laya rejects rather than truncating', async () => {

@@ -22,7 +22,8 @@ dist/
 
 # Internal planning and working notes — kept local, not published
 /AGENTS.md
-/CLAUDE.md
+/*.local.md
 /docs/
 /planning/
 /tasks/
+/siteclarity-video.mp4

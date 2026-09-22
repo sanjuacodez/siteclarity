@@ -585,3 +585,42 @@ describe('decision model settings', () => {
     expect(js).toMatch(/smaller context/i)
   })
 })
+
+describe('export', () => {
+  const js = script
+
+  it('offers Markdown, HTML, JSON and the prompt bundle', () => {
+    expect(js).toContain('data-x="md"')
+    expect(js).toContain('data-x="html"')
+    expect(js).toContain('data-x="json"')
+    expect(js).toContain('data-x="prompts"')
+  })
+
+  it('builds exports in the browser, with no extra request', () => {
+    expect(js).toContain('function exportMarkdown')
+    expect(js).toContain('function exportHtml')
+    expect(js).toContain('URL.createObjectURL')
+    // An export endpoint would cost a round trip for data already in memory.
+    expect(js).not.toMatch(/fetch\(['"]\/api\/export/)
+  })
+
+  it('tracks a context that survives a site scan clearing activeReport', () => {
+    expect(js).toContain('exportCtx = { kind: \'site\'')
+    expect(js).toContain('exportCtx = { kind: \'page\'')
+    expect(js).toContain("if (!exportCtx || !exportCtx.reports.length)")
+  })
+
+  it('exports the unmodified API response as JSON so it stays diffable', () => {
+    expect(js).toContain('JSON.stringify(exportCtx.kind === \'site\' ? exportCtx.reports : exportCtx.reports[0], null, 2)')
+  })
+
+  it('names files by host and audit date', () => {
+    expect(js).toContain("'siteclarity-' + host + scope + '-' + day")
+  })
+
+  it('carries the limits block into the Markdown, not just the findings', () => {
+    // A report without its scope statements would overstate what was checked.
+    expect(js).toContain('What was and was not examined')
+    expect(js).toContain('r.limits.statements')
+  })
+})

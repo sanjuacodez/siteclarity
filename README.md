@@ -14,11 +14,10 @@ Free, open source, and built as a practical application of
 
 ### See it run
 
-https://github.com/sanjuacodez/siteclarity/raw/main/siteclarity-video.mp4
+[![Watch SiteClarity audit a page](https://img.youtube.com/vi/Fd_TAiQClr0/maxresdefault.jpg)](https://www.youtube.com/watch?v=Fd_TAiQClr0)
 
-_A full audit from URL to findings — structural checks, meaning checks, and the copy-prompt output._
-
----
+_A full audit from URL to findings — structural checks, meaning checks, and the
+copy-prompt output. **[Watch on YouTube](https://www.youtube.com/watch?v=Fd_TAiQClr0)**_
 
 ## Why this exists
 

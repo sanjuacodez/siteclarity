@@ -153,6 +153,16 @@ blockquote { background:var(--bg); border-left:2px solid var(--border); margin:0
   padding:7px 14px; font-size:.78rem; font-weight:650; border-radius:9px; cursor:pointer }
 .copy-all:hover { border-color:var(--accent) }
 .prompt-hint { font-size:.7rem }
+.footlinks { display:flex; gap:16px; flex-wrap:wrap; justify-content:center; margin:8px 0 }
+.footlinks a { color:var(--muted); text-decoration:none; border-bottom:1px solid transparent }
+.footlinks a:hover { color:var(--accent); border-bottom-color:var(--accent) }
+.report-actions { display:flex; flex-direction:column; align-items:flex-end; gap:10px }
+.exports { display:flex; align-items:center; gap:6px; flex-wrap:wrap; justify-content:flex-end }
+.exportl { font-size:.64rem; letter-spacing:.08em; text-transform:uppercase; color:var(--muted);
+  font-weight:650 }
+.exp { background:transparent; color:var(--muted); border:1px solid var(--border);
+  padding:5px 10px; font-size:.74rem; font-weight:600; border-radius:7px; cursor:pointer }
+.exp:hover { color:var(--accent); border-color:var(--accent) }
 .keybox.needed { border-color:var(--warn); background:var(--warn-soft) }
 .keybox.needed > summary { color:var(--warn) }
 .keybox { border:1px solid var(--border); border-radius:12px; margin:0 0 14px; background:var(--surface) }
@@ -354,12 +364,24 @@ footer a { color:var(--muted) }
     </div>
   </section>
 </main>
-<div class="shell"><footer><p>Built for clearer content. Free &amp; open source.</p><p>Reports stay in this tab · <a href="/checks">Checks &amp; limitations</a> · MIT license</p></footer></div>
+<div class="shell"><footer>
+<p>Built for clearer content. Free &amp; open source · MIT license</p>
+<p class="footlinks">
+  <a href="/checks">Checks &amp; limitations</a>
+  <a href="https://github.com/sanjuacodez/siteclarity" target="_blank" rel="noopener noreferrer">Source</a>
+  <a href="https://github.com/doable-team/" target="_blank" rel="noopener noreferrer">doable.team</a>
+  <a href="https://sanjayshankar.me" target="_blank" rel="noopener noreferrer">sanjayshankar.me</a>
+</p>
+<p class="muted">Decisions by a System One model. No generative AI, so evidence cannot be invented. Reports stay in this tab.</p>
+</footer></div>
 <script>
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 let busy = false;
 let activeReport = null;
+// Exports must work for a site scan too, and renderSite deliberately clears
+// activeReport, so the export context is tracked separately.
+let exportCtx = null;
 let activeFilter = 'all';
 let __gid = 0;
 const priorities = { high: 0, medium: 1, low: 2 };
@@ -433,6 +455,8 @@ document.addEventListener('input', e => {
 document.addEventListener('click', e => {
   // Copy-prompt lives inside the existing delegated handler on purpose: a second
   // document-level click listener competes with this one rather than composing with it.
+  const expBtn = e.target.closest && e.target.closest('.exp');
+  if (expBtn) { e.preventDefault(); handleExport(expBtn.dataset.x); return; }
   if (e.target.id === 'skip-key') {
     // The deterministic layer genuinely works without a model, so offer it rather than
     // implying a key is the only route to anything useful.
@@ -494,12 +518,13 @@ $('f').addEventListener('submit', async e => {
     promptForKey(); return;
   }
   skipKeyOnce = false;
-  setBusy(true); activeReport = null; activeFilter = 'all'; announce('Audit started.');
+  setBusy(true); activeReport = null; exportCtx = null; activeFilter = 'all'; announce('Audit started.');
   try {
     if (currentMode() === 'page') {
       showOutput(loading('Reading your page…', 'Checking structure, content and answer readiness. Keep this tab open.'), false);
       const data = await requestPage($('u').value.trim());
       activeReport = data;
+      exportCtx = { kind: 'page', reports: [data] };
       showOutput(render(data), true); announce('Audit complete. ' + data.findings.length + ' findings.');
     } else if (currentMode() === 'site') {
       await scanSite($('us').value.trim(), Number($('np').value));
@@ -558,7 +583,123 @@ function summaryCards(c) {
 }
 function reportHeading(title, description, badge) {
   return '<div class="report-top"><div><div class="eyebrow">Your audit report</div><h2>' + esc(title) +
-    '</h2><p class="sub">' + esc(description) + '</p></div><span class="badge">' + esc(badge) + '</span></div>';
+    '</h2><p class="sub">' + esc(description) + '</p></div>' +
+    '<div class="report-actions"><span class="badge">' + esc(badge) + '</span>' +
+    '<div class="exports"><span class="exportl">Save as</span>' +
+    '<button type="button" class="exp" data-x="md">Markdown</button>' +
+    '<button type="button" class="exp" data-x="html">HTML</button>' +
+    '<button type="button" class="exp" data-x="json">JSON</button>' +
+    '<button type="button" class="exp" data-x="prompts">All prompts</button>' +
+    '</div></div></div>';
+}
+
+/**
+ * SC-112 — export.
+ *
+ * Built in the browser from the report already in memory, so it costs no request and
+ * works offline once a report is open. The Markdown and HTML forms are written for a
+ * person to read; the JSON is the unmodified API response so it stays diffable between
+ * runs and usable by other tools.
+ */
+function exportFilename(ext) {
+  const first = exportCtx && exportCtx.reports[0];
+  let host = 'report';
+  try { host = new URL(first.input.finalUrl).hostname.replace(/^www\\./, ''); } catch (err) {}
+  const day = ((first && first.input.fetchedAt) || new Date().toISOString()).slice(0, 10);
+  const scope = exportCtx && exportCtx.kind === 'site' ? '-site' : '';
+  return 'siteclarity-' + host + scope + '-' + day + '.' + ext;
+}
+
+function exportMarkdown() {
+  const reports = exportCtx.reports;
+  const L = [];
+  L.push('# SiteClarity report');
+  L.push('');
+  if (exportCtx.kind === 'site') {
+    L.push('**Pages audited:** ' + reports.length);
+    L.push('**Audited:** ' + reports[0].input.fetchedAt);
+  } else {
+    L.push('**Page:** ' + (reports[0].input.title || reports[0].input.finalUrl));
+    L.push('**URL:** ' + reports[0].input.finalUrl);
+    L.push('**Audited:** ' + reports[0].input.fetchedAt);
+  }
+  L.push('');
+  L.push('> SiteClarity reports what to improve, never a score. Every quote below is');
+  L.push('> word-for-word from the page.');
+  L.push('');
+  let total = 0;
+  reports.forEach(r => {
+    if (exportCtx.kind === 'site') {
+      L.push('---');
+      L.push('');
+      L.push('## ' + (r.input.title || r.input.finalUrl));
+      L.push('');
+      L.push(r.input.finalUrl);
+      L.push('');
+    }
+    L.push(exportCtx.kind === 'site' ? '### What was and was not examined' : '## What was and was not examined');
+    L.push('');
+    (r.limits.statements || []).forEach(x => L.push('- ' + x));
+    L.push('');
+    const all = r.findings || [];
+    total += all.length;
+    L.push(exportCtx.kind === 'site' ? '### Findings (' + all.length + ')' : '## Findings (' + all.length + ')');
+    all.forEach((f, i) => {
+      L.push('');
+      L.push((exportCtx.kind === 'site' ? '#### ' : '### ') + (i + 1) + '. ' + f.observation);
+      L.push('');
+      L.push('**Priority:** ' + f.priority + ' · **Confidence:** ' + f.confidence);
+      L.push('');
+      L.push('**Why it matters.** ' + f.whyItMatters);
+      L.push('');
+      L.push('**What to change.** ' + f.recommendedAction);
+      (f.evidence || []).forEach(e => { L.push(''); L.push('> ' + e.quote); });
+      if ((f.highlights || []).length) { L.push(''); L.push('Words to replace: ' + f.highlights.join(', ')); }
+    });
+    if (!all.length) { L.push(''); L.push('Nothing to fix was found on this page.'); }
+    L.push('');
+  });
+  L.push('---');
+  L.push('');
+  L.push(total + ' finding' + (total === 1 ? '' : 's') + ' · generated by SiteClarity · ' +
+    (reports[0].provider.model || 'structural checks only'));
+  return L.join('\\n');
+}
+
+function exportHtml() {
+  const r = exportCtx.reports[0];
+  const body = $('out') ? $('out').innerHTML : '';
+  const style = document.querySelector('style');
+  return '<!doctype html><html lang="en"><head><meta charset="utf-8">' +
+    '<meta name="viewport" content="width=device-width, initial-scale=1">' +
+    '<title>SiteClarity — ' + esc(r.input.title || r.input.finalUrl) + '</title>' +
+    '<style>' + (style ? style.textContent : '') + '</style></head>' +
+    '<body><div class="wrap"><h1>SiteClarity report</h1>' +
+    '<p class="sub"><a href="' + esc(r.input.finalUrl) + '">' + esc(r.input.finalUrl) + '</a> · ' +
+    esc(r.input.fetchedAt) + '</p>' + body + '</div></body></html>';
+}
+
+function download(text, filename, mime) {
+  try {
+    const blob = new Blob([text], { type: mime + ';charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+    return true;
+  } catch (err) { return false; }
+}
+
+function handleExport(kind) {
+  if (!exportCtx || !exportCtx.reports.length) { announce('Run an audit first.'); return; }
+  let text = '', name = '', mime = 'text/plain';
+  if (kind === 'md') { text = exportMarkdown(); name = exportFilename('md'); mime = 'text/markdown'; }
+  else if (kind === 'json') { text = JSON.stringify(exportCtx.kind === 'site' ? exportCtx.reports : exportCtx.reports[0], null, 2); name = exportFilename('json'); mime = 'application/json'; }
+  else if (kind === 'html') { text = exportHtml(); name = exportFilename('html'); mime = 'text/html'; }
+  else if (kind === 'prompts') { text = __prompts.join('\\n\\n---\\n\\n'); name = exportFilename('txt'); mime = 'text/plain'; }
+  if (!text) { announce('Nothing to export yet.'); return; }
+  announce(download(text, name, mime) ? 'Saved ' + name : 'Could not save the file.');
 }
 function modelNotice(d) {
   if (d.provider.degraded) return '<div class="notice warning"><strong>Partial report · decision model unavailable</strong><p>Static checks are included. Semantic analysis is incomplete; some findings may be missing.</p></div>';
@@ -582,6 +723,7 @@ function findingsBody(d, filter) {
 }
 function renderSite(results, sm, failures, partial) {
   activeReport = null;
+  exportCtx = { kind: 'site', reports: results, meta: sm };
   const all = results.flatMap(r => r.findings);
   const c = countFindings(all);
   const limited = results.filter(r => r.provider.degraded || !r.limits.decisionsRan).length;
