@@ -1,0 +1,778 @@
+/**
+ * SC-116 — Worker-served audit workspace. No build step or external assets.
+ * Keep script regex backslashes doubled: this is a TypeScript template literal.
+ * Findings, quotes and limits come from the API; the UI never invents audit data.
+ */
+export const DASHBOARD_HTML = `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>SiteClarity — Answer readiness audit</title>
+<style>
+:root {
+  color-scheme:light dark;
+  --bg:#f7f7fb; --surface:#fff; --soft:#f2f1f8; --border:#e4e3ed; --text:#242330;
+  --muted:#656477; --accent:#6d4aff; --accent-soft:#efebff; --button:#fff;
+  --warn:#926000; --warn-soft:#fff5de; --bad:#b43f4f; --bad-soft:#ffedf0;
+  --good:#267357; --good-soft:#eaf6ef; --shadow:0 8px 32px #29203e06; --radius:18px;
+}
+@media(prefers-color-scheme:dark) {
+  :root {
+    --bg:#141419; --surface:#1c1c24; --soft:#24242f; --border:#343440; --text:#efedf7;
+    --muted:#aaa7bd; --accent:#aa96ff; --accent-soft:#302745; --button:#1b1338;
+    --warn:#edc172; --warn-soft:#342b1c; --bad:#f09aab; --bad-soft:#38242d;
+    --good:#8ed4b3; --good-soft:#21332d; --shadow:0 8px 32px #00000012;
+  }
+}
+* { box-sizing:border-box }
+[hidden] { display:none!important }
+body { margin:0; background:var(--bg); color:var(--text); font:15px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif }
+a { color:var(--accent); text-underline-offset:3px }
+button,input,textarea { font:inherit }
+button,a,input,textarea,summary { -webkit-tap-highlight-color:transparent }
+button { cursor:pointer }
+:focus-visible { outline:3px solid var(--accent); outline-offset:4px }
+button:disabled { opacity:.5; cursor:wait }
+button { border:0; border-radius:10px; padding:11px 18px; background:var(--accent); color:var(--button); font-weight:650 }
+button:hover:not(:disabled) { filter:brightness(.96) }
+input,textarea { min-width:0; border:1px solid var(--border); border-radius:10px; background:var(--bg); color:var(--text); padding:13px 15px; width:100% }
+input::placeholder,textarea::placeholder { color:var(--muted); opacity:.8 }
+input:focus,textarea:focus { outline:2px solid var(--accent); outline-offset:1px }
+textarea { resize:vertical; line-height:1.7; font-size:.9rem }
+label { display:block; font-size:.85rem; font-weight:600; margin-bottom:7px }
+h1,h2,h3,p { margin-top:0 }
+h1,h2,h3 { line-height:1.25 }
+h1 { font-size:clamp(1.9rem,3vw,2.65rem); letter-spacing:-.045em; font-weight:700; margin-bottom:14px }
+h2 { font-size:1.15rem; letter-spacing:-.025em; margin-bottom:8px }
+h3 { font-size:1rem; letter-spacing:-.015em }
+.shell { max-width:1120px; margin:auto; padding:0 32px }
+.topbar { border-bottom:1px solid var(--border); background:var(--surface) }
+.topbar .shell { min-height:78px; display:flex; align-items:center; gap:40px }
+.brand { color:var(--text); text-decoration:none; font-size:1.15rem; letter-spacing:-.035em; font-weight:750; display:flex; gap:10px; align-items:center }
+.brand-mark { background:var(--accent); color:var(--button); width:30px; height:30px; display:grid; place-items:center; border-radius:9px }
+.brand-mark svg { width:20px; height:20px }
+nav { display:flex; gap:28px; align-self:stretch; align-items:center }
+nav a { text-decoration:none; color:var(--muted); font-size:.85rem; display:flex; height:100%; align-items:center; border-bottom:2px solid transparent; padding-top:2px }
+nav a[aria-current] { color:var(--accent); border-bottom-color:var(--accent); font-weight:600 }
+.oss { margin-left:auto; color:var(--muted); font-size:.75rem; padding:4px 10px; border:1px solid var(--border); border-radius:99px; white-space:nowrap }
+.oss::before { content:""; display:inline-block; width:6px; height:6px; background:var(--good); border-radius:50%; margin-right:7px }
+main { padding-top:48px!important; padding-bottom:36px!important }
+.eyebrow { font-size:.7rem; text-transform:uppercase; letter-spacing:.12em; color:var(--accent); font-weight:700; margin-bottom:12px; display:flex; gap:8px; align-items:center }
+.eyebrow span { width:6px; height:6px; border-radius:50%; background:var(--accent) }
+.intro { max-width:720px; margin-bottom:30px }
+.intro p { color:var(--muted); font-size:1rem; max-width:650px; margin-bottom:0 }
+.setup { display:grid; grid-template-columns:minmax(0,1fr) 270px; gap:0; border:1px solid var(--border); border-radius:var(--radius); background:var(--surface); box-shadow:var(--shadow); overflow:hidden }
+.setup-main { padding:26px 28px }
+.setup-heading { display:flex; align-items:center; gap:9px; margin-bottom:18px }
+.step { display:grid; place-items:center; width:23px; height:23px; border:1px solid var(--border); color:var(--muted); border-radius:7px; font-size:.72rem }
+.setup-heading h2 { margin:0; font-size:.96rem }
+.modes { display:flex; background:var(--soft); padding:4px; border-radius:11px; gap:4px; margin-bottom:22px }
+.mtab { flex:1; background:transparent; color:var(--muted); padding:9px 5px; font-size:.84rem; border:1px solid transparent; border-radius:8px; white-space:nowrap }
+.mtab.on { color:var(--text); background:var(--surface); border-color:var(--border); box-shadow:0 2px 4px #00000005 }
+.row { display:flex; gap:10px; align-items:center }
+.row input { flex:1 }
+.row button { min-height:51px; white-space:nowrap; display:flex; gap:15px; align-items:center }
+.field-hint { color:var(--muted); font-size:.78rem; margin:8px 0 0 }
+.input-bottom { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:12px }
+.cnt { display:flex; align-items:center; gap:8px; margin:10px 0 0; font-size:.8rem; color:var(--muted); font-weight:400 }
+.cnt input { width:70px; padding:6px 9px }
+.form-note { display:flex; flex-wrap:wrap; gap:6px 18px; border-top:1px solid var(--border); margin-top:22px; padding-top:15px; font-size:.73rem; color:var(--muted) }
+.form-note span::before { content:"✓"; color:var(--good); margin-right:6px }
+.setup-aside { background:var(--soft); border-left:1px solid var(--border); padding:28px 25px; display:flex; flex-direction:column; justify-content:center }
+.setup-aside h3 { font-size:.84rem; margin-bottom:15px }
+.setup-aside ul { padding:0; margin:0 0 18px; list-style:none; display:grid; gap:12px }
+.setup-aside li { display:flex; gap:9px; font-size:.79rem; color:var(--muted) }
+.setup-aside li b { color:var(--accent); font-weight:600 }
+.setup-aside a { font-size:.78rem; width:fit-content }
+#out { margin-top:30px; scroll-margin-top:24px }
+#out:focus { outline:none }
+.empty { margin-top:34px }
+.section-label { display:flex; align-items:center; justify-content:space-between; gap:15px; margin-bottom:17px }
+.section-label h2 { font-size:.94rem; margin:0 }
+.section-label span { font-size:.74rem; color:var(--muted) }
+.feature-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:17px }
+.feature { padding:20px; border:1px solid var(--border); border-radius:14px }
+.feature .feature-icon { color:var(--accent); font-size:1.1rem; margin-bottom:12px; display:block }
+.feature h3 { font-size:.88rem; margin-bottom:8px }
+.feature p { font-size:.8rem; color:var(--muted); margin:0; line-height:1.7 }
+.card { padding:22px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); margin-bottom:18px }
+.card p:last-child { margin-bottom:0 }
+.report-top { display:flex; gap:16px; justify-content:space-between; align-items:flex-start; margin-bottom:24px }
+.report-top h2 { font-size:1.45rem; margin:6px 0 9px; overflow-wrap:anywhere }
+.report-top .eyebrow { margin:0 }
+.sub { color:var(--muted); font-size:.85rem; margin:0; overflow-wrap:anywhere }
+.page-link { font-size:.8rem; overflow-wrap:anywhere }
+.badge { color:var(--accent); background:var(--accent-soft); font-size:.73rem; border-radius:6px; padding:4px 8px; display:inline-block }
+.summary-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin:0 0 23px }
+.metric { padding:17px 19px; background:var(--surface); border:1px solid var(--border); border-radius:13px }
+.metric b { font-size:1.65rem; display:block; letter-spacing:-.05em; line-height:1.2; margin-bottom:6px; font-variant-numeric:tabular-nums }
+.metric span { color:var(--muted); font-size:.76rem }
+.metric.high b { color:var(--bad) }
+.metric.medium b { color:var(--warn) }
+.metric.low b { color:var(--accent) }
+.notice { border-radius:12px; border:1px solid var(--border); padding:14px 17px; background:var(--soft); font-size:.81rem; margin-bottom:18px }
+.notice strong { display:block; margin-bottom:3px }
+.notice p { margin:0 }
+.notice.warning { background:var(--warn-soft); border-color:transparent; color:var(--warn) }
+.limits { background:var(--soft); box-shadow:none; font-size:.79rem }
+.limits h2 { font-size:.86rem }
+.limits ul { padding-left:18px; margin:9px 0 0; color:var(--muted) }
+.limits li { margin:5px 0; overflow-wrap:anywhere }
+.filters { display:flex; flex-wrap:wrap; gap:7px; margin-bottom:18px }
+.chip { background:transparent; color:var(--muted); border:1px solid var(--border); padding:7px 12px; font-size:.77rem; border-radius:8px }
+.chip.on { color:var(--accent); background:var(--accent-soft); border-color:var(--accent) }
+.chip span { margin-left:7px; opacity:.85; font-variant-numeric:tabular-nums }
+.grp { background:var(--surface); border:1px solid var(--border); border-radius:14px; margin-bottom:12px; overflow:hidden }
+.group-summary { list-style:none; cursor:pointer; padding:20px 22px; position:relative }
+.group-summary::-webkit-details-marker { display:none }
+.group-summary::after { content:"+"; color:var(--muted); position:absolute; right:22px; top:19px; font-size:1.2rem }
+.grp[open]>.group-summary::after { content:"−" }
+.group-meta { display:flex; align-items:center; gap:10px; margin-bottom:10px; padding-right:25px; flex-wrap:wrap }
+.group-meta .muted { font-size:.74rem }
+.tag { font-size:.64rem; letter-spacing:.03em; font-weight:650; padding:3px 7px; border-radius:5px }
+.tag.high { color:var(--bad); background:var(--bad-soft) }
+.tag.medium { color:var(--warn); background:var(--warn-soft) }
+.tag.low { color:var(--accent); background:var(--accent-soft) }
+.group-summary h3 { margin:0 0 7px; font-size:.98rem }
+.group-summary p { font-size:.8rem; color:var(--muted); margin:0; max-width:860px }
+.ins { padding:20px 22px; border-top:1px solid var(--border) }
+.insh { font-size:.8rem; font-weight:600; margin-bottom:10px; overflow-wrap:anywhere }
+.evl,.fixl { display:block; font-size:.64rem; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); margin-bottom:6px; font-weight:600 }
+blockquote { background:var(--bg); border-left:2px solid var(--border); margin:0 0 9px; padding:12px 15px; font-size:.84rem; color:var(--muted); overflow-wrap:anywhere }
+.evidence-ref { margin:0 0 14px; font-size:.69rem; color:var(--muted); overflow-wrap:anywhere }
+.fix { margin:15px 0 0; padding:14px 16px; background:var(--accent-soft); border-radius:9px; font-size:.83rem }
+.fixl { color:var(--accent) }
+.prompt-row { display:flex; align-items:center; gap:10px; margin-top:12px; flex-wrap:wrap }
+.copy-prompt { background:var(--accent-soft); color:var(--accent); border:1px solid var(--accent);
+  padding:6px 13px; font-size:.76rem; font-weight:650; border-radius:8px; cursor:pointer }
+.copy-prompt:hover { background:var(--accent); color:var(--surface) }
+.copy-all { background:transparent; color:var(--accent); border:1px solid var(--border);
+  padding:7px 14px; font-size:.78rem; font-weight:650; border-radius:9px; cursor:pointer }
+.copy-all:hover { border-color:var(--accent) }
+.prompt-hint { font-size:.7rem }
+.keybox { border:1px solid var(--border); border-radius:12px; margin:0 0 14px; background:var(--surface) }
+.keybox > summary { cursor:pointer; padding:11px 15px; font-size:.82rem; font-weight:600; list-style:none }
+.keybox > summary::-webkit-details-marker { display:none }
+.keybox > summary::after { content:"+"; float:right; color:var(--muted) }
+.keybox[open] > summary::after { content:"−" }
+.keybox .muted { font-weight:400 }
+.keybody { padding:0 15px 15px; border-top:1px solid var(--border) }
+.keybody p { font-size:.78rem; margin:12px 0 10px }
+.keybody input { flex:1 1 260px; padding:9px 12px; font:inherit; font-size:.86rem;
+  background:var(--bg); color:var(--text); border:1px solid var(--border); border-radius:9px }
+.keybody button { padding:9px 15px; font-size:.8rem; font-weight:650; border-radius:9px;
+  border:1px solid var(--accent); background:var(--accent); color:var(--surface); cursor:pointer }
+.keybody button.ghost { background:transparent; color:var(--muted); border-color:var(--border) }
+.keywarn { color:var(--warn) !important; margin-bottom:0 !important }
+mark { background:var(--warn-soft); color:var(--warn); border-radius:3px; font-weight:600 }
+.muted { color:var(--muted) }
+.empty-result { text-align:center; padding:28px; border:1px dashed var(--border); border-radius:14px; margin-bottom:18px }
+.empty-result h3 { margin-bottom:8px }
+.empty-result p { margin:0; font-size:.83rem; color:var(--muted) }
+.progress { display:flex; align-items:center; gap:17px }
+.progress strong { font-size:.9rem }
+.progress p { font-size:.8rem; color:var(--muted); margin:3px 0 0 }
+.spin { width:23px; height:23px; border:2px solid var(--border); border-right-color:var(--accent); border-radius:50%; animation:spin .8s linear infinite; flex-shrink:0 }
+@keyframes spin { to { transform:rotate(360deg) } }
+@media(prefers-reduced-motion:reduce) { .spin { animation:none } }
+.err { border-color:var(--bad); background:var(--bad-soft) }
+.err h2 { color:var(--bad); font-size:.95rem }
+.err p { font-size:.85rem; margin-bottom:7px }
+.tbl-card { padding:22px 0 0; overflow:hidden }
+.table-title { padding:0 22px 20px }
+.table-title h2 { font-size:1rem }
+.tscroll { overflow-x:auto }
+.tbl { width:100%; border-collapse:collapse; text-align:left; font-size:.83rem }
+.tbl th { background:var(--soft); font-size:.65rem; text-transform:uppercase; letter-spacing:.05em; font-weight:600; color:var(--muted); padding:11px 18px; white-space:nowrap }
+.tbl td { padding:16px 18px; border-top:1px solid var(--border); vertical-align:top }
+.tbl th.c-n,.tbl td.c-n { text-align:center; white-space:nowrap; width:85px }
+.prow:hover { background:var(--soft) }
+.page-toggle { background:transparent; color:var(--text); padding:0; text-align:left; width:100%; display:flex; gap:12px; align-items:flex-start; font-weight:500 }
+.page-toggle::before { content:"›"; color:var(--muted); font-size:1.2rem; line-height:1.2; transition:transform .15s }
+.page-toggle[aria-expanded=true]::before { transform:rotate(90deg) }
+.ptitle { font-size:.83rem; font-weight:600; display:block; overflow-wrap:anywhere }
+.ppath { display:block; font-size:.7rem; color:var(--muted); margin-top:3px; overflow-wrap:anywhere }
+.page-status { font-size:.66rem; color:var(--warn); display:block; margin-top:4px }
+.n { font-weight:650; font-variant-numeric:tabular-nums; border-radius:5px; padding:3px 7px; display:inline-block; min-width:25px }
+.n.high { background:var(--bad-soft); color:var(--bad) }
+.n.medium { background:var(--warn-soft); color:var(--warn) }
+.n.low { background:var(--accent-soft); color:var(--accent) }
+.n.zero { color:var(--muted) }
+.pbody>td { background:var(--bg); padding:20px }
+.pbody .card { margin-bottom:12px }
+.tech { font-size:.8rem; margin-top:18px }
+.tech summary { cursor:pointer; color:var(--muted); font-weight:600 }
+.stats { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; padding-top:18px }
+.stat b { display:block; font-size:1rem }
+.stat span { color:var(--muted); font-size:.7rem }
+.tech p { color:var(--muted); margin:15px 0 0 }
+code { font-family:ui-monospace,SFMono-Regular,monospace; font-size:.85em; overflow-wrap:anywhere }
+footer { border-top:1px solid var(--border); padding:21px 0 27px; color:var(--muted); font-size:.73rem; display:flex; justify-content:space-between; gap:20px }
+footer p { margin:0 }
+footer a { color:var(--muted) }
+.skip { position:absolute; left:20px; top:-80px; background:var(--surface); padding:10px; z-index:5 }
+.skip:focus { top:10px }
+.sr-status { position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap }
+@media(max-width:850px) {
+  .setup { grid-template-columns:1fr }
+  .setup-aside { display:none }
+  .shell { padding-inline:24px }
+}
+@media(max-width:560px) {
+  .shell { padding-inline:18px }
+  .topbar .shell { min-height:67px; gap:22px }
+  .brand { font-size:1rem; gap:7px }
+  .brand-mark { width:27px; height:27px }
+  nav { gap:17px }
+  nav a { font-size:.77rem }
+  .oss { display:none }
+  main { padding-top:32px!important }
+  .intro { margin-bottom:25px }
+  .intro p { font-size:.89rem }
+  .setup-main { padding:20px 17px }
+  .row { flex-direction:column; align-items:stretch }
+  .row input { flex:auto }
+  .row button { justify-content:center }
+  .feature-grid { grid-template-columns:1fr; gap:10px }
+  .feature { padding:17px 18px }
+  .feature .feature-icon { float:left; margin:0 15px 0 0 }
+  .feature h3,.feature p { margin-left:34px }
+  .feature h3 { margin-bottom:5px }
+  .section-label span { display:none }
+  .summary-grid { grid-template-columns:repeat(2,1fr); gap:9px }
+  .metric { padding:14px 16px }
+  .metric b { font-size:1.4rem }
+  .report-top { display:block }
+  .report-top .badge { margin-top:10px }
+  .report-top h2 { font-size:1.2rem }
+  .card { padding:18px }
+  .tbl-card { padding:18px 0 0 }
+  .tbl { min-width:590px }
+  .group-summary,.ins { padding:17px }
+  .stats { grid-template-columns:repeat(2,1fr) }
+  footer { display:block }
+  footer p+p { margin-top:7px }
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to audit</a>
+<header class="topbar"><div class="shell">
+  <a class="brand" href="/" aria-label="SiteClarity home"><span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M5 7h14M5 12h9M5 17h5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><path d="m15 16 2 2 4-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>SiteClarity</a>
+  <nav aria-label="Main navigation"><a href="/" aria-current="page">Audit</a><a href="/checks">How it works</a></nav>
+  <span class="oss">Open source · MIT</span>
+</div></header>
+<main id="main" class="shell">
+  <div class="intro">
+    <div class="eyebrow"><span aria-hidden="true"></span> AI &amp; answer readiness</div>
+    <h1>Good content. Clear answers.</h1>
+    <p>Find what makes your content harder for search and AI systems to understand. Get specific fixes, backed by evidence from your pages.</p>
+  </div>
+  <section class="setup" aria-labelledby="setup-title">
+    <div class="setup-main">
+      <div class="setup-heading"><span class="step" aria-hidden="true">01</span><h2 id="setup-title">Choose what to audit</h2></div>
+      <div class="modes" role="tablist" aria-label="Audit scope">
+        <button type="button" id="tab-page" class="mtab on" role="tab" aria-selected="true" aria-controls="pane-page" data-m="page">One page</button>
+        <button type="button" id="tab-site" class="mtab" role="tab" aria-selected="false" aria-controls="pane-site" tabindex="-1" data-m="site">Site scan</button>
+        <button type="button" id="tab-list" class="mtab" role="tab" aria-selected="false" aria-controls="pane-list" tabindex="-1" data-m="list">URL list</button>
+      </div>
+<details class="keybox">
+  <summary>API key <span class="muted" id="key-status"></span></summary>
+  <div class="keybody">
+    <p class="muted">Paste your own <a href="https://typesafe.ai" target="_blank" rel="noopener noreferrer">TypeSafe Jev</a> key to run audits against your own account. It is stored in this browser only, sent with each audit request, and never saved on the server.</p>
+    <div class="row">
+      <input type="password" id="key-input" autocomplete="off" spellcheck="false" aria-label="Jev API key">
+      <button type="button" id="key-save">Save</button>
+      <button type="button" id="key-clear" class="ghost">Remove</button>
+    </div>
+    <p class="muted keywarn">Anyone who can use this browser profile can read the key. On a shared machine, remove it when you are done.</p>
+  </div>
+</details>
+      <form id="f">
+        <div id="pane-page" class="pane" role="tabpanel" aria-labelledby="tab-page">
+          <label for="u">Page URL</label>
+          <div class="row"><input type="url" id="u" placeholder="https://example.com/page" required autocomplete="url" aria-describedby="page-hint"><button id="b" type="submit">Audit page <span aria-hidden="true">↗</span></button></div>
+          <p class="field-hint" id="page-hint">A focused review of one public page.</p>
+        </div>
+        <div id="pane-site" class="pane" role="tabpanel" aria-labelledby="tab-site" hidden>
+          <label for="us">Website URL</label>
+          <div class="row"><input type="url" id="us" placeholder="https://example.com" required disabled autocomplete="url" aria-describedby="site-hint"><button type="submit" disabled>Scan pages <span aria-hidden="true">↗</span></button></div>
+          <label class="cnt" for="np">Page limit <input type="number" id="np" value="8" min="2" max="25" required disabled> between 2 and 25</label>
+          <p class="field-hint" id="site-hint">Reviews the first pages found in your sitemap. This is a sample, not a complete site audit.</p>
+        </div>
+        <div id="pane-list" class="pane" role="tabpanel" aria-labelledby="tab-list" hidden>
+          <label for="ul">Page URLs</label>
+          <textarea id="ul" rows="4" required disabled aria-describedby="list-hint ulcount" placeholder="https://example.com/pricing&#10;https://example.com/features"></textarea>
+          <p class="field-hint" id="list-hint">One URL per line, up to 25 unique pages. Duplicate URLs are removed.</p>
+          <div class="input-bottom"><span class="field-hint" id="ulcount">0 URLs</span><button type="submit" disabled>Audit list <span aria-hidden="true">↗</span></button></div>
+        </div>
+      </form>
+      <div class="form-note"><span>Source-backed findings</span><span>Prioritised fixes</span><span>No account needed</span></div>
+    </div>
+    <aside class="setup-aside" aria-label="What is included">
+      <h3>A clear next step for every finding.</h3>
+      <ul><li><b>01</b> Find content and structure issues</li><li><b>02</b> See the exact source evidence</li><li><b>03</b> Know what to change next</li></ul>
+      <a href="/checks">Explore the checks <span aria-hidden="true">↗</span></a>
+    </aside>
+  </section>
+  <div id="status" class="sr-status" role="status" aria-live="polite"></div>
+  <section id="out" aria-label="Audit report" tabindex="-1" hidden></section>
+  <section id="empty" class="empty" aria-labelledby="empty-title">
+    <div class="section-label"><h2 id="empty-title">Look beyond keywords.</h2><span>Three ways to make your content clearer</span></div>
+    <div class="feature-grid">
+      <article class="feature"><span class="feature-icon" aria-hidden="true">⌘</span><h3>Structure that makes sense</h3><p>Check headings, structured data and whether meaningful content is available in the HTML.</p></article>
+      <article class="feature"><span class="feature-icon" aria-hidden="true">≡</span><h3>Answers that stand alone</h3><p>Spot sections that need more context, clearer claims or a more direct answer.</p></article>
+      <article class="feature"><span class="feature-icon" aria-hidden="true">↗</span><h3>Changes you can act on</h3><p>Work through prioritised findings with source quotes and a specific action for each one.</p></article>
+    </div>
+  </section>
+</main>
+<div class="shell"><footer><p>Built for clearer content. Free &amp; open source.</p><p>Reports stay in this tab · <a href="/checks">Checks &amp; limitations</a> · MIT license</p></footer></div>
+<script>
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+let busy = false;
+let activeReport = null;
+let activeFilter = 'all';
+let __gid = 0;
+const priorities = { high: 0, medium: 1, low: 2 };
+
+function safeUrl(value) {
+  try { const u = new URL(value); return ['http:', 'https:'].includes(u.protocol) ? u.href : ''; }
+  catch { return ''; }
+}
+function pageLink(value, text) {
+  const href = safeUrl(value);
+  return href ? '<a class="page-link" href="' + esc(href) + '" target="_blank" rel="noopener noreferrer">' + esc(text || value) + ' ↗</a>' : esc(text || value);
+}
+function currentMode() { return document.querySelector('.mtab.on').dataset.m; }
+function selectMode(mode, focus) {
+  document.querySelectorAll('.mtab').forEach(t => {
+    const selected = t.dataset.m === mode;
+    t.classList.toggle('on', selected); t.setAttribute('aria-selected', String(selected)); t.tabIndex = selected ? 0 : -1;
+    if (selected && focus) t.focus();
+  });
+  for (const m of ['page', 'site', 'list']) {
+    const pane = $('pane-' + m);
+    pane.hidden = m !== mode;
+    pane.querySelectorAll('input,textarea,button').forEach(el => { el.disabled = busy || m !== mode; });
+  }
+}
+function setBusy(value) {
+  busy = value;
+  document.querySelectorAll('.mtab').forEach(t => { t.disabled = value; });
+  selectMode(currentMode(), false);
+  $('f').setAttribute('aria-busy', String(value));
+}
+function showOutput(html, focus) {
+  $('empty').hidden = true; $('out').hidden = false; $('out').innerHTML = html;
+  if (focus) { $('out').focus({ preventScroll: true }); $('out').scrollIntoView({ block:'start' }); }
+}
+function announce(message) { $('status').textContent = message; }
+function loading(title, detail) {
+  return '<div class="card progress"><span class="spin" aria-hidden="true"></span><div><strong id="progress-title">' + esc(title) + '</strong><p id="progress-detail">' + esc(detail) + '</p></div></div>';
+}
+function renderErr(data) {
+  return '<div class="card err" role="alert"><h2>We couldn’t complete this audit</h2><p>' +
+    esc(data.error && data.error.message || 'The request failed. Please try again.') +
+    '</p><p class="muted">Check the URL and try again. You can also use a URL list if sitemap discovery is unavailable.</p></div>';
+}
+function readUrls(raw) {
+  return [...new Set(raw.split(/[\\n,]+/).map(s => s.trim()).filter(Boolean).map(s => safeUrl(s) || s))];
+}
+function parseUrlList(raw) { return readUrls(raw).slice(0, 25); }
+// Input validation remains mode-specific: hidden required inputs are disabled.
+function validateList() {
+  const urls = readUrls($('ul').value);
+  const invalid = urls.find(u => !safeUrl(u) || new URL(u).username || new URL(u).password);
+  const message = urls.length > 25 ? 'Please use 25 unique URLs or fewer. No URLs have been submitted.' :
+    invalid ? 'Use a full http:// or https:// URL without credentials on each line.' : '';
+  $('ul').setCustomValidity(message);
+  $('ulcount').textContent = urls.length + (urls.length === 1 ? ' URL' : ' URLs') + (urls.length > 25 ? ' · limit is 25' : '');
+  return !message;
+}
+document.addEventListener('input', e => {
+  if (e.target.id === 'ul') validateList();
+});
+document.addEventListener('click', e => {
+  // Copy-prompt lives inside the existing delegated handler on purpose: a second
+  // document-level click listener competes with this one rather than composing with it.
+  if (e.target.id === 'key-save') {
+    const input = $('key-input');
+    const value = input.value.trim();
+    const ok = saveKey(value);
+    renderKeyState();
+    announce(ok ? (value ? 'API key saved in this browser.' : 'API key removed.')
+                : 'Could not save the key — browser storage is unavailable.');
+    return;
+  }
+  if (e.target.id === 'key-clear') {
+    saveKey(''); $('key-input').value = ''; renderKeyState();
+    announce('API key removed from this browser.');
+    return;
+  }
+  const copyBtn = e.target.closest && e.target.closest('[data-p]');
+  if (copyBtn) { e.preventDefault(); handleCopyPrompt(copyBtn); return; }
+  const tab = e.target.closest('.mtab');
+  if (tab && !busy) selectMode(tab.dataset.m, false);
+  const filter = e.target.closest('.chip');
+  if (filter && activeReport) {
+    activeFilter = filter.dataset.f;
+    $('finding-list').innerHTML = findingsBody(activeReport, activeFilter);
+    document.querySelectorAll('.chip').forEach(c => {
+      const on = c.dataset.f === activeFilter; c.classList.toggle('on', on); c.setAttribute('aria-pressed', String(on));
+    });
+  }
+  const toggle = e.target.closest('.page-toggle');
+  if (toggle) {
+    const body = $(toggle.getAttribute('aria-controls'));
+    body.hidden = !body.hidden; toggle.setAttribute('aria-expanded', String(!body.hidden));
+  }
+});
+document.addEventListener('keydown', e => {
+  const tab = e.target.closest('.mtab');
+  if (!tab || busy || !['ArrowLeft','ArrowRight','Home','End'].includes(e.key)) return;
+  e.preventDefault();
+  const modes = ['page','site','list']; const index = modes.indexOf(tab.dataset.m);
+  const next = e.key === 'Home' ? 0 : e.key === 'End' ? 2 : (index + (e.key === 'ArrowRight' ? 1 : 2)) % 3;
+  selectMode(modes[next], true);
+});
+$('f').addEventListener('submit', async e => {
+  e.preventDefault();
+  if (busy) return;
+  if (currentMode() === 'list' && !validateList()) { $('ul').reportValidity(); return; }
+  setBusy(true); activeReport = null; activeFilter = 'all'; announce('Audit started.');
+  try {
+    if (currentMode() === 'page') {
+      showOutput(loading('Reading your page…', 'Checking structure, content and answer readiness. Keep this tab open.'), false);
+      const data = await requestPage($('u').value.trim());
+      activeReport = data;
+      showOutput(render(data), true); announce('Audit complete. ' + data.findings.length + ' findings.');
+    } else if (currentMode() === 'site') {
+      await scanSite($('us').value.trim(), Number($('np').value));
+    } else {
+      await analyseList(parseUrlList($('ul').value));
+    }
+  } catch (err) {
+    showOutput(renderErr({ error: { message: err.message } }), true);
+    announce('Audit could not be completed.');
+  } finally { setBusy(false); }
+});
+async function requestPage(url) {
+  const r = await fetch('/api/analyze', { method:'POST', headers:analyzeHeaders(), body:JSON.stringify({ url }) });
+  const d = await r.json();
+  if (!r.ok) throw new Error(d.error && d.error.message || 'Unable to analyse this page.');
+  return d;
+}
+async function analyseList(urls, metadata) {
+  const results = []; const failures = [];
+  const meta = metadata || { totalFound:urls.length, urls, truncated:false, sitemapUrl:null };
+  showOutput(loading('Preparing ' + urls.length + ' pages…', 'Each page is analysed separately. Keep this tab open.'), false);
+  let done = 0;
+  const queue = urls.slice();
+  await Promise.all(Array.from({ length:Math.min(3, queue.length) }, async () => {
+    while (queue.length) {
+      const url = queue.shift();
+      try { results.push(await requestPage(url)); }
+      catch (err) { failures.push({ url, error:{ message:err.message } }); }
+      done++;
+      const message = done + ' of ' + urls.length + ' pages processed';
+      $('progress-title').textContent = message;
+      $('progress-detail').textContent = results.length + ' analysed · ' + failures.length + ' failed. The report will appear when this scan finishes.';
+      announce(message);
+    }
+  }));
+  showOutput(renderSite(results, meta, failures, false), true);
+  announce('Scan complete. ' + results.length + ' pages analysed; ' + failures.length + ' failed.');
+}
+async function scanSite(url, limit) {
+  showOutput(loading('Finding pages in your sitemap…', 'We will analyse up to ' + limit + ' pages.'), false);
+  const r = await fetch('/api/sitemap?limit=' + limit + '&url=' + encodeURIComponent(url));
+  const data = await r.json();
+  if (!r.ok) throw new Error(data.error && data.error.message || 'Could not find a usable sitemap.');
+  if (!data.urls.length) throw new Error('No pages were found in this sitemap. Try a URL list instead.');
+  await analyseList(data.urls, data);
+}
+function countFindings(findings) {
+  const c = { count:findings.length, high:0, medium:0, low:0 };
+  findings.forEach(f => c[f.priority]++);
+  return c;
+}
+function summaryCards(c) {
+  return '<div class="summary-grid" aria-label="Finding counts">' +
+    [['',c.count,'Total findings'],['high',c.high,'Fix first'],['medium',c.medium,'Worth doing'],['low',c.low,'Minor']].map(x =>
+    '<div class="metric ' + x[0] + '"><b>' + x[1] + '</b><span>' + x[2] + '</span></div>').join('') + '</div>';
+}
+function reportHeading(title, description, badge) {
+  return '<div class="report-top"><div><div class="eyebrow">Your audit report</div><h2>' + esc(title) +
+    '</h2><p class="sub">' + esc(description) + '</p></div><span class="badge">' + esc(badge) + '</span></div>';
+}
+function modelNotice(d) {
+  if (d.provider.degraded) return '<div class="notice warning"><strong>Partial report · decision model unavailable</strong><p>Static checks are included. Semantic analysis is incomplete; some findings may be missing.</p></div>';
+  if (!d.limits.decisionsRan) return '<div class="notice warning"><strong>Limited semantic coverage</strong><p>No section-level decisions were completed. Read the scope below before interpreting these findings.</p></div>';
+  return '';
+}
+function render(d) {
+  const c = countFindings(d.findings);
+  return reportHeading(d.input.title || 'Page audit', 'Review the highest-priority findings, then open each one for the evidence and next step.', 'Single page') +
+    '<p class="page-link">' + pageLink(d.input.finalUrl) + '</p>' + modelNotice(d) + summaryCards(c) +
+    limitsCard(d) + '<div class="section-label"><h2>What to improve</h2><span>Open a finding to see the evidence</span></div>' +
+    '<div class="filters" role="group" aria-label="Filter findings by priority">' +
+    chip('all','All findings',c.count,true) + chip('high','Fix first',c.high,false) + chip('medium','Worth doing',c.medium,false) + chip('low','Minor',c.low,false) +
+    '</div><div id="finding-list">' + findingsBody(d,'all') + '</div>' + techCard(d);
+}
+function findingsBody(d, filter) {
+  const list = d.findings.filter(f => filter === 'all' || f.priority === filter);
+  if (!list.length) return '<div class="empty-result"><h3>' + (filter === 'all' ? 'No findings in the checks completed' : 'No ' + label(filter).toLowerCase() + ' findings') +
+    '</h3><p>' + (filter === 'all' ? 'This does not guarantee readiness. Review the scope and limitations above.' : 'Choose another priority to continue reviewing this page.') + '</p></div>';
+  return renderGroups(list, d.sections);
+}
+function renderSite(results, sm, failures, partial) {
+  activeReport = null;
+  const all = results.flatMap(r => r.findings);
+  const c = countFindings(all);
+  const limited = results.filter(r => r.provider.degraded || !r.limits.decisionsRan).length;
+  const rows = results.map(report => {
+    const count = countFindings(report.findings);
+    return { ...count, total:count.count, report, path:shortPath(report.input.finalUrl) };
+  }).sort((a, b) => b.high - a.high || b.total - a.total || a.path.localeCompare(b.path));
+  const scope = sm.sitemapUrl
+    ? 'Selected ' + sm.urls.length + ' of ' + sm.totalFound + ' sitemap URLs' + (sm.truncated ? ' (page limit reached).' : '.')
+    : 'Selected ' + sm.urls.length + ' URLs from your list.';
+  let h = reportHeading(results.length + ' pages analysed', failures.length + ' failed · ' + sm.urls.length + ' selected', partial ? 'In progress' : 'Selected pages') +
+    '<div class="notice"><strong>Scope of this scan</strong><p>' + esc(scope) + ' These results apply only to successfully analysed pages, not the entire website.</p></div>';
+  if (limited) h += '<div class="notice warning"><strong>' + limited + ' pages have limited semantic coverage</strong><p>Static findings are included. Open each page to see its analysis limits.</p></div>';
+  if (failures.length) h += '<div class="card err"><h2>' + failures.length + ' pages could not be analysed</h2><ul>' +
+    failures.map(f => '<li>' + pageLink(f.url) + '<p>' + esc(f.error && f.error.message || 'Request failed.') + '</p></li>').join('') +
+    '</ul><p>Retry these pages with the URL list tab. Successful pages are included below.</p></div>';
+  if (!results.length) return h + '<div class="empty-result"><h3>No page reports are available</h3><p>Review the errors above and try again. No conclusion can be drawn about these pages.</p></div>';
+  h += summaryCards(c) + '<div class="card tbl-card"><div class="table-title"><h2>Choose a page to work on</h2><p class="sub">Ordered by “Fix first” findings, then total findings. Open a page for its report and scope.</p></div>' +
+    '<div class="tscroll" role="region" aria-label="Page reports, scroll horizontally on small screens" tabindex="0"><table class="tbl"><thead><tr>' +
+    '<th scope="col">Page</th><th scope="col" class="c-n">Fix first</th><th scope="col" class="c-n">Worth doing</th><th scope="col" class="c-n">Minor</th><th scope="col" class="c-n">Total</th>' +
+    '</tr></thead><tbody>' + rows.map(pageRow).join('') + '</tbody></table></div></div>';
+  return h;
+}
+function pageRow(r, i) {
+  const d = r.report;
+  return '<tr class="prow"><td><button type="button" class="page-toggle" aria-expanded="false" aria-controls="row' + i + '">' +
+    '<span><span class="ptitle">' + esc(d.input.title || r.path) + '</span><span class="ppath">' + esc(d.input.finalUrl) + '</span>' +
+    (d.provider.degraded || !d.limits.decisionsRan ? '<span class="page-status">Limited semantic coverage</span>' : '') + '</span></button></td>' +
+    ['high','medium','low'].map(p => '<td class="c-n"><span class="n ' + (r[p] ? p : 'zero') + '">' + r[p] + '</span></td>').join('') +
+    '<td class="c-n"><b>' + r.total + '</b></td></tr><tr class="pbody" id="row' + i + '" hidden><td colspan="5">' +
+    '<p>' + pageLink(d.input.finalUrl,'Open source page') + '</p>' + modelNotice(d) + limitsCard(d) + findingsBody(d,'all') + techCard(d) + '</td></tr>';
+}
+/**
+ * Bring-your-own Jev key.
+ *
+ * Stored in localStorage, NOT a cookie. A cookie is attached automatically to every
+ * request the browser makes to this origin — including page loads and asset requests —
+ * which puts the key into far more places than it needs to be. localStorage is read
+ * only when we choose to send it, on the one request that needs it.
+ *
+ * The key is sent to this Worker, used for that single request, and never stored
+ * server-side. It never leaves the browser otherwise.
+ */
+const KEY_STORE = 'siteclarity.jevKey';
+
+function loadKey() {
+  try { return localStorage.getItem(KEY_STORE) || ''; } catch (err) { return ''; }
+}
+function saveKey(value) {
+  try {
+    if (value) localStorage.setItem(KEY_STORE, value); else localStorage.removeItem(KEY_STORE);
+    return true;
+  } catch (err) { return false; }
+}
+function analyzeHeaders() {
+  const h = { 'content-type': 'application/json' };
+  const k = loadKey();
+  if (k) h['x-jev-key'] = k;
+  return h;
+}
+function maskKey(k) {
+  if (!k) return '';
+  return k.length <= 10 ? '•'.repeat(k.length) : k.slice(0, 4) + '•'.repeat(10) + k.slice(-4);
+}
+
+function renderKeyState() {
+  const k = loadKey();
+  const status = $('key-status');
+  const input = $('key-input');
+  if (!status || !input) return;
+  if (k) {
+    status.textContent = 'Saved in this browser: ' + maskKey(k);
+    input.value = '';
+    input.placeholder = 'Enter a new key to replace it';
+  } else {
+    status.textContent = 'No key saved. This deployment will use its own configured model.';
+    input.placeholder = 'Paste your TypeSafe Jev API key';
+  }
+}
+
+renderKeyState();
+
+function resetPrompts() { __prompts.length = 0; }
+
+function renderGroups(list, sections) {
+  const groups = new Map();
+  for (const f of [...list].sort((a,b) => priorities[a.priority] - priorities[b.priority])) {
+    const key = f.checkId + ':' + f.priority;
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(f);
+  }
+  return [...groups.values()].map(items => {
+    const f = items[0]; const id = 'finding-' + __gid++;
+    return '<details class="grp"><summary class="group-summary" aria-controls="' + id + '">' +
+      '<div class="group-meta"><span class="tag ' + esc(f.priority) + '">' + label(f.priority) + '</span>' +
+      '<span class="muted">' + items.length + (items.length === 1 ? ' finding' : ' findings') + '</span></div>' +
+      '<h3>' + esc(headline(f,items.length)) + '</h3><p>' + esc(f.whyItMatters) + '</p></summary>' +
+      '<div id="' + id + '">' + items.map(it => '<div class="ins"><div class="insh">' + esc(sectionName(it,sections)) +
+      ' <span class="muted">· ' + esc(it.confidence) + ' confidence</span></div>' +
+      (it.evidence.length ? '<span class="evl">From your page</span>' + it.evidence.map(e =>
+        '<blockquote>' + mark(e.quote,it.highlights) + '</blockquote><p class="evidence-ref">Passage ' + esc(e.passageId) +
+        (e.sectionId ? ' · Section ' + esc(e.sectionId) : '') + '</p>').join('') :
+        '<p class="muted">Page-level structural check. There is no text passage to quote.</p>') +
+      '<p class="fix"><span class="fixl">What to change</span>' + esc(it.recommendedAction) + '</p>' +
+      '<div class="prompt-row">' + promptButton(it, it._page) +
+      '<span class="muted prompt-hint">Paste into an AI agent to fix this</span></div>' +
+      '</div>').join('') + '</div></details>';
+  }).join('');
+}
+/**
+ * Copy-prompt support.
+ *
+ * Turns one finding into a self-contained instruction an AI coding agent can act on.
+ * Everything in it comes from the audit response — the quote is the verbatim passage,
+ * the words are the ones actually matched on the page. The prompt explicitly forbids
+ * inventing facts, because the agent receiving it has no more access to the truth than
+ * we do.
+ */
+const __prompts = [];
+
+function buildPrompt(it, pageUrl) {
+  const quotes = (it.evidence || []).map(e => e.quote);
+  const words = (it.highlights || []);
+  const lines = [
+    'Fix one issue on this web page: ' + (it._page || pageUrl || ''),
+    '',
+    'PROBLEM',
+    it.observation,
+    '',
+    'WHY IT MATTERS',
+    it.whyItMatters,
+    '',
+    'WHAT TO CHANGE',
+    it.recommendedAction,
+  ];
+  if (quotes.length) {
+    lines.push('', 'EXACT TEXT ON THE PAGE (quote verbatim, do not paraphrase this input)');
+    quotes.forEach(q => lines.push('  "' + q + '"'));
+  }
+  if (words.length) {
+    lines.push('', 'WORDS TO REPLACE', '  ' + words.join(', '));
+  }
+  lines.push(
+    '',
+    'RULES',
+    '- Keep the original meaning. Do not change what the page claims.',
+    '- Do not invent numbers, customers, benchmarks or sources.',
+    '- If a specific figure is needed and you do not have it, leave [TODO: add figure] in place.',
+    '- Rewrite only the text quoted above. Leave the rest of the page alone.',
+    '- Return the replacement text only.',
+  );
+  return lines.join('\\n');
+}
+
+async function handleCopyPrompt(btn) {
+  const text = btn.dataset.all === '1' ? __prompts.join('\\n\\n---\\n\\n') : __prompts[Number(btn.dataset.p)];
+  if (!text) return;
+  const ok = await copyText(text);
+  const was = btn.textContent;
+  btn.textContent = ok ? 'Copied' : 'Press Ctrl+C';
+  if (!ok) window.prompt('Copy this prompt:', text);
+  announce(ok ? 'Prompt copied to clipboard.' : 'Copy failed. Use the dialog to copy manually.');
+  setTimeout(() => { btn.textContent = was; }, 1600);
+}
+
+function promptButton(it, pageUrl, cls) {
+  const i = __prompts.push(buildPrompt(it, pageUrl)) - 1;
+  return '<button type="button" class="' + (cls || 'copy-prompt') + '" data-p="' + i +
+    '">Copy prompt</button>';
+}
+
+async function copyText(text) {
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+  } catch (err) { /* fall through to the textarea path below */ }
+  try {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.setAttribute('readonly', '');
+    ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    const ok = document.execCommand && document.execCommand('copy');
+    ta.remove();
+    return !!ok;
+  } catch (err) { return false; }
+}
+
+
+// Highlight text before escaping, so source strings can never become HTML.
+function mark(quote, terms) {
+  const wanted = (terms || []).filter(Boolean).sort((a,b) => b.length-a.length);
+  if (!wanted.length) return esc(quote);
+  // NOTE: do NOT escape '-'. This regex carries the 'u' flag (needed for \\p{L}), and
+  // under Unicode mode '\\-' is an *invalid escape* that throws at construction. Every
+  // hyphenated lexicon term — world-class, cutting-edge, best-in-class — crashed the
+  // whole render. '-' is only special inside a character class; this is outside one.
+  const escaped = wanted.map(t => t.replace(/[.*+?^$()|[\\]{}\\\\]/g, '\\\\$&'));
+  const re = new RegExp('(?<![\\\\p{L}-])(' + escaped.join('|') + ')(?![\\\\p{L}-])','giu');
+  let result = ''; let end = 0;
+  for (const match of String(quote).matchAll(re)) {
+    result += esc(quote.slice(end,match.index)) + '<mark>' + esc(match[0]) + '</mark>';
+    end = match.index + match[0].length;
+  }
+  return result + esc(quote.slice(end));
+}
+function shortPath(u) { try { const p = new URL(u).pathname; return p === '/' ? '/' : p.replace(/\\/$/,''); } catch { return u; } }
+function headline(f,n) {
+  if (n === 1) return f.observation;
+  const m = f.observation.match(/^[“"](.+)[”"]\\s+(.*)$/);
+  return m ? n + ' sections ' + m[2].replace(/^does not/,'do not').replace(/^reads/,'read').replace(/^contains/,'contain').replace(/^holds/,'hold') : f.observation + ' (' + n + ' places)';
+}
+function sectionName(f,sections) {
+  const ref = f.affects && f.affects.find(a => a.sectionId);
+  const sectionId = ref && ref.sectionId || f.evidence[0] && f.evidence[0].sectionId;
+  const section = (sections || []).find(s => s.sectionId === sectionId);
+  if (section && section.heading) return section.heading;
+  return sectionId ? 'Section ' + sectionId : 'This page';
+}
+function label(p) { return p === 'high' ? 'Fix first' : p === 'medium' ? 'Worth doing' : 'Minor'; }
+function chip(v,text,n,on) {
+  return '<button type="button" class="chip' + (on ? ' on' : '') + '" data-f="' + v + '" aria-pressed="' + on + '">' + esc(text) + '<span>' + n + '</span></button>';
+}
+function limitsCard(d) {
+  return '<section class="card limits"><h2>What was and wasn’t examined</h2><ul>' +
+    d.limits.statements.map(s => '<li>' + esc(s) + '</li>').join('') +
+    '<li>Only served HTML is read. JavaScript-rendered content and ranking or citation outcomes are not assessed.</li></ul></section>';
+}
+function techCard(d) {
+  const p = d.provider;
+  const passages = d.sections.reduce((n,s) => n + s.passageCount,0);
+  return '<details class="card tech"><summary>Analysis details</summary><div class="stats">' +
+    stat(d.sections.length,'sections extracted') + stat(passages,'passages extracted') +
+    stat(d.timings.totalMs + ' ms','time taken') + stat(p.inputTokens.toLocaleString(),'input tokens') +
+    '</div><p>Model: <code>' + esc(p.model || 'Unavailable') + '</code> · ' + p.calls +
+    ' calls. Low-confidence decisions are not reported.' +
+    (p.degraded ? ' Provider unavailable: ' + esc(p.degradedReason || 'No reason supplied.') : '') +
+    '</p><p>Fetched: ' + esc(d.input.fetchedAt) + '</p></details>';
+}
+function stat(v,text) { return '<div class="stat"><b>' + esc(v) + '</b><span>' + esc(text) + '</span></div>'; }
+</script>
+</body>
+</html>`

@@ -1,0 +1,27 @@
+{
+  "name": "siteclarity",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "description": "Evidence-backed website answer-readiness analysis. A practical System One (Jev) application.",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "analyze": "node scripts/analyze.mjs"
+  },
+  "dependencies": {
+    "hono": "^4.6.0",
+    "zod": "^3.23.0"
+  },
+  "devDependencies": {
+    "@cloudflare/vitest-pool-workers": "^0.22.0",
+    "@cloudflare/workers-types": "^5.20260922.1",
+    "typescript": "^5.6.0",
+    "vitest": "^4.1.0",
+    "wrangler": "^4.124.0"
+  }
+}

@@ -1,0 +1,62 @@
+# SiteClarity — planning decisions
+
+Status: implementation-ready planning draft. No application has been built or deployed.
+Date: 2026-09-22. Working product name: SiteClarity. Product-name availability has not been assessed.
+
+## User requirements
+
+- Standalone product, confirmed by the user.
+- Enter a public page URL or website URL; no Search Console, Analytics, keyword database, or customer-connected third-party accounts required.
+- Combine website messaging understanding, buyer-journey mapping, question/answer coverage, evidence review, and actionable reporting.
+- Use Jev for repeated bounded decisions; explicitly identify other required APIs and estimate a complete crawl/report workload.
+- Save a concrete plan and dependency-ordered tasks in the product folder before development.
+
+## Frozen planning defaults
+
+- English-first pilot: service businesses and B2B SaaS, one public host, up to three primary offerings. Unsupported languages/site types yield an explicit limited assessment.
+- Single-page mode evaluates exactly the submitted page. Domain mode defaults to 100 unique HTML pages; user-selectable caps of 50, 100, or 500. Do not silently call a capped crawl exhaustive.
+- Default domain question budget: up to 60 relevant questions across up to three offerings; 40 for a 50-page planning scenario; 200 only in the 500-page extended scenario. Single-page cost scenario uses 15. These are ceilings, not quotas.
+- One audit includes page inventory, evidence-backed business profile, editable proposed questions, coverage results, buyer-journey contribution, limited proof/consistency findings, AI answer-usability observations, and prioritized tasks.
+- Business profile/question generation proceeds automatically so URL-only onboarding remains true. Corrections are optional and trigger versioned selective reanalysis.
+- No overall SEO/AI rank, citation probability, search-volume inference, traffic prediction, automatic publish, pruning/deleting, or actual AI-engine monitoring in V1.
+- Labels: answered, partial, conflicting, not_found_in_scope, cannot_assess. Question applicability is a separate field. Answer location is a separate field.
+- A negative finding requires expanded retrieval and a verification pass. Quote text comes from saved passage IDs, never model-invented strings.
+- Preferred stack: TypeScript, Next.js, separate Node Docker worker, Crawlee Cheerio + Playwright fallback, PostgreSQL + pgvector + pg-boss, Drizzle, Zod, S3-compatible snapshot adapter (local filesystem only for development), Better Auth for account access; existing auth integration can be reconsidered at the foundation task.
+- Primary AI providers: TypeSafe Jev 1.13.0, OpenAI GPT-5.4 mini with structured outputs/reasoning none, text-embedding-3-small. Pin available snapshots; model access and task accuracy must be verified before full UI development. OpenAI is the companion provider, not a required customer connection.
+- Providers are adapters. No graph database, separate vector service, Redis, agent framework, or paid search API in V1.
+- Initial production hosting target: separate web/worker services plus PostgreSQL on Railway; pgvector-capable DB image and backup/restore must be verified. Object storage stays behind an adapter. Deployment is a later task, not authorized or performed by this planning work.
+- Full internal-link destination auditing is a V1.1 module. V1 only suggests a contextual route to an existing answer when evidence and source context support it.
+
+## Ownership while planning
+
+- Root: README, architecture, data/API contracts, costs, cost calculator, foundation/provider/retrieval task files, task index and dependency validation.
+- Product agent: product spec and SC-001, SC-017..SC-021.
+- Crawl agent: crawl/operations doc and SC-003..SC-007, SC-022.
+- AI agent: AI evaluation doc and SC-008..SC-010, SC-012..SC-015.
+
+## Task numbering contract
+
+SC-001 Product and evaluation fixtures
+SC-002 Application foundation and data schema
+SC-003 Audit intake, URL scope, and SSRF protection
+SC-004 Durable audit orchestration
+SC-005 HTTP discovery and crawling
+SC-006 Browser-rendering fallback
+SC-007 Evidence extraction and snapshots
+SC-008 Provider adapters and cost ledger
+SC-009 Business profile and page intelligence
+SC-010 Relevant question planning and corrections
+SC-011 Hybrid retrieval
+SC-012 Coverage judgments and negative verification
+SC-013 Proof, consistency, and AI answer usability
+SC-014 Opportunity prioritization and task generation
+SC-015 Evaluation and calibration gate
+SC-016 Incremental reanalysis and caching
+SC-017 Audit dashboard and evidence UI
+SC-018 Report, CSV, and PDF export
+SC-019 Accounts and tenant isolation
+SC-020 Pilot acceptance and pricing experiment
+SC-021 Product billing and usage entitlements
+SC-022 Production deployment and recovery
+
+Every task must include purpose, dependencies, deliverables, acceptance criteria, meaningful validation, and handoff notes. Task status begins TODO. Dependencies must form a DAG and referenced contracts must exist. Product billing follows pilot evidence; it is not a prerequisite for a private alpha.

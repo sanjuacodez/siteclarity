@@ -1,0 +1,33 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci --legacy-peer-deps
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      # No secrets are configured for this job, deliberately.
+      # The suite must pass offline with no API key and no cost (AGENTS.md §8);
+      # if it ever needs one, that is a bug in the tests, not a missing secret.
+      - name: Test
+        run: npm test
+
+      - name: Verify no secret is required
+        run: |
+          if [ -n "${JEV_API_KEY:-}" ] || [ -n "${SYSTEMONE_BASE_URL:-}" ]; then
+            echo "CI must run without decision-model credentials"; exit 1
+          fi
+          echo "Suite passed with no credentials configured."

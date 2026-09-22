@@ -1,0 +1,37 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "siteclarity",
+  "account_id": "fb6b235c04ab3989b2c93782bb8b0f60",
+  "main": "src/index.ts",
+  "compatibility_date": "2025-09-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "observability": { "enabled": true },
+
+  // NOTE: the Workers AI binding is intentionally NOT enabled on the public instance.
+  //
+  // With no server-side credentials, visitors supply their own Jev key from the
+  // dashboard, so nobody can spend the operator's quota. Without a key the audit still
+  // runs and returns the full deterministic layer, clearly marked as partial.
+  //
+  // To use Workers AI instead (your own free daily neuron allowance, no key needed by
+  // visitors), uncomment the line below and redeploy:
+  // "ai": { "binding": "AI" },
+
+  "vars": {
+    // "workersai" (default, no key) | "systemone" (Jev API, Kev, Decider) | "replay"
+    "DECISION_BACKEND": "workersai",
+    "DECISION_MODEL": "jev-latest",
+    "MAX_PAGE_BYTES": "300000",
+    "MAX_REDIRECTS": "5",
+    "FETCH_TIMEOUT_MS": "10000",
+    "MAX_CONCURRENT_DECISIONS": "14",
+    "CONFIDENCE_THRESHOLD": "0.6",
+    "STATE_TOKEN_BUDGET": "24000",
+    "MAX_SECTIONS": "40",
+    "MIN_SECTION_WORDS": "12"
+  }
+
+  // Secrets (never in this file):
+  //   JEV_API_KEY          -> .dev.vars locally, `wrangler secret put` in production
+  //   SYSTEMONE_BASE_URL   -> optional; self-hosted Kev / Decider / Laya
+}

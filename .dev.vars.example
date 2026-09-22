@@ -1,0 +1,11 @@
+# Copy this file to `.dev.vars` and fill in real values.
+# `.dev.vars` is gitignored and is read automatically by `wrangler dev`.
+# NEVER commit `.dev.vars`. NEVER paste a key into chat or a task file.
+
+# Optional. Only needed to call the TypeSafe Jev API directly.
+# The default backend is the Workers AI binding (`typesafe/jev`), which needs no key.
+JEV_API_KEY=
+
+# Optional. Point at a self-hosted Kev / Decider / Laya server.
+# Jev, Kev and Decider share the POST /v1/systemone wire format, so this is a base-URL swap.
+SYSTEMONE_BASE_URL=

@@ -1,0 +1,856 @@
+<!DOCTYPE html>
+<html lang="en-US" data-theme="light">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+	<link rel="preload" href="https://sanjayshankar.me/wp-content/themes/sanjay-shankar-editorial/assets/fonts/geist.woff2" as="font" type="font/woff2" crossorigin>
+<script>(function(){try{var s=JSON.parse(localStorage.getItem('sse')||'{}'),d=document.documentElement,t=s.theme||'system';if(t==='system'){t=window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'}d.setAttribute('data-theme',t);if(s.size){d.setAttribute('data-size',s.size)}if(s.bionic){d.classList.add('is-bionic')}if(s.motion==='reduce'){d.classList.add('is-reduced-motion')}if(s.focus){d.classList.add('is-focus')}}catch(e){}})();</script>
+		<title>How AI Search Engines Work: A Technical Guide for SEO</title>
+<!-- Editorial SEO -->
+<meta name="robots" content="follow, index, max-snippet:-1, max-video-preview:-1, max-image-preview:large">
+<meta name="description" content="How AI search engines actually work under the hood: query fan-out, RAG retrieval, chunking, the search indexes behind ChatGPT, Gemini, Claude, and Perplexity.">
+<link rel="canonical" href="https://sanjayshankar.me/how-ai-search-engines-work-technical-guide/">
+<meta property="og:locale" content="en_US">
+<meta property="og:type" content="article">
+<meta property="og:title" content="How AI Search Engines Work: A Technical Guide for SEO">
+<meta property="og:description" content="How AI search engines actually work under the hood: query fan-out, RAG retrieval, chunking, the search indexes behind ChatGPT, Gemini, Claude, and Perplexity.">
+<meta property="og:url" content="https://sanjayshankar.me/how-ai-search-engines-work-technical-guide/">
+<meta property="og:site_name" content="Sanjay Shankar M">
+<meta property="og:image" content="https://sanjayshankar.me/wp-content/uploads/2026/08/ai-search-pipeline.webp">
+<meta property="og:image:secure_url" content="https://sanjayshankar.me/wp-content/uploads/2026/08/ai-search-pipeline.webp">
+<meta property="og:image:width" content="1672">
+<meta property="og:image:height" content="941">
+<meta property="og:image:alt" content="How AI search engines work showing the pipeline from user prompt to query fan-out to web search to chunking to answer">
+<meta property="og:image:type" content="image/webp">
+<meta property="article:published_time" content="2026-08-04T09:28:37+00:00">
+<meta property="article:modified_time" content="2026-09-10T10:13:57+00:00">
+<meta property="og:updated_time" content="2026-09-10T10:13:57+00:00">
+<meta property="article:author" content="https://sanjayshankar.me/about/">
+<meta property="article:section" content="Technical">
+<meta property="article:tag" content="AI Search">
+<meta property="article:tag" content="AI Visibility">
+<meta property="article:tag" content="GEO">
+<meta property="article:tag" content="Query Fan-Out">
+<meta property="article:tag" content="RAG">
+<meta property="article:tag" content="SEO">
+<meta property="article:tag" content="Technical SEO">
+<meta property="article:publisher" content="https://www.facebook.com/mesanjayshankar">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="How AI Search Engines Work: A Technical Guide for SEO">
+<meta name="twitter:description" content="How AI search engines actually work under the hood: query fan-out, RAG retrieval, chunking, the search indexes behind ChatGPT, Gemini, Claude, and Perplexity.">
+<meta name="twitter:site" content="@sanjayshankarr">
+<meta name="twitter:creator" content="@sanjayshankarr">
+<meta name="twitter:image" content="https://sanjayshankar.me/wp-content/uploads/2026/08/ai-search-pipeline.webp">
+<meta name="twitter:label1" content="Written by">
+<meta name="twitter:data1" content="Sanjay Shankar">
+<meta name="twitter:label2" content="Reading time">
+<meta name="twitter:data2" content="7 minutes">
+<!-- /Editorial SEO -->
+<link href='https://www.googletagmanager.com' crossorigin rel='preconnect' />
+<link href='https://gravatar.com' crossorigin rel='preconnect' />
+<link rel="preload" as="image" href="https://sanjayshankar.me/wp-content/uploads/2026/08/ai-search-pipeline-1024x576.webp" fetchpriority="high">
+<script type="application/ld+json" class="sse-schema">{"@context":"https://schema.org","@graph":[{"@type":["Person","Organization"],"@id":"https://sanjayshankar.me/#person","name":"Sanjay Shankar","alternateName":"Sanjay Shankar M","url":"https://sanjayshankar.me/","jobTitle":"Co-Founder, Program Manager, Engineering Leader","description":"Tech manager and agentic SEO specialist building AI agents that compound visibility and team productivity.","email":"mailto:me@sanjayshankar.me","telephone":"+919745145445","sameAs":["https://x.com/sanjayshankarr","https://www.linkedin.com/in/sanjay-shankar-a6885224","https://github.com/sanjuacodez","https://www.instagram.com/sanjushankar","https://www.facebook.com/mesanjayshankar","https://profiles.wordpress.org/sanju-shankar","https://dev.to/sanjay_shankar_5bc7676af0","https://medium.com/@shankarsanjay0","https://www.indiehackers.com/sanjayshankar","https://make.rs/@sanjayshankar","https://sourceforge.net/u/sanjayshankar/profile","https://peerpush.com/u/sanjayshankar","https://alternativeto.net/user/sanjayshankar"],"knowsAbout":["Software Engineering","Digital Strategy","WordPress Development","Agile Project Management","Agentic SEO","Growth Strategy","PHP Development","Product Strategy"],"alumniOf":{"@type":"Organization","name":"AWH Engineering College"},"address":{"@type":"PostalAddress","addressLocality":"Kozhikode","addressRegion":"Kerala","addressCountry":"IN"},"contactPoint":{"@type":"ContactPoint","contactType":"business inquiries","email":"me@sanjayshankar.me","telephone":"+919745145445","availableLanguage":["English","Malayalam","Hindi"]},"worksFor":[{"@type":"Organization","name":"Visibility.so","url":"https://visibility.so"},{"@type":"Organization","name":"Acodez IT Solutions","url":"https://acodez.in"}],"logo":{"@type":"ImageObject","@id":"https://sanjayshankar.me/#logo","url":"https://sanjayshankar.me/wp-content/uploads/2026/06/linedrawing.webp","contentUrl":"https://sanjayshankar.me/wp-content/uploads/2026/06/linedrawing.webp","width":1254,"height":1254,"inLanguage":"en-US"},"image":{"@type":"ImageObject","@id":"https://sanjayshankar.me/#logo","url":"https://sanjayshankar.me/wp-content/uploads/2026/06/linedrawing.webp","contentUrl":"https://sanjayshankar.me/wp-content/uploads/2026/06/linedrawing.webp","width":1254,"height":1254,"inLanguage":"en-US"}},{"@type":"WebSite","@id":"https://sanjayshankar.me/#website","url":"https://sanjayshankar.me/","name":"Sanjay Shankar M","alternateName":"Sanjay Shankar","description":"Tech manager and agentic SEO specialist building AI agents that compound visibility and team productivity.","publisher":{"@id":"https://sanjayshankar.me/#person"},"inLanguage":"en-US","potentialAction":{"@type":"SearchAction","target":{"@type":"EntryPoint","urlTemplate":"https://sanjayshankar.me/?s={search_term_string}"},"query-input":"required name=search_term_string"}},{"@type":"ImageObject","@id":"https://sanjayshankar.me/wp-content/uploads/2026/08/ai-search-pipeline.webp","url":"https://sanjayshankar.me/wp-content/uploads/2026/08/ai-search-pipeline.webp","contentUrl":"https://sanjayshankar.me/wp-content/uploads/2026/08/ai-search-pipeline.webp","width":1672,"height":941,"caption":"How AI search engines work showing the pipeline from user prompt to query fan-out to web search to chunking to answer","inLanguage":"en-US"},{"@type":"BreadcrumbList","@id":"https://sanjayshankar.me/how-ai-search-engines-work-technical-guide/#breadcrumb","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://sanjayshankar.me/"},{"@type":"ListItem","position":2,"name":"Blog","item":"https://sanjayshankar.me/blog/"},{"@type":"ListItem","position":3,"name":"Technical","item":"https://sanjayshankar.me/category/technical/"},{"@type":"ListItem","position":4,"name":"How AI Search Engines Work: A Technical Guide for SEO"}]},{"@type":"BlogPosting","@id":"https://sanjayshankar.me/how-ai-search-engines-work-technical-guide/#article","headline":"How AI Search Engines Work: A Technical Guide for SEO","description":"How AI search engines actually work under the hood: query fan-out, RAG retrieval, chunking, the search indexes behind ChatGPT, Gemini, Claude, and Perplexity.","url":"https://sanjayshankar.me/how-ai-search-engines-work-technical-guide/","datePublished":"2026-08-04T09:28:37+00:00","dateModified":"2026-09-10T10:13:57+00:00","author":{"@id":"https://sanjayshankar.me/#person"},"publisher":{"@id":"https://sanjayshankar.me/#person"},"isPartOf":{"@id":"https://sanjayshankar.me/how-ai-search-engines-work-technical-guide/#webpage"},"mainEntityOfPage":{"@id":"https://sanjayshankar.me/how-ai-search-engines-work-technical-guide/#webpage"},"inLanguage":"en-US","wordCount":1374,"timeRequired":"PT7M","articleSection":["Technical"],"keywords":"AI search engines, AI Search, AI Visibility, GEO, Query Fan-Out, RAG, SEO, Technical SEO","about":{"@type":"Thing","name":"AI search engines"},"image":{"@id":"https://sanjayshankar.me/wp-content/uploads/2026/08/ai-search-pipeline.webp"},"thumbnailUrl":"https://sanjayshankar.me/wp-content/uploads/2026/08/ai-search-pipeline.webp"},{"@type":"FAQPage","@id":"https://sanjayshankar.me/how-ai-search-engines-work-technical-guide/#faq","mainEntity":[{"@type":"Question","name":"Do AI search engines use Google's index?","acceptedAnswer":{"@type":"Answer","text":"Some do. Gemini and Google AI Mode use Google. ChatGPT uses Bing and Google. Claude uses Brave. Perplexity maintains its own index. There is no single backend index across all engines."}},{"@type":"Question","name":"Does ranking on Google help with AI visibility?","acceptedAnswer":{"@type":"Answer","text":"Yes. Most AI engines retrieve from traditional search indexes. Better Google rankings usually mean better retrieval, which means better AI visibility. The exceptions are engines with their own indexes like Perplexity."}},{"@type":"Question","name":"What is query fan-out?","acceptedAnswer":{"@type":"Answer","text":"Query fan-out is how AI engines decompose a long conversational prompt into multiple shorter keyword-style queries before searching. Your existing keyword research covers this space, which is why traditional SEO still matters."}},{"@type":"Question","name":"Why do AI engines cite some pages and not others?","acceptedAnswer":{"@type":"Answer","text":"Relevance to the specific claim, freshness of the source, and citation diversity. Engines prefer multiple sources, so being one of several is better than being the only one."}},{"@type":"Question","name":"How long are the content snippets AI engines use?","acceptedAnswer":{"@type":"Answer","text":"Roughly 200 to 2,000 words per chunk. Your content must be valuable in isolation because the engine may only use one section of your page."}},{"@type":"Question","name":"Does llms.txt help AI engines find content?","acceptedAnswer":{"@type":"Answer","text":"It can help. llms.txt provides a structured summary of your site for AI systems that choose to consume it. See our llms.txt guide for a full walkthrough."}},{"@type":"Question","name":"How is this related to agentic SEO?","acceptedAnswer":{"@type":"Answer","text":"Agentic SEO is the operating model that runs visibility tracking, opportunity discovery, and execution continuously. Understanding how AI engines work is the technical foundation for agentic SEO."}}]},{"@type":"WebPage","@id":"https://sanjayshankar.me/how-ai-search-engines-work-technical-guide/#webpage","url":"https://sanjayshankar.me/how-ai-search-engines-work-technical-guide/","name":"How AI Search Engines Work: A Technical Guide for SEO","description":"How AI search engines actually work under the hood: query fan-out, RAG retrieval, chunking, the search indexes behind ChatGPT, Gemini, Claude, and Perplexity.","isPartOf":{"@id":"https://sanjayshankar.me/#website"},"inLanguage":"en-US","primaryImageOfPage":{"@id":"https://sanjayshankar.me/wp-content/uploads/2026/08/ai-search-pipeline.webp"},"breadcrumb":{"@id":"https://sanjayshankar.me/how-ai-search-engines-work-technical-guide/#breadcrumb"},"datePublished":"2026-08-04T09:28:37+00:00","dateModified":"2026-09-10T10:13:57+00:00","speakable":{"@type":"SpeakableSpecification","cssSelector":[".sse-post-title",".sse-post-lead",".sse-takeaways"]}}]}</script>
+<link rel="llms-txt" type="text/plain" href="https://sanjayshankar.me/llms.txt">
+<link rel="alternate" type="text/markdown" href="https://sanjayshankar.me/how-ai-search-engines-work-technical-guide/?format=markdown">
+<style id="wp-img-auto-sizes-contain-inline-css">
+img:is([sizes=auto i],[sizes^="auto," i]){contain-intrinsic-size:3000px 1500px}
+/*# sourceURL=wp-img-auto-sizes-contain-inline-css */
+</style>
+<link rel='stylesheet' id='sse-fonts-css' href='https://sanjayshankar.me/wp-content/themes/sanjay-shankar-editorial/assets/css/fonts.css?ver=1788623450' media='all' />
+<link rel='stylesheet' id='sse-core-css' href='https://sanjayshankar.me/wp-content/themes/sanjay-shankar-editorial/assets/css/core.css?ver=1788623450' media='all' />
+<link rel='stylesheet' id='sse-single-css' href='https://sanjayshankar.me/wp-content/themes/sanjay-shankar-editorial/assets/css/single.css?ver=1788623450' media='all' />
+<style id="wp-block-library-inline-css">
+:root{--wp-block-synced-color:#7a00df;--wp-block-synced-color--rgb:122,0,223;--wp-bound-block-color:var(--wp-block-synced-color);--wp-editor-canvas-background:#ddd;--wp-admin-theme-color:#007cba;--wp-admin-theme-color--rgb:0,124,186;--wp-admin-theme-color-darker-10:#006ba1;--wp-admin-theme-color-darker-10--rgb:0,107,160.5;--wp-admin-theme-color-darker-20:#005a87;--wp-admin-theme-color-darker-20--rgb:0,90,135;--wp-admin-border-width-focus:2px}@media (min-resolution:192dpi){:root{--wp-admin-border-width-focus:1.5px}}.wp-element-button{cursor:pointer}:root .has-very-light-gray-background-color{background-color:#eee}:root .has-very-dark-gray-background-color{background-color:#313131}:root .has-very-light-gray-color{color:#eee}:root .has-very-dark-gray-color{color:#313131}:root .has-vivid-green-cyan-to-vivid-cyan-blue-gradient-background{background:linear-gradient(135deg,#00d084,#0693e3)}:root .has-purple-crush-gradient-background{background:linear-gradient(135deg,#34e2e4,#4721fb 50%,#ab1dfe)}:root .has-hazy-dawn-gradient-background{background:linear-gradient(135deg,#faaca8,#dad0ec)}:root .has-subdued-olive-gradient-background{background:linear-gradient(135deg,#fafae1,#67a671)}:root .has-atomic-cream-gradient-background{background:linear-gradient(135deg,#fdd79a,#004a59)}:root .has-nightshade-gradient-background{background:linear-gradient(135deg,#330968,#31cdcf)}:root .has-midnight-gradient-background{background:linear-gradient(135deg,#020381,#2874fc)}:root{--wp--preset--font-size--normal:16px;--wp--preset--font-size--huge:42px}.has-regular-font-size{font-size:1em}.has-larger-font-size{font-size:2.625em}.has-normal-font-size{font-size:var(--wp--preset--font-size--normal)}.has-huge-font-size{font-size:var(--wp--preset--font-size--huge)}:root .has-text-align-center{text-align:center}:root .has-text-align-left{text-align:left}:root .has-text-align-right{text-align:right}.has-fit-text{white-space:nowrap!important}#end-resizable-editor-section{display:none}.aligncenter{clear:both}.items-justified-left{justify-content:flex-start}.items-justified-center{justify-content:center}.items-justified-right{justify-content:flex-end}.items-justified-space-between{justify-content:space-between}.screen-reader-text{word-wrap:normal!important;border:0;clip-path:inset(50%);height:1px;margin:-1px;overflow:hidden;padding:0;position:absolute;width:1px;word-break:normal!important}.screen-reader-text:focus{background-color:#ddd;clip-path:none;color:#444;display:block;font-size:1em;height:auto;left:5px;line-height:normal;padding:15px 23px 14px;text-decoration:none;top:5px;width:auto;z-index:100000}html :where(.has-border-color){border-style:solid}html :where([style^=border-color],[style*=";border-color"],[style*="; border-color"]){border-style:solid}html :where([style^=border-top-color],[style*=";border-top-color"],[style*="; border-top-color"]){border-top-style:solid}html :where([style^=border-right-color],[style*=";border-right-color"],[style*="; border-right-color"]){border-right-style:solid}html :where([style^=border-bottom-color],[style*=";border-bottom-color"],[style*="; border-bottom-color"]){border-bottom-style:solid}html :where([style^=border-left-color],[style*=";border-left-color"],[style*="; border-left-color"]){border-left-style:solid}html :where([style^=border-width],[style*=";border-width"],[style*="; border-width"]){border-style:solid}html :where([style^=border-top-width],[style*=";border-top-width"],[style*="; border-top-width"]){border-top-style:solid}html :where([style^=border-right-width],[style*=";border-right-width"],[style*="; border-right-width"]){border-right-style:solid}html :where([style^=border-bottom-width],[style*=";border-bottom-width"],[style*="; border-bottom-width"]){border-bottom-style:solid}html :where([style^=border-left-width],[style*=";border-left-width"],[style*="; border-left-width"]){border-left-style:solid}html :where(img[class*=wp-image-]){height:auto;max-width:100%}:where(figure){margin:0 0 1em}html :where(.is-position-sticky){--wp-admin--admin-bar--position-offset:var(--wp-admin--admin-bar--height,0px)}@media screen and (max-width:600px){html :where(.is-position-sticky){--wp-admin--admin-bar--position-offset:0px}}
+
+/*# sourceURL=/wp-includes/css/dist/block-library/common.min.css */
+</style>
+
+<style id="global-styles-inline-css">
+:root{--wp--preset--aspect-ratio--square: 1;--wp--preset--aspect-ratio--4-3: 4/3;--wp--preset--aspect-ratio--3-4: 3/4;--wp--preset--aspect-ratio--3-2: 3/2;--wp--preset--aspect-ratio--2-3: 2/3;--wp--preset--aspect-ratio--16-9: 16/9;--wp--preset--aspect-ratio--9-16: 9/16;--wp--preset--color--black: #111111;--wp--preset--color--cyan-bluish-gray: #abb8c3;--wp--preset--color--white: #FFFFFF;--wp--preset--color--pale-pink: #f78da7;--wp--preset--color--vivid-red: #cf2e2e;--wp--preset--color--luminous-vivid-orange: #ff6900;--wp--preset--color--luminous-vivid-amber: #fcb900;--wp--preset--color--light-green-cyan: #7bdcb5;--wp--preset--color--vivid-green-cyan: #00d084;--wp--preset--color--pale-cyan-blue: #8ed1fc;--wp--preset--color--vivid-cyan-blue: #0693e3;--wp--preset--color--vivid-purple: #9b51e0;--wp--preset--color--gray: #E4E4E2;--wp--preset--color--muted: #6B6B6B;--wp--preset--color--line: #E6E6E4;--wp--preset--color--blue: #A6DCF4;--wp--preset--color--blue-ink: #0F4C81;--wp--preset--color--yellow: #FBE29D;--wp--preset--color--yellow-ink: #6B5900;--wp--preset--color--green: #BCE3BA;--wp--preset--color--green-ink: #2B5C2C;--wp--preset--color--purple: #DECBF5;--wp--preset--color--purple-ink: #57308D;--wp--preset--color--orange: #FFD5B8;--wp--preset--color--orange-ink: #8F3D00;--wp--preset--gradient--vivid-cyan-blue-to-vivid-purple: linear-gradient(135deg,rgb(6,147,227) 0%,rgb(155,81,224) 100%);--wp--preset--gradient--light-green-cyan-to-vivid-green-cyan: linear-gradient(135deg,rgb(122,220,180) 0%,rgb(0,208,130) 100%);--wp--preset--gradient--luminous-vivid-amber-to-luminous-vivid-orange: linear-gradient(135deg,rgb(252,185,0) 0%,rgb(255,105,0) 100%);--wp--preset--gradient--luminous-vivid-orange-to-vivid-red: linear-gradient(135deg,rgb(255,105,0) 0%,rgb(207,46,46) 100%);--wp--preset--gradient--very-light-gray-to-cyan-bluish-gray: linear-gradient(135deg,rgb(238,238,238) 0%,rgb(169,184,195) 100%);--wp--preset--gradient--cool-to-warm-spectrum: linear-gradient(135deg,rgb(74,234,220) 0%,rgb(151,120,209) 20%,rgb(207,42,186) 40%,rgb(238,44,130) 60%,rgb(251,105,98) 80%,rgb(254,248,76) 100%);--wp--preset--gradient--blush-light-purple: linear-gradient(135deg,rgb(255,206,236) 0%,rgb(152,150,240) 100%);--wp--preset--gradient--blush-bordeaux: linear-gradient(135deg,rgb(254,205,165) 0%,rgb(254,45,45) 50%,rgb(107,0,62) 100%);--wp--preset--gradient--luminous-dusk: linear-gradient(135deg,rgb(255,203,112) 0%,rgb(199,81,192) 50%,rgb(65,88,208) 100%);--wp--preset--gradient--pale-ocean: linear-gradient(135deg,rgb(255,245,203) 0%,rgb(182,227,212) 50%,rgb(51,167,181) 100%);--wp--preset--gradient--electric-grass: linear-gradient(135deg,rgb(202,248,128) 0%,rgb(113,206,126) 100%);--wp--preset--gradient--midnight: linear-gradient(135deg,rgb(2,3,129) 0%,rgb(40,116,252) 100%);--wp--preset--font-size--small: 13px;--wp--preset--font-size--medium: clamp(14px, 0.875rem + ((1vw - 3.2px) * 0.625), 20px);--wp--preset--font-size--large: clamp(22.041px, 1.378rem + ((1vw - 3.2px) * 1.454), 36px);--wp--preset--font-size--x-large: clamp(25.014px, 1.563rem + ((1vw - 3.2px) * 1.769), 42px);--wp--preset--font-size--xs: 0.8rem;--wp--preset--font-size--xl: clamp(1.5rem, 1.5rem + ((1vw - 0.2rem) * 1), 2.1rem);--wp--preset--font-size--xxl: clamp(2.1rem, 2.1rem + ((1vw - 0.2rem) * 2.167), 3.4rem);--wp--preset--font-size--display: clamp(2.8rem, 2.8rem + ((1vw - 0.2rem) * 4.5), 5.5rem);--wp--preset--font-family--sans: 'Geist', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;--wp--preset--font-family--mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;--wp--preset--spacing--20: 0.44rem;--wp--preset--spacing--30: 0.67rem;--wp--preset--spacing--40: 1rem;--wp--preset--spacing--50: 1.5rem;--wp--preset--spacing--60: 2.25rem;--wp--preset--spacing--70: 3.38rem;--wp--preset--spacing--80: 5.06rem;--wp--preset--spacing--10: 0.5rem;--wp--preset--shadow--natural: 6px 6px 9px rgba(0, 0, 0, 0.2);--wp--preset--shadow--deep: 12px 12px 50px rgba(0, 0, 0, 0.4);--wp--preset--shadow--sharp: 6px 6px 0px rgba(0, 0, 0, 0.2);--wp--preset--shadow--outlined: 6px 6px 0px -3px rgb(255, 255, 255), 6px 6px rgb(0, 0, 0);--wp--preset--shadow--crisp: 6px 6px 0px rgb(0, 0, 0);}.wp-block-button{--wp--preset--dimension--25: 25%;--wp--preset--dimension--50: 50%;--wp--preset--dimension--75: 75%;--wp--preset--dimension--100: 100%;}:root { --wp--style--global--content-size: 720px;--wp--style--global--wide-size: 1280px; }:where(body) { margin: 0; }.wp-site-blocks { padding-top: var(--wp--style--root--padding-top); padding-bottom: var(--wp--style--root--padding-bottom); }.has-global-padding { padding-right: var(--wp--style--root--padding-right); padding-left: var(--wp--style--root--padding-left); }.has-global-padding > .alignfull { margin-right: calc(var(--wp--style--root--padding-right) * -1); margin-left: calc(var(--wp--style--root--padding-left) * -1); }.has-global-padding :where(:not(.alignfull.is-layout-flow) > .has-global-padding:not(.wp-block-block, .alignfull)) { padding-right: 0; padding-left: 0; }.has-global-padding :where(:not(.alignfull.is-layout-flow) > .has-global-padding:not(.wp-block-block, .alignfull)) > .alignfull { margin-left: 0; margin-right: 0; }.wp-site-blocks > .alignleft { float: left; margin-right: 2em; }.wp-site-blocks > .alignright { float: right; margin-left: 2em; }.wp-site-blocks > .aligncenter { justify-content: center; margin-left: auto; margin-right: auto; }:where(.wp-site-blocks) > * { margin-block-start: 24px; margin-block-end: 0; }:where(.wp-site-blocks) > :first-child { margin-block-start: 0; }:where(.wp-site-blocks) > :last-child { margin-block-end: 0; }:root { --wp--style--block-gap: 24px; }:root :where(.is-layout-flow) > :first-child{margin-block-start: 0;}:root :where(.is-layout-flow) > :last-child{margin-block-end: 0;}:root :where(.is-layout-flow) > *{margin-block-start: 24px;margin-block-end: 0;}:root :where(.is-layout-constrained) > :first-child{margin-block-start: 0;}:root :where(.is-layout-constrained) > :last-child{margin-block-end: 0;}:root :where(.is-layout-constrained) > *{margin-block-start: 24px;margin-block-end: 0;}:root :where(.is-layout-flex){gap: 24px;}:root :where(.is-layout-grid){gap: 24px;}.is-layout-flow > .alignleft{float: left;margin-inline-start: 0;margin-inline-end: 2em;}.is-layout-flow > .alignright{float: right;margin-inline-start: 2em;margin-inline-end: 0;}.is-layout-flow > .aligncenter{margin-left: auto !important;margin-right: auto !important;}.is-layout-constrained > .alignleft{float: left;margin-inline-start: 0;margin-inline-end: 2em;}.is-layout-constrained > .alignright{float: right;margin-inline-start: 2em;margin-inline-end: 0;}.is-layout-constrained > .aligncenter{margin-left: auto !important;margin-right: auto !important;}.is-layout-constrained > :where(:not(.alignleft):not(.alignright):not(.alignfull)){max-width: var(--wp--style--global--content-size);margin-left: auto !important;margin-right: auto !important;}.is-layout-constrained > .alignwide{max-width: var(--wp--style--global--wide-size);}body .is-layout-flex{display: flex;}.is-layout-flex{flex-wrap: wrap;align-items: center;}.is-layout-flex > :is(*, div){margin: 0;}body .is-layout-grid{display: grid;}.is-layout-grid > :is(*, div){margin: 0;}body{background-color: var(--paper);color: var(--ink);font-family: var(--wp--preset--font-family--sans);font-size: var(--wp--preset--font-size--medium);line-height: 1.65;--wp--style--root--padding-top: 0px;--wp--style--root--padding-right: 0px;--wp--style--root--padding-bottom: 0px;--wp--style--root--padding-left: 0px;}a:where(:not(.wp-element-button)){color: var(--ink);}:root :where(a:where(:not(.wp-element-button)):hover){color: var(--ink);}h1, h2, h3, h4, h5, h6{font-family: var(--wp--preset--font-family--sans);font-weight: 600;letter-spacing: -0.03em;line-height: 1.05;}h1{font-size: var(--wp--preset--font-size--display);}h2{font-size: var(--wp--preset--font-size--xxl);}h3{font-size: var(--wp--preset--font-size--xl);}h4{font-size: var(--wp--preset--font-size--large);}:root :where(.wp-element-button, .wp-block-button__link){background-color: #32373c;border-width: 0;color: #fff;font-family: inherit;font-size: inherit;font-style: inherit;font-weight: inherit;letter-spacing: inherit;line-height: inherit;padding-top: calc(0.667em + 2px);padding-right: calc(1.333em + 2px);padding-bottom: calc(0.667em + 2px);padding-left: calc(1.333em + 2px);text-decoration: none;text-transform: inherit;}.has-black-color{color: var(--wp--preset--color--black) !important;}.has-cyan-bluish-gray-color{color: var(--wp--preset--color--cyan-bluish-gray) !important;}.has-white-color{color: var(--wp--preset--color--white) !important;}.has-pale-pink-color{color: var(--wp--preset--color--pale-pink) !important;}.has-vivid-red-color{color: var(--wp--preset--color--vivid-red) !important;}.has-luminous-vivid-orange-color{color: var(--wp--preset--color--luminous-vivid-orange) !important;}.has-luminous-vivid-amber-color{color: var(--wp--preset--color--luminous-vivid-amber) !important;}.has-light-green-cyan-color{color: var(--wp--preset--color--light-green-cyan) !important;}.has-vivid-green-cyan-color{color: var(--wp--preset--color--vivid-green-cyan) !important;}.has-pale-cyan-blue-color{color: var(--wp--preset--color--pale-cyan-blue) !important;}.has-vivid-cyan-blue-color{color: var(--wp--preset--color--vivid-cyan-blue) !important;}.has-vivid-purple-color{color: var(--wp--preset--color--vivid-purple) !important;}.has-gray-color{color: var(--wp--preset--color--gray) !important;}.has-muted-color{color: var(--wp--preset--color--muted) !important;}.has-line-color{color: var(--wp--preset--color--line) !important;}.has-blue-color{color: var(--wp--preset--color--blue) !important;}.has-blue-ink-color{color: var(--wp--preset--color--blue-ink) !important;}.has-yellow-color{color: var(--wp--preset--color--yellow) !important;}.has-yellow-ink-color{color: var(--wp--preset--color--yellow-ink) !important;}.has-green-color{color: var(--wp--preset--color--green) !important;}.has-green-ink-color{color: var(--wp--preset--color--green-ink) !important;}.has-purple-color{color: var(--wp--preset--color--purple) !important;}.has-purple-ink-color{color: var(--wp--preset--color--purple-ink) !important;}.has-orange-color{color: var(--wp--preset--color--orange) !important;}.has-orange-ink-color{color: var(--wp--preset--color--orange-ink) !important;}.has-black-background-color{background-color: var(--wp--preset--color--black) !important;}.has-cyan-bluish-gray-background-color{background-color: var(--wp--preset--color--cyan-bluish-gray) !important;}.has-white-background-color{background-color: var(--wp--preset--color--white) !important;}.has-pale-pink-background-color{background-color: var(--wp--preset--color--pale-pink) !important;}.has-vivid-red-background-color{background-color: var(--wp--preset--color--vivid-red) !important;}.has-luminous-vivid-orange-background-color{background-color: var(--wp--preset--color--luminous-vivid-orange) !important;}.has-luminous-vivid-amber-background-color{background-color: var(--wp--preset--color--luminous-vivid-amber) !important;}.has-light-green-cyan-background-color{background-color: var(--wp--preset--color--light-green-cyan) !important;}.has-vivid-green-cyan-background-color{background-color: var(--wp--preset--color--vivid-green-cyan) !important;}.has-pale-cyan-blue-background-color{background-color: var(--wp--preset--color--pale-cyan-blue) !important;}.has-vivid-cyan-blue-background-color{background-color: var(--wp--preset--color--vivid-cyan-blue) !important;}.has-vivid-purple-background-color{background-color: var(--wp--preset--color--vivid-purple) !important;}.has-gray-background-color{background-color: var(--wp--preset--color--gray) !important;}.has-muted-background-color{background-color: var(--wp--preset--color--muted) !important;}.has-line-background-color{background-color: var(--wp--preset--color--line) !important;}.has-blue-background-color{background-color: var(--wp--preset--color--blue) !important;}.has-blue-ink-background-color{background-color: var(--wp--preset--color--blue-ink) !important;}.has-yellow-background-color{background-color: var(--wp--preset--color--yellow) !important;}.has-yellow-ink-background-color{background-color: var(--wp--preset--color--yellow-ink) !important;}.has-green-background-color{background-color: var(--wp--preset--color--green) !important;}.has-green-ink-background-color{background-color: var(--wp--preset--color--green-ink) !important;}.has-purple-background-color{background-color: var(--wp--preset--color--purple) !important;}.has-purple-ink-background-color{background-color: var(--wp--preset--color--purple-ink) !important;}.has-orange-background-color{background-color: var(--wp--preset--color--orange) !important;}.has-orange-ink-background-color{background-color: var(--wp--preset--color--orange-ink) !important;}.has-black-border-color{border-color: var(--wp--preset--color--black) !important;}.has-cyan-bluish-gray-border-color{border-color: var(--wp--preset--color--cyan-bluish-gray) !important;}.has-white-border-color{border-color: var(--wp--preset--color--white) !important;}.has-pale-pink-border-color{border-color: var(--wp--preset--color--pale-pink) !important;}.has-vivid-red-border-color{border-color: var(--wp--preset--color--vivid-red) !important;}.has-luminous-vivid-orange-border-color{border-color: var(--wp--preset--color--luminous-vivid-orange) !important;}.has-luminous-vivid-amber-border-color{border-color: var(--wp--preset--color--luminous-vivid-amber) !important;}.has-light-green-cyan-border-color{border-color: var(--wp--preset--color--light-green-cyan) !important;}.has-vivid-green-cyan-border-color{border-color: var(--wp--preset--color--vivid-green-cyan) !important;}.has-pale-cyan-blue-border-color{border-color: var(--wp--preset--color--pale-cyan-blue) !important;}.has-vivid-cyan-blue-border-color{border-color: var(--wp--preset--color--vivid-cyan-blue) !important;}.has-vivid-purple-border-color{border-color: var(--wp--preset--color--vivid-purple) !important;}.has-gray-border-color{border-color: var(--wp--preset--color--gray) !important;}.has-muted-border-color{border-color: var(--wp--preset--color--muted) !important;}.has-line-border-color{border-color: var(--wp--preset--color--line) !important;}.has-blue-border-color{border-color: var(--wp--preset--color--blue) !important;}.has-blue-ink-border-color{border-color: var(--wp--preset--color--blue-ink) !important;}.has-yellow-border-color{border-color: var(--wp--preset--color--yellow) !important;}.has-yellow-ink-border-color{border-color: var(--wp--preset--color--yellow-ink) !important;}.has-green-border-color{border-color: var(--wp--preset--color--green) !important;}.has-green-ink-border-color{border-color: var(--wp--preset--color--green-ink) !important;}.has-purple-border-color{border-color: var(--wp--preset--color--purple) !important;}.has-purple-ink-border-color{border-color: var(--wp--preset--color--purple-ink) !important;}.has-orange-border-color{border-color: var(--wp--preset--color--orange) !important;}.has-orange-ink-border-color{border-color: var(--wp--preset--color--orange-ink) !important;}.has-vivid-cyan-blue-to-vivid-purple-gradient-background{background: var(--wp--preset--gradient--vivid-cyan-blue-to-vivid-purple) !important;}.has-light-green-cyan-to-vivid-green-cyan-gradient-background{background: var(--wp--preset--gradient--light-green-cyan-to-vivid-green-cyan) !important;}.has-luminous-vivid-amber-to-luminous-vivid-orange-gradient-background{background: var(--wp--preset--gradient--luminous-vivid-amber-to-luminous-vivid-orange) !important;}.has-luminous-vivid-orange-to-vivid-red-gradient-background{background: var(--wp--preset--gradient--luminous-vivid-orange-to-vivid-red) !important;}.has-very-light-gray-to-cyan-bluish-gray-gradient-background{background: var(--wp--preset--gradient--very-light-gray-to-cyan-bluish-gray) !important;}.has-cool-to-warm-spectrum-gradient-background{background: var(--wp--preset--gradient--cool-to-warm-spectrum) !important;}.has-blush-light-purple-gradient-background{background: var(--wp--preset--gradient--blush-light-purple) !important;}.has-blush-bordeaux-gradient-background{background: var(--wp--preset--gradient--blush-bordeaux) !important;}.has-luminous-dusk-gradient-background{background: var(--wp--preset--gradient--luminous-dusk) !important;}.has-pale-ocean-gradient-background{background: var(--wp--preset--gradient--pale-ocean) !important;}.has-electric-grass-gradient-background{background: var(--wp--preset--gradient--electric-grass) !important;}.has-midnight-gradient-background{background: var(--wp--preset--gradient--midnight) !important;}.has-small-font-size{font-size: var(--wp--preset--font-size--small) !important;}.has-medium-font-size{font-size: var(--wp--preset--font-size--medium) !important;}.has-large-font-size{font-size: var(--wp--preset--font-size--large) !important;}.has-x-large-font-size{font-size: var(--wp--preset--font-size--x-large) !important;}.has-xs-font-size{font-size: var(--wp--preset--font-size--xs) !important;}.has-xl-font-size{font-size: var(--wp--preset--font-size--xl) !important;}.has-xxl-font-size{font-size: var(--wp--preset--font-size--xxl) !important;}.has-display-font-size{font-size: var(--wp--preset--font-size--display) !important;}.has-sans-font-family{font-family: var(--wp--preset--font-family--sans) !important;}.has-mono-font-family{font-family: var(--wp--preset--font-family--mono) !important;}
+:root :where(.wp-block-separator){color: var(--line);}
+/*# sourceURL=global-styles-inline-css */
+</style>
+
+<link rel='stylesheet' id='wp-block-paragraph-css' href='https://sanjayshankar.me/wp-includes/blocks/paragraph/style.min.css?ver=2dc7694abc7c28de16c43c59daa0e824' media='all' />
+<link rel='stylesheet' id='wp-block-image-css' href='https://sanjayshankar.me/wp-includes/blocks/image/style.min.css?ver=2dc7694abc7c28de16c43c59daa0e824' media='all' />
+<link rel='stylesheet' id='wp-block-image-theme-css' href='https://sanjayshankar.me/wp-includes/blocks/image/theme.min.css?ver=2dc7694abc7c28de16c43c59daa0e824' media='all' />
+<link rel='stylesheet' id='wp-block-separator-css' href='https://sanjayshankar.me/wp-includes/blocks/separator/style.min.css?ver=2dc7694abc7c28de16c43c59daa0e824' media='all' />
+<link rel='stylesheet' id='wp-block-separator-theme-css' href='https://sanjayshankar.me/wp-includes/blocks/separator/theme.min.css?ver=2dc7694abc7c28de16c43c59daa0e824' media='all' />
+<link rel='stylesheet' id='wp-block-heading-css' href='https://sanjayshankar.me/wp-includes/blocks/heading/style.min.css?ver=2dc7694abc7c28de16c43c59daa0e824' media='all' />
+<link rel='stylesheet' id='wp-block-list-css' href='https://sanjayshankar.me/wp-includes/blocks/list/style.min.css?ver=2dc7694abc7c28de16c43c59daa0e824' media='all' />
+<link rel='stylesheet' id='wp-block-table-css' href='https://sanjayshankar.me/wp-includes/blocks/table/style.min.css?ver=2dc7694abc7c28de16c43c59daa0e824' media='all' />
+<link rel='stylesheet' id='wp-block-table-theme-css' href='https://sanjayshankar.me/wp-includes/blocks/table/theme.min.css?ver=2dc7694abc7c28de16c43c59daa0e824' media='all' />
+<link rel='stylesheet' id='sse-blocks-css' href='https://sanjayshankar.me/wp-content/themes/sanjay-shankar-editorial/assets/css/blocks.css?ver=1788623450' media='all' />
+<link rel="https://api.w.org/" href="https://sanjayshankar.me/wp-json/" /><link rel="alternate" title="JSON" type="application/json" href="https://sanjayshankar.me/wp-json/wp/v2/posts/535" /><link rel="icon" href="https://sanjayshankar.me/wp-content/uploads/2026/06/cropped-potrait-32x32.webp" sizes="32x32" />
+<link rel="icon" href="https://sanjayshankar.me/wp-content/uploads/2026/06/cropped-potrait-192x192.webp" sizes="192x192" />
+<link rel="apple-touch-icon" href="https://sanjayshankar.me/wp-content/uploads/2026/06/cropped-potrait-180x180.webp" />
+<meta name="msapplication-TileImage" content="https://sanjayshankar.me/wp-content/uploads/2026/06/cropped-potrait-270x270.webp" />
+</head>
+
+<body class="wp-singular post-template-default single single-post postid-535 single-format-standard wp-embed-responsive wp-theme-sanjay-shankar-editorial sse sse-single">
+
+<a class="sse-skip" href="#main" title="Skip straight to the main content">Skip to content</a>
+
+<header class="sse-bar" id="sseBar">
+	<div class="sse-bar-inner">
+		<a class="sse-wordmark" href="https://sanjayshankar.me/" rel="home" aria-label="Sanjay Shankar M" title="Sanjay Shankar — home">
+			Sanjay Shankar<span class="sse-wordmark-dot">.</span>
+		</a>
+
+		<div class="sse-bar-actions">
+			<button type="button" class="sse-bar-btn" id="sseSearchBtn" aria-label="Search" title="Search this site (press /)" aria-haspopup="dialog" aria-controls="sseSearch">
+				<svg class="sse-icon sse-icon-search " width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>				<span class="sse-bar-hint sans" aria-hidden="true"><kbd>/</kbd></span>
+			</button>
+			<button type="button" class="sse-bar-btn" id="ssePanelBtn" aria-label="Display settings" title="Display settings: theme, text size, reading modes" aria-expanded="false" aria-controls="ssePanel">
+				<svg class="sse-icon sse-icon-settings " width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 0 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 0 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 0 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 0 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>			</button>
+			<button type="button" class="sse-bar-btn sse-bar-menu" id="sseMenuBtn" aria-label="Menu" title="Open the site menu" aria-expanded="false" aria-controls="sseMenu" aria-haspopup="dialog">
+				<span class="sse-dots" aria-hidden="true"><i class="d-top"></i><i class="d-left"></i><i class="d-mid"></i><i class="d-right"></i><i class="d-bottom"></i></span>
+			</button>
+		</div>
+	</div>
+	<div class="sse-panel sans" id="ssePanel" role="dialog" aria-label="Display settings" hidden>
+	<div class="sse-panel-group">
+		<span class="sse-panel-label">Appearance</span>
+		<div class="sse-seg" role="radiogroup" aria-label="Theme">
+			<button type="button" role="radio" aria-checked="false" data-sse-theme="system" title="Follow the system theme"><svg class="sse-icon sse-icon-monitor " width="15" height="15" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg><span>Auto</span></button>
+			<button type="button" role="radio" aria-checked="false" data-sse-theme="light" title="Always use the light theme"><svg class="sse-icon sse-icon-sun " width="15" height="15" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg><span>Light</span></button>
+			<button type="button" role="radio" aria-checked="false" data-sse-theme="dark" title="Always use the dark theme"><svg class="sse-icon sse-icon-moon " width="15" height="15" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg><span>Dark</span></button>
+		</div>
+	</div>
+
+	<div class="sse-panel-group">
+		<span class="sse-panel-label">Reading</span>
+		<button type="button" class="sse-toggle" data-sse-toggle="bionic" aria-pressed="false" title="Bionic reading: bold the first letters of each word">
+			<svg class="sse-icon sse-icon-type " width="15" height="15" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7V4h16v3M9 20h6M12 4v16"/></svg><span>Bionic reading</span><i class="sse-switch" aria-hidden="true"></i>
+		</button>
+		<button type="button" class="sse-toggle" data-sse-toggle="focus" aria-pressed="false" title="Focus mode: hide everything but the article">
+			<svg class="sse-icon sse-icon-focus " width="15" height="15" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3"/><circle cx="12" cy="12" r="3"/></svg><span>Focus mode</span><i class="sse-switch" aria-hidden="true"></i>
+		</button>
+	</div>
+
+	<div class="sse-panel-group">
+		<span class="sse-panel-label">Text size</span>
+		<div class="sse-seg" role="radiogroup" aria-label="Text size">
+			<button type="button" role="radio" aria-checked="false" data-sse-size="s" title="Smaller text"><span>A−</span></button>
+			<button type="button" role="radio" aria-checked="false" data-sse-size="m" title="Default text size"><span>A</span></button>
+			<button type="button" role="radio" aria-checked="false" data-sse-size="l" title="Larger text"><span>A+</span></button>
+		</div>
+	</div>
+
+	<div class="sse-panel-shortcuts">
+		<span><kbd>/</kbd> search</span>
+		<span><kbd>D</kbd> dark</span>
+		<span><kbd>B</kbd> bionic</span>
+		<span><kbd>M</kbd> menu</span>
+	</div>
+</div>
+</header>
+
+<div class="sse-overlay" id="sseMenu" data-tone="4" style="--n: 5" role="dialog" aria-modal="true" aria-label="Site menu" hidden>
+	<div class="sse-overlay-inner">
+		<div class="sse-overlay-top">
+			<a class="sse-wordmark" href="https://sanjayshankar.me/" rel="home" title="Sanjay Shankar — home">Sanjay Shankar<span class="sse-wordmark-dot">.</span></a>
+			<button type="button" class="sse-bar-btn sse-overlay-close" id="sseMenuClose" aria-label="Close menu" title="Close the menu (Esc)">
+				<span class="sans">Close</span><svg class="sse-icon sse-icon-close " width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6 6 18"/></svg>			</button>
+		</div>
+
+		<div class="sse-overlay-grid">
+			<nav class="sse-overlay-nav" aria-label="Primary">
+				<span class="sse-overline script">Index</span>
+				<ul id="menu-headermenu" class="sse-menu-list"><li class="sse-menu-item menu-item menu-item-type-post_type menu-item-object-page menu-item-home"><a href="https://sanjayshankar.me/" class="sse-menu-link" title="Home"><span class="sse-menu-num sans">01</span><span class="sse-menu-text">Home</span></a></li>
+<li class="sse-menu-item menu-item menu-item-type-post_type menu-item-object-page"><a href="https://sanjayshankar.me/about/" class="sse-menu-link" title="About"><span class="sse-menu-num sans">02</span><span class="sse-menu-text">About</span></a></li>
+<li class="sse-menu-item menu-item menu-item-type-post_type menu-item-object-page"><a href="https://sanjayshankar.me/products/" class="sse-menu-link" title="Products"><span class="sse-menu-num sans">03</span><span class="sse-menu-text">Products</span></a></li>
+<li class="sse-menu-item menu-item menu-item-type-post_type menu-item-object-page current_page_parent"><a href="https://sanjayshankar.me/blog/" class="sse-menu-link" aria-current="page" title="Blog (current page)"><span class="sse-menu-num sans">04</span><span class="sse-menu-text">Blog</span></a></li>
+<li class="sse-menu-item menu-item menu-item-type-post_type menu-item-object-page"><a href="https://sanjayshankar.me/contact/" class="sse-menu-link" title="Contact"><span class="sse-menu-num sans">05</span><span class="sse-menu-text">Contact</span></a></li>
+</ul>			</nav>
+
+			<aside class="sse-overlay-side">
+				<div class="sse-overlay-block">
+					<span class="sse-overline script">Say hello</span>
+					<a class="sse-overlay-contact" href="mailto:me@sanjayshankar.me" title="Email Sanjay Shankar">me@sanjayshankar.me</a>
+					<a class="sse-overlay-contact" href="tel:+919745145445" title="Call Sanjay Shankar">+91 9745 145 445</a>
+					<span class="sse-overlay-muted sans"><svg class="sse-icon sse-icon-map-pin " width="14" height="14" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/></svg> Kozhikode, Kerala, India</span>
+				</div>
+
+				<div class="sse-overlay-block">
+					<span class="sse-overline script">Elsewhere</span>
+					<ul class="sse-social-text sans">
+													<li><a href="https://x.com/sanjayshankarr" target="_blank" rel="noopener me" title="Sanjay Shankar on X (Twitter) (opens in a new tab)"><span class="sse-social-net">X (Twitter)</span><span class="sse-social-handle">@sanjayshankarr</span></a></li>
+													<li><a href="https://www.linkedin.com/in/sanjay-shankar-a6885224/" target="_blank" rel="noopener me" title="Sanjay Shankar on LinkedIn (opens in a new tab)"><span class="sse-social-net">LinkedIn</span></a></li>
+													<li><a href="https://github.com/sanjuacodez" target="_blank" rel="noopener me" title="Sanjay Shankar on GitHub (opens in a new tab)"><span class="sse-social-net">GitHub</span><span class="sse-social-handle">@sanjuacodez</span></a></li>
+													<li><a href="https://www.instagram.com/sanjushankar/" target="_blank" rel="noopener me" title="Sanjay Shankar on Instagram (opens in a new tab)"><span class="sse-social-net">Instagram</span><span class="sse-social-handle">@sanjushankar</span></a></li>
+													<li><a href="https://www.facebook.com/mesanjayshankar" target="_blank" rel="noopener me" title="Sanjay Shankar on Facebook (opens in a new tab)"><span class="sse-social-net">Facebook</span><span class="sse-social-handle">@mesanjayshankar</span></a></li>
+													<li><a href="https://profiles.wordpress.org/sanju-shankar/" target="_blank" rel="noopener me" title="Sanjay Shankar on WordPress.org (opens in a new tab)"><span class="sse-social-net">WordPress.org</span><span class="sse-social-handle">@sanju-shankar</span></a></li>
+											</ul>
+					<a class="sse-overlay-links sans" href="https://sanjayshankar.me/links/" title="Every profile and contact route in one place">All my links <svg class="sse-icon sse-icon-arrow-right " width="14" height="14" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+				</div>
+
+								<button type="button" class="sse-btn sse-btn-ghost sse-overlay-chat" data-sse-chat-open title="Ask the assistant about Sanjay Shankar: work, services and products">
+					<svg class="sse-icon sse-icon-sparkles " width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M18.4 5.6l-2.8 2.8M8.4 15.6l-2.8 2.8"/></svg> Ask about my work				</button>
+							</aside>
+		</div>
+
+		<div class="sse-overlay-foot sans">
+			<span><svg class="sse-icon sse-icon-clock " width="14" height="14" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg> <span data-sse-clock>17:52</span> IST</span>
+			<span><a href="https://sanjayshankar.me/llms.txt" title="llms.txt — a short site map written for language models">llms.txt</a> · <a href="https://sanjayshankar.me/how-ai-search-engines-work-technical-guide/?format=markdown" title="Read this page as plain Markdown">This page as Markdown</a></span>
+		</div>
+	</div>
+</div>
+<div class="sse-search" id="sseSearch" role="dialog" aria-modal="true" aria-label="Search" hidden>
+	<div class="sse-search-backdrop" data-sse-search-close></div>
+	<div class="sse-search-box">
+		<form class="sse-search-form" role="search" method="get" action="https://sanjayshankar.me/">
+			<svg class="sse-icon sse-icon-search sse-search-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>			<input type="search" name="s" id="sseSearchInput" class="sse-search-input sans" placeholder="Search journals, pages, products…" autocomplete="off" spellcheck="false" aria-label="Search">
+			<button type="button" class="sse-search-esc sans" data-sse-search-close aria-label="Close search" title="Close search (Esc)"><kbd>esc</kbd></button>
+		</form>
+		<div class="sse-search-results" id="sseSearchResults" aria-live="polite"></div>
+		<div class="sse-search-foot sans">
+			<span><kbd>↑</kbd><kbd>↓</kbd> navigate</span>
+			<span><kbd>↵</kbd> open</span>
+			<span><kbd>esc</kbd> close</span>
+		</div>
+	</div>
+</div>
+
+<main id="main" class="sse-main">
+	<div class="sse-progress" aria-hidden="true"><i id="sseProgress"></i></div>
+
+	<article id="post-535" class="sse-post post-535 post type-post status-publish format-standard has-post-thumbnail hentry category-technical tag-ai-search tag-ai-visibility tag-geo tag-query-fan-out tag-rag tag-seo tag-technical-seo">
+		<header class="sse-post-head sse-wrap-mid">
+			<nav class="sse-crumbs sans" aria-label="Breadcrumb"><ol><li><a href="https://sanjayshankar.me/" title="Go to Home">Home</a></li><li><a href="https://sanjayshankar.me/blog/" title="Go to Blog">Blog</a></li><li><a href="https://sanjayshankar.me/category/technical/" title="Go to Technical">Technical</a></li><li><span aria-current="page">How AI Search Engines Work: A Technical Guide for SEO</span></li></ol></nav>			<div class="sse-meta sse-post-meta">
+				<a class="sse-chip sse-chip-accent" href="https://sanjayshankar.me/category/technical/" title="All posts in Technical">Technical</a>				<time datetime="2026-08-04T09:28:37+00:00">Aug 4, 2026</time>
+				<span class="dot"></span><span>Updated <time datetime="2026-09-10T10:13:57+00:00">Sep 10, 2026</time></span>				<span class="dot"></span>
+				<span>7 min read</span>
+				<button type="button" class="sse-focus-btn sans" data-sse-toggle="focus" aria-pressed="false" title="Focus mode: hide everything but the article">
+					<svg class="sse-icon sse-icon-focus " width="14" height="14" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3"/><circle cx="12" cy="12" r="3"/></svg>					<span class="sse-focus-btn-on">Focus mode</span>
+					<span class="sse-focus-btn-off">Exit focus</span>
+				</button>
+			</div>
+			<h1 class="sse-post-title sse-bionic">How AI Search Engines Work: A Technical Guide for SEO</h1>
+						<div class="sse-post-byline">
+				<a class="sse-byline" href="https://sanjayshankar.me/about/" title="About Sanjay Shankar">
+					<img class="sse-byline-img" src="https://gravatar.com/avatar/ed6b8bb8fba09d0472aa16e6f638ce274cb0beba1e2cea56d990174af206b75e?s=40&#038;d=mm" srcset="https://gravatar.com/avatar/ed6b8bb8fba09d0472aa16e6f638ce274cb0beba1e2cea56d990174af206b75e?s=80&#038;d=mm 2x" alt="Sanjay Shankar" title="Sanjay Shankar" width="40" height="40" decoding="async">					<span class="sans"><span class="sse-byline-name">Sanjay Shankar</span><span class="sse-byline-role">Co-Founder, Program Manager, Engineering Leader</span></span>
+				</a>
+				<div class="sse-summarize sse-focus-hide">
+					<span class="sse-summarize-label sans"><svg class="sse-icon sse-icon-sparkles " width="14" height="14" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M18.4 5.6l-2.8 2.8M8.4 15.6l-2.8 2.8"/></svg> Summarize with</span>
+					<div class="sse-summarize-list">
+													<a class="sse-summarize-btn" href="https://chatgpt.com/?q=Summarize%20this%20article%20in%20a%20few%20key%20points%20and%20tell%20me%20who%20it%20is%20for%3A%20https%3A%2F%2Fsanjayshankar.me%2Fhow-ai-search-engines-work-technical-guide%2F" target="_blank" rel="noopener nofollow" title="Summarize with ChatGPT" aria-label="Summarize with ChatGPT" data-agent="chatgpt">
+								<img src="https://sanjayshankar.me/wp-content/themes/sanjay-shankar-editorial/assets/images/ai-icons/chatgpt.svg" alt="ChatGPT logo" title="ChatGPT" width="20" height="20" loading="lazy">
+							</a>
+													<a class="sse-summarize-btn" href="https://claude.ai/new?q=Summarize%20this%20article%20in%20a%20few%20key%20points%20and%20tell%20me%20who%20it%20is%20for%3A%20https%3A%2F%2Fsanjayshankar.me%2Fhow-ai-search-engines-work-technical-guide%2F" target="_blank" rel="noopener nofollow" title="Summarize with Claude" aria-label="Summarize with Claude" data-agent="claude">
+								<img src="https://sanjayshankar.me/wp-content/themes/sanjay-shankar-editorial/assets/images/ai-icons/claude.svg" alt="Claude logo" title="Claude" width="20" height="20" loading="lazy">
+							</a>
+													<a class="sse-summarize-btn" href="https://www.perplexity.ai/search?q=Summarize%20this%20article%20in%20a%20few%20key%20points%20and%20tell%20me%20who%20it%20is%20for%3A%20https%3A%2F%2Fsanjayshankar.me%2Fhow-ai-search-engines-work-technical-guide%2F" target="_blank" rel="noopener nofollow" title="Summarize with Perplexity" aria-label="Summarize with Perplexity" data-agent="perplexity">
+								<img src="https://sanjayshankar.me/wp-content/themes/sanjay-shankar-editorial/assets/images/ai-icons/perplexity.png" alt="Perplexity logo" title="Perplexity" width="20" height="20" loading="lazy">
+							</a>
+													<a class="sse-summarize-btn" href="https://www.google.com/search?udm=50&#038;aep=11&#038;q=Summarize%20this%20article%20in%20a%20few%20key%20points%20and%20tell%20me%20who%20it%20is%20for%3A%20https%3A%2F%2Fsanjayshankar.me%2Fhow-ai-search-engines-work-technical-guide%2F" target="_blank" rel="noopener nofollow" title="Summarize with Gemini" aria-label="Summarize with Gemini" data-agent="gemini">
+								<img src="https://sanjayshankar.me/wp-content/themes/sanjay-shankar-editorial/assets/images/ai-icons/gemini.png" alt="Gemini logo" title="Gemini" width="20" height="20" loading="lazy">
+							</a>
+													<a class="sse-summarize-btn" href="https://x.com/i/grok?text=Summarize%20this%20article%20in%20a%20few%20key%20points%20and%20tell%20me%20who%20it%20is%20for%3A%20https%3A%2F%2Fsanjayshankar.me%2Fhow-ai-search-engines-work-technical-guide%2F" target="_blank" rel="noopener nofollow" title="Summarize with Grok" aria-label="Summarize with Grok" data-agent="grok">
+								<img src="https://sanjayshankar.me/wp-content/themes/sanjay-shankar-editorial/assets/images/ai-icons/grok.svg" alt="Grok logo" title="Grok" width="20" height="20" loading="lazy">
+							</a>
+											</div>
+				</div>
+			</div>
+		</header>
+
+
+		<div class="sse-post-layout sse-wrap-wide">
+			<aside class="sse-post-side sse-focus-hide">
+								<nav class="sse-toc sans" id="sseToc" aria-label="On this page">
+					<button type="button" class="sse-toc-toggle" aria-expanded="false" aria-controls="sseTocList"><svg class="sse-icon sse-icon-list " width="15" height="15" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg> On this page <svg class="sse-icon sse-icon-chevron-down sse-toc-chev" width="15" height="15" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></button>
+					<ol class="sse-toc-list" id="sseTocList">
+													<li class="lvl-2"><a href="#the-core-principle-ai-search-is-built-on-traditional-search" title="Jump to: The Core Principle: AI Search Is Built on Traditional Search">The Core Principle: AI Search Is Built on Traditional Search</a></li>
+													<li class="lvl-2"><a href="#how-the-ai-search-pipeline-works" title="Jump to: How the AI Search Pipeline Works">How the AI Search Pipeline Works</a></li>
+													<li class="lvl-3"><a href="#the-search-indexes-behind-each-engine" title="Jump to: The Search Indexes Behind Each Engine">The Search Indexes Behind Each Engine</a></li>
+													<li class="lvl-2"><a href="#query-fan-out-the-step-most-seos-miss" title="Jump to: Query Fan-Out: The Step Most SEOs Miss">Query Fan-Out: The Step Most SEOs Miss</a></li>
+													<li class="lvl-2"><a href="#retrieval-and-chunking-why-your-content-must-survive-being-cut" title="Jump to: Retrieval and Chunking: Why Your Content Must Survive Being Cut">Retrieval and Chunking: Why Your Content Must Survive Being Cut</a></li>
+													<li class="lvl-2"><a href="#training-data-vs-grounding-two-different-visibility-channels" title="Jump to: Training Data vs Grounding: Two Different Visibility Channels">Training Data vs Grounding: Two Different Visibility Channels</a></li>
+													<li class="lvl-2"><a href="#geo-exclusive-tactics-not-for-traditional-seo" title="Jump to: GEO-Exclusive Tactics (Not for Traditional SEO)">GEO-Exclusive Tactics (Not for Traditional SEO)</a></li>
+													<li class="lvl-3"><a href="#1-redirect-hallucinated-urls" title="Jump to: 1. Redirect Hallucinated URLs">1. Redirect Hallucinated URLs</a></li>
+													<li class="lvl-3"><a href="#2-structure-for-chunkability" title="Jump to: 2. Structure for Chunkability">2. Structure for Chunkability</a></li>
+													<li class="lvl-3"><a href="#3-entity-optimization" title="Jump to: 3. Entity Optimization">3. Entity Optimization</a></li>
+													<li class="lvl-3"><a href="#4-ai-crawler-accessibility" title="Jump to: 4. AI Crawler Accessibility">4. AI Crawler Accessibility</a></li>
+													<li class="lvl-2"><a href="#a-chunking-aware-content-model" title="Jump to: A Chunking-Aware Content Model">A Chunking-Aware Content Model</a></li>
+													<li class="lvl-2"><a href="#what-this-means-for-your-seo-workflow" title="Jump to: What This Means for Your SEO Workflow">What This Means for Your SEO Workflow</a></li>
+													<li class="lvl-2"><a href="#frequently-asked-questions" title="Jump to: Frequently Asked Questions">Frequently Asked Questions</a></li>
+											</ol>
+				</nav>
+							</aside>
+
+			<div class="sse-post-body">
+				<div class="sse-prose sse-post-content sse-bionic" id="ssePostContent">
+					
+<p class="wp-block-paragraph"><strong>Quick answer:</strong> AI search engines do not rank your page the way Google does. They take a user prompt, break it into multiple smaller search queries, pull results from traditional search indexes through retrieval-augmented generation, grab short chunks of content instead of full pages, and synthesize an answer with citations. If your content is not structured to survive that process, you lose visibility regardless of how well you rank on Google.</p>
+
+
+
+<figure class="wp-block-image size-large"><img title="How AI search engines work showing the pipeline from user prompt to query fan-out to web search to chunking to answer" decoding="async" width="1024" height="576" src="https://sanjayshankar.me/wp-content/uploads/2026/08/ai-search-pipeline-1024x576.webp" alt="How AI search engines work showing the pipeline from user prompt to query fan-out to web search to chunking to answer" class="wp-image-536" srcset="https://sanjayshankar.me/wp-content/uploads/2026/08/ai-search-pipeline-1024x576.webp 1024w, https://sanjayshankar.me/wp-content/uploads/2026/08/ai-search-pipeline-300x169.webp 300w, https://sanjayshankar.me/wp-content/uploads/2026/08/ai-search-pipeline-768x432.webp 768w, https://sanjayshankar.me/wp-content/uploads/2026/08/ai-search-pipeline-1536x864.webp 1536w, https://sanjayshankar.me/wp-content/uploads/2026/08/ai-search-pipeline.webp 1672w" sizes="(max-width: 1024px) 100vw, 1024px" /></figure>
+
+
+
+<p class="wp-block-paragraph">GEO is not separate from SEO. AI search engines (ChatGPT, Gemini, Claude, Perplexity) use traditional search indexes (Google, Bing, Brave) for real-time grounding. Better traditional SEO leads to better AI visibility. Most people treat them as different disciplines. They are not. They are the same foundation with a different consumption layer on top.</p>
+
+
+
+<p class="wp-block-paragraph">I have spent months running <a href="/geo-tracking-brand-across-ai-engines-30-days/" title="GEO tracking experiments">GEO tracking experiments</a> across four AI engines and building visibility.so&#8217;s AI visibility engine. This guide is the technical layer underneath all of that: how these engines actually decide what to cite, and what you can do about it.</p>
+
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+
+
+
+<h2 class="wp-block-heading" id="the-core-principle-ai-search-is-built-on-traditional-search">The Core Principle: AI Search Is Built on Traditional Search</h2>
+
+
+
+<p class="wp-block-paragraph">Here is the mental model that changes everything: AI search engines do not maintain their own index of the web. They borrow one.</p>
+
+
+
+<p class="wp-block-paragraph">When you ask ChatGPT a question that needs current information, it does not reason from its training data alone. It runs a live search against Bing or Google, retrieves results, and grounds its answer in what it finds. The same is true for Gemini (Google index), Claude (Brave index), and Perplexity (its own index).</p>
+
+
+
+<p class="wp-block-paragraph">This means:</p>
+
+
+
+<ul class="wp-block-list">
+<li>Traditional SEO is not obsolete. It is the foundation AI engines retrieve from</li>
+
+
+
+<li>A page that is not crawlable and indexable on Google is invisible to most AI engines</li>
+
+
+
+<li>Technical SEO problems (blocked crawling, poor indexing, slow pages) hurt GEO exactly as much as they hurt Google rankings</li>
+</ul>
+
+
+
+<p class="wp-block-paragraph">The ranking model for both looks like this:</p>
+
+
+
+<p class="wp-block-paragraph"><strong>Visibility = f(Technical SEO + Content Quality/EEAT + Backlinks + User Signals)</strong></p>
+
+
+
+<p class="wp-block-paragraph">AI engines do not skip any of these. They consume the output of the same signals through a different pipeline.</p>
+
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+
+
+
+<h2 class="wp-block-heading" id="how-the-ai-search-pipeline-works">How the AI Search Pipeline Works</h2>
+
+
+
+<p class="wp-block-paragraph">Strip away the marketing and every AI search engine runs the same pipeline:</p>
+
+
+
+<ol class="wp-block-list">
+<li><strong>User prompt</strong> &#8211; the user types a conversational question</li>
+
+
+
+<li><strong>Query fan-out</strong> &#8211; the engine decomposes the prompt into multiple shorter keyword-style queries</li>
+
+
+
+<li><strong>Web search</strong> &#8211; each fan-out query hits a traditional search index (Google, Bing, or Brave)</li>
+
+
+
+<li><strong>Retrieval and chunking</strong> &#8211; the engine pulls snippets, not full pages</li>
+
+
+
+<li><strong>Grounding/RAG</strong> &#8211; the snippets are injected into the model&#8217;s context window</li>
+
+
+
+<li><strong>Synthesis</strong> &#8211; the LLM generates an answer from the retrieved content</li>
+
+
+
+<li><strong>Citations</strong> &#8211; sources are attributed</li>
+</ol>
+
+
+
+<p class="wp-block-paragraph">Each step is a place where your content either wins or loses.</p>
+
+
+
+<h3 class="wp-block-heading" id="the-search-indexes-behind-each-engine">The Search Indexes Behind Each Engine</h3>
+
+
+
+<figure class="wp-block-table"><table class="has-fixed-layout"><thead><tr><th>AI Engine</th><th>Backend Index</th></tr></thead><tbody><tr><td>ChatGPT</td><td>Bing, Google</td></tr><tr><td>Claude</td><td>Brave</td></tr><tr><td>Gemini</td><td>Google</td></tr><tr><td>Perplexity</td><td>In-house</td></tr><tr><td>Copilot</td><td>Bing</td></tr><tr><td>Google AI Mode</td><td>Google</td></tr></tbody></table></figure>
+
+
+
+<p class="wp-block-paragraph">This table has practical consequences. If your site is poorly indexed on Bing, ChatGPT and Copilot lose visibility even if you rank well on Google. If Brave does not have your content, Claude cannot cite you. Cross-index optimization is now part of AI visibility.</p>
+
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+
+
+
+<h2 class="wp-block-heading" id="query-fan-out-the-step-most-seos-miss">Query Fan-Out: The Step Most SEOs Miss</h2>
+
+
+
+<p class="wp-block-paragraph">This is the most misunderstood part of AI search.</p>
+
+
+
+<p class="wp-block-paragraph">Users type long conversational prompts into ChatGPT: &#8220;What is the best SEO platform for a small agency that wants to automate audits?&#8221; The engine does not search for that sentence. It decomposes it into shorter keyword-style queries that look like traditional SEO keywords: &#8220;best SEO platform for agencies,&#8221; &#8220;automated SEO audit tools,&#8221; &#8220;SEO platform small agency.&#8221;</p>
+
+
+
+<p class="wp-block-paragraph">The implication is significant. Your existing keyword research already covers the fan-out space. The queries you track in Ahrefs or Semrush are the same queries the AI engine generates internally.</p>
+
+
+
+<p class="wp-block-paragraph">One data point that surprised me: only about 12% of cited links in AI answers appear in the Google top 10 for the original long prompt. But the fan-out queries are where traditional SEO wins. Your keyword rankings for the short queries feed directly into whether the AI engine retrieves you.</p>
+
+
+
+<p class="wp-block-paragraph"><strong>Practical takeaway:</strong> Do not create a separate &#8220;AI SEO&#8221; keyword set. Optimize the keywords you already track. The fan-out layer uses them.</p>
+
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+
+
+
+<h2 class="wp-block-heading" id="retrieval-and-chunking-why-your-content-must-survive-being-cut">Retrieval and Chunking: Why Your Content Must Survive Being Cut</h2>
+
+
+
+<p class="wp-block-paragraph">Here is the part that breaks most content strategies.</p>
+
+
+
+<p class="wp-block-paragraph">AI engines do not read your full page. They grab snippets of 200 to 2,000 words through chunking. The engine takes your content, cuts it into pieces, and decides which piece answers the query.</p>
+
+
+
+<p class="wp-block-paragraph">This means a page can be excellent overall and still never get cited, because the specific chunk that answers the query is buried under navigation, background, or throat-clearing.</p>
+
+
+
+<p class="wp-block-paragraph">The chunking problem has a direct fix: <strong>every paragraph must be independently valuable.</strong> An LLM might grab only your third H2 section. If that section cannot stand alone, you lose the citation.</p>
+
+
+
+<p class="wp-block-paragraph">What makes an LLM cite you:</p>
+
+
+
+<ol class="wp-block-list">
+<li><strong>Relevance</strong> &#8211; how directly your content contributed to a specific claim in the answer</li>
+
+
+
+<li><strong>Freshness</strong> &#8211; how recent your source is</li>
+
+
+
+<li><strong>Diversity</strong> &#8211; AI engines prefer citing multiple sources, not the same one repeatedly</li>
+</ol>
+
+
+
+<p class="wp-block-paragraph">Freshness deserves attention. In my 30-day <a href="/geo-tracking-brand-across-ai-engines-30-days/" title="GEO tracking experiment">GEO tracking experiment</a>, ChatGPT showed a strong bias toward content published in the last 30-60 days. Old but authoritative content lost to newer pieces even from lower-authority domains. Content freshness is a GEO factor, not just a Google factor.</p>
+
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+
+
+
+<h2 class="wp-block-heading" id="training-data-vs-grounding-two-different-visibility-channels">Training Data vs Grounding: Two Different Visibility Channels</h2>
+
+
+
+<p class="wp-block-paragraph">AI engines have two ways of knowing about your brand:</p>
+
+
+
+<p class="wp-block-paragraph"><strong>Training data</strong> is the static snapshot of the web at model release. Entity-based SEO helps here: Knowledge Graph presence, schema markup, brand consistency across the web, Wikipedia and Crunchbase entries. If a model already &#8220;knows&#8221; your brand from training, it is more likely to mention you without needing to retrieve you.</p>
+
+
+
+<p class="wp-block-paragraph"><strong>Grounding/RAG</strong> is real-time web search at answer time. Traditional SEO helps here: rankings, backlinks, technical health. Current and relevant answers use grounding, not training data.</p>
+
+
+
+<p class="wp-block-paragraph">The practical implication: you need both. Entity signals make you known. Traditional SEO makes you retrieved. Most brands focus on one and ignore the other.</p>
+
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+
+
+
+<h2 class="wp-block-heading" id="geo-exclusive-tactics-not-for-traditional-seo">GEO-Exclusive Tactics (Not for Traditional SEO)</h2>
+
+
+
+<p class="wp-block-paragraph">Some tactics only matter for AI visibility. These are the ones that do not show up in a traditional SEO checklist:</p>
+
+
+
+<h3 class="wp-block-heading" id="1-redirect-hallucinated-urls">1. Redirect Hallucinated URLs</h3>
+
+
+
+<p class="wp-block-paragraph">AI engines sometimes invent URLs that do not exist. When ChatGPT cites a made-up URL on your domain, set up a catch-all redirect (301) so those invented URLs resolve to your real pages. This recovers citations that would otherwise be dead links.</p>
+
+
+
+<h3 class="wp-block-heading" id="2-structure-for-chunkability">2. Structure for Chunkability</h3>
+
+
+
+<p class="wp-block-paragraph">Front-load value in every section. Put the answer in the first sentence or two. Use informative H2 headings that contain the takeaway, not labels. &#8220;How visibility.so Automated 96% of Its Audits&#8221; beats &#8220;Introduction.&#8221; Make sure the first 50-100 words of each section work as a standalone summary.</p>
+
+
+
+<h3 class="wp-block-heading" id="3-entity-optimization">3. Entity Optimization</h3>
+
+
+
+<p class="wp-block-paragraph">Build consistent entity signals: schema.org markup (Organization, Product, Article, FAQPage), Knowledge Graph presence, consistent name/address/phone across the web, and brand co-occurrence alongside relevant entities. LLMs reason about entities, not keywords.</p>
+
+
+
+<h3 class="wp-block-heading" id="4-ai-crawler-accessibility">4. AI Crawler Accessibility</h3>
+
+
+
+<p class="wp-block-paragraph">Check that AI crawlers are allowed. Cloudflare&#8217;s default settings and aggressive security layers block GPTBot, Claude-Web, PerplexityBot, and Google-Extended. Verify your robots.txt and security settings are not silently excluding the crawlers that feed AI engines.</p>
+
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+
+
+
+<h2 class="wp-block-heading" id="a-chunking-aware-content-model">A Chunking-Aware Content Model</h2>
+
+
+
+<p class="wp-block-paragraph">The content structure that wins under AI retrieval looks different from the classic blog structure:</p>
+
+
+
+<figure class="wp-block-table"><table class="has-fixed-layout"><thead><tr><th>Bad Structure</th><th>Chunking-Aware Structure</th></tr></thead><tbody><tr><td>Intro</td><td>Title with key finding</td></tr><tr><td>Background</td><td>Summary/TL;DR</td></tr><tr><td>Industry overview</td><td>Key data table</td></tr><tr><td>Methodology</td><td>Main analysis</td></tr><tr><td>Answer</td><td>FAQ</td></tr><tr><td>Conclusion</td><td>&#8211;</td></tr></tbody></table></figure>
+
+
+
+<p class="wp-block-paragraph">Every section must be self-contained. Headings should contain the answer, not describe the section. Tables for anything comparative. FAQ blocks that answer one question per block. This is the model we use across the content on sanjayshankar.me, and it is the model visibility.so&#8217;s content pipeline recommends to users.</p>
+
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+
+
+
+<h2 class="wp-block-heading" id="what-this-means-for-your-seo-workflow">What This Means for Your SEO Workflow</h2>
+
+
+
+<p class="wp-block-paragraph">If you are an SEO professional, this changes three habits:</p>
+
+
+
+<ol class="wp-block-list">
+<li><strong>Stop treating GEO as separate.</strong> It is traditional SEO plus an AI consumption layer. Fix the technical foundation first.</li>
+
+
+
+<li><strong>Refresh content on a cycle.</strong> Freshness is a citation factor. Old posts need refresh schedules, not just new posts.</li>
+
+
+
+<li><strong>Check your AI crawler access.</strong> A Cloudflare setting you configured years ago might be blocking every AI engine from reading your site.</li>
+</ol>
+
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+
+
+
+<h2 class="wp-block-heading" id="frequently-asked-questions">Frequently Asked Questions</h2>
+
+
+<section class="sse-section sse-faq wp-block-sse-faq">
+	<div class="sse-wrap-mid">
+				<div class="sse-faq-list">
+<details class="sse-faq-item">
+	<summary class="sse-faq-q sse-bionic"><span>Do AI search engines use Google&#039;s index?</span><svg class="sse-icon sse-icon-plus sse-faq-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg></summary>
+	<div class="sse-faq-a sse-prose sse-bionic"><p>Some do. Gemini and Google AI Mode use Google. ChatGPT uses Bing and Google. Claude uses Brave. Perplexity maintains its own index. There is no single backend index across all engines.</p>
+</div>
+</details>
+
+<details class="sse-faq-item">
+	<summary class="sse-faq-q sse-bionic"><span>Does ranking on Google help with AI visibility?</span><svg class="sse-icon sse-icon-plus sse-faq-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg></summary>
+	<div class="sse-faq-a sse-prose sse-bionic"><p>Yes. Most AI engines retrieve from traditional search indexes. Better Google rankings usually mean better retrieval, which means better AI visibility. The exceptions are engines with their own indexes like Perplexity.</p>
+</div>
+</details>
+
+<details class="sse-faq-item">
+	<summary class="sse-faq-q sse-bionic"><span>What is query fan-out?</span><svg class="sse-icon sse-icon-plus sse-faq-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg></summary>
+	<div class="sse-faq-a sse-prose sse-bionic"><p>Query fan-out is how AI engines decompose a long conversational prompt into multiple shorter keyword-style queries before searching. Your existing keyword research covers this space, which is why traditional SEO still matters.</p>
+</div>
+</details>
+
+<details class="sse-faq-item">
+	<summary class="sse-faq-q sse-bionic"><span>Why do AI engines cite some pages and not others?</span><svg class="sse-icon sse-icon-plus sse-faq-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg></summary>
+	<div class="sse-faq-a sse-prose sse-bionic"><p>Relevance to the specific claim, freshness of the source, and citation diversity. Engines prefer multiple sources, so being one of several is better than being the only one.</p>
+</div>
+</details>
+
+<details class="sse-faq-item">
+	<summary class="sse-faq-q sse-bionic"><span>How long are the content snippets AI engines use?</span><svg class="sse-icon sse-icon-plus sse-faq-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg></summary>
+	<div class="sse-faq-a sse-prose sse-bionic"><p>Roughly 200 to 2,000 words per chunk. Your content must be valuable in isolation because the engine may only use one section of your page.</p>
+</div>
+</details>
+
+<details class="sse-faq-item">
+	<summary class="sse-faq-q sse-bionic"><span>Does llms.txt help AI engines find content?</span><svg class="sse-icon sse-icon-plus sse-faq-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg></summary>
+	<div class="sse-faq-a sse-prose sse-bionic"><p>It can help. llms.txt provides a structured summary of your site for AI systems that choose to consume it. See our <a href="/llms-txt-guide-ai-crawler-optimization/" title="llms.txt guide">llms.txt guide</a> for a full walkthrough.</p>
+</div>
+</details>
+
+<details class="sse-faq-item">
+	<summary class="sse-faq-q sse-bionic"><span>How is this related to agentic SEO?</span><svg class="sse-icon sse-icon-plus sse-faq-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg></summary>
+	<div class="sse-faq-a sse-prose sse-bionic"><p>Agentic SEO is the operating model that runs visibility tracking, opportunity discovery, and execution continuously. Understanding how AI engines work is the technical foundation for <a href="/what-is-agentic-seo-complete-guide-2026/" title="agentic SEO">agentic SEO</a>.</p>
+</div>
+</details>
+
+</div>
+	</div>
+</section>
+
+
+
+<hr class="wp-block-separator has-alpha-channel-opacity"/>
+
+
+
+<p class="wp-block-paragraph"><em>Found this useful? Share it with someone still treating GEO and SEO as separate disciplines. Follow <a href="https://x.com/sanjayshankarr" rel="noopener" target="_blank" title="@sanjayshankarr (opens in a new tab)">@sanjayshankarr</a> for more on AI search mechanics.</em></p>
+				</div>
+
+				<footer class="sse-post-foot">
+					<div class="sse-share-wrap sse-focus-hide">
+						<span class="sse-share-hint sans">Found this useful? Pass it on.</span>
+						<div class="sse-share sse-share-row sans" aria-label="Share">
+							<span class="sse-share-label">Share</span>
+							<a class="sse-share-btn" href="https://www.linkedin.com/sharing/share-offsite/?url=https%3A%2F%2Fsanjayshankar.me%2Fhow-ai-search-engines-work-technical-guide%2F" target="_blank" rel="noopener" aria-label="Share on LinkedIn" title="Share this post on LinkedIn (opens in a new tab)"><svg class="sse-icon sse-icon-linkedin " width="15" height="15" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="currentColor"><path fill="currentColor" stroke="none" d="M20.4 2H3.6A1.6 1.6 0 0 0 2 3.6v16.8A1.6 1.6 0 0 0 3.6 22h16.8a1.6 1.6 0 0 0 1.6-1.6V3.6A1.6 1.6 0 0 0 20.4 2zM8 19H5V9h3v10zM6.5 7.7a1.7 1.7 0 1 1 0-3.4 1.7 1.7 0 0 1 0 3.4zM19 19h-3v-4.9c0-1.2 0-2.7-1.6-2.7s-1.9 1.3-1.9 2.6V19h-3V9h2.9v1.4a3.2 3.2 0 0 1 2.8-1.6c3 0 3.6 2 3.6 4.6V19z"/></svg></a>
+							<a class="sse-share-btn" href="https://twitter.com/intent/tweet?url=https%3A%2F%2Fsanjayshankar.me%2Fhow-ai-search-engines-work-technical-guide%2F&text=How%20AI%20Search%20Engines%20Work%3A%20A%20Technical%20Guide%20for%20SEO" target="_blank" rel="noopener" aria-label="Share on X" title="Share this post on X (opens in a new tab)"><svg class="sse-icon sse-icon-x-twitter " width="14" height="14" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="currentColor"><path fill="currentColor" stroke="none" d="M18.9 2H22l-7.4 8.5L23 22h-6.8l-5.3-6.9L4.8 22H1.6l7.9-9L1 2h7l4.8 6.3L18.9 2zm-1.2 18h1.9L7.1 3.9H5.1L17.7 20z"/></svg></a>
+							<a class="sse-share-btn" href="https://api.whatsapp.com/send?text=How%20AI%20Search%20Engines%20Work%3A%20A%20Technical%20Guide%20for%20SEO%20https%3A%2F%2Fsanjayshankar.me%2Fhow-ai-search-engines-work-technical-guide%2F" target="_blank" rel="noopener" aria-label="Share on WhatsApp" title="Share this post on WhatsApp (opens in a new tab)"><svg class="sse-icon sse-icon-whatsapp " width="15" height="15" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="currentColor"><path fill="currentColor" stroke="none" d="M17.5 14.4c-.3-.1-1.8-.9-2-1-.3-.1-.5-.1-.7.1l-.9 1.1c-.2.2-.3.2-.6.1a8.2 8.2 0 0 1-4-3.5c-.3-.5.3-.5.9-1.6.1-.2 0-.4 0-.5l-.9-2.2c-.2-.6-.5-.5-.7-.5h-.6a1.1 1.1 0 0 0-.8.4 3.5 3.5 0 0 0-1.1 2.6c0 1.5 1.1 3 1.3 3.2.2.2 2.2 3.3 5.3 4.7 2 .8 2.7.9 3.7.8.6-.1 1.8-.7 2.1-1.5.3-.7.3-1.3.2-1.5l-.6-.3zM12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.3c-1.5 0-3-.4-4.3-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.3 8.3 0 1 1 12 20.3z"/></svg></a>
+							<a class="sse-share-btn" href="mailto:?subject=How%20AI%20Search%20Engines%20Work%3A%20A%20Technical%20Guide%20for%20SEO&body=https%3A%2F%2Fsanjayshankar.me%2Fhow-ai-search-engines-work-technical-guide%2F" aria-label="Share by email" title="Share this post by email"><svg class="sse-icon sse-icon-mail " width="15" height="15" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg></a>
+							<button type="button" class="sse-share-btn" data-sse-copy="https://sanjayshankar.me/how-ai-search-engines-work-technical-guide/" aria-label="Copy link" title="Copy this post&#039;s link to the clipboard"><svg class="sse-icon sse-icon-link " width="15" height="15" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"/></svg></button>
+							<button type="button" class="sse-share-btn" data-sse-share hidden aria-label="Share" title="Share this post using your device&#039;s share sheet"><svg class="sse-icon sse-icon-share " width="15" height="15" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4"/></svg></button>
+						</div>
+					</div>
+
+										<div class="sse-post-terms">
+						<a class="sse-chip sse-chip-accent" href="https://sanjayshankar.me/category/technical/" title="All posts in Technical"><svg class="sse-icon sse-icon-folder " width="12" height="12" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg> Technical</a>						<a class="sse-chip" href="https://sanjayshankar.me/tag/ai-search/" title="All posts tagged AI Search"><svg class="sse-icon sse-icon-tag " width="12" height="12" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L2 12V2h10l8.6 8.6a2 2 0 0 1 0 2.8z"/><circle cx="7" cy="7" r="1.5"/></svg> AI Search</a><a class="sse-chip" href="https://sanjayshankar.me/tag/ai-visibility/" title="All posts tagged AI Visibility"><svg class="sse-icon sse-icon-tag " width="12" height="12" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L2 12V2h10l8.6 8.6a2 2 0 0 1 0 2.8z"/><circle cx="7" cy="7" r="1.5"/></svg> AI Visibility</a><a class="sse-chip" href="https://sanjayshankar.me/tag/geo/" title="All posts tagged GEO"><svg class="sse-icon sse-icon-tag " width="12" height="12" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L2 12V2h10l8.6 8.6a2 2 0 0 1 0 2.8z"/><circle cx="7" cy="7" r="1.5"/></svg> GEO</a><a class="sse-chip" href="https://sanjayshankar.me/tag/query-fan-out/" title="All posts tagged Query Fan-Out"><svg class="sse-icon sse-icon-tag " width="12" height="12" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L2 12V2h10l8.6 8.6a2 2 0 0 1 0 2.8z"/><circle cx="7" cy="7" r="1.5"/></svg> Query Fan-Out</a><a class="sse-chip" href="https://sanjayshankar.me/tag/rag/" title="All posts tagged RAG"><svg class="sse-icon sse-icon-tag " width="12" height="12" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L2 12V2h10l8.6 8.6a2 2 0 0 1 0 2.8z"/><circle cx="7" cy="7" r="1.5"/></svg> RAG</a><a class="sse-chip" href="https://sanjayshankar.me/tag/seo/" title="All posts tagged SEO"><svg class="sse-icon sse-icon-tag " width="12" height="12" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L2 12V2h10l8.6 8.6a2 2 0 0 1 0 2.8z"/><circle cx="7" cy="7" r="1.5"/></svg> SEO</a><a class="sse-chip" href="https://sanjayshankar.me/tag/technical-seo/" title="All posts tagged Technical SEO"><svg class="sse-icon sse-icon-tag " width="12" height="12" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L2 12V2h10l8.6 8.6a2 2 0 0 1 0 2.8z"/><circle cx="7" cy="7" r="1.5"/></svg> Technical SEO</a>					</div>
+					
+					<a class="sse-google-follow sse-focus-hide" href="https://www.google.com/preferences/source?q=sanjayshankar.me" target="_blank" rel="noopener" title="Follow this site in Google Search (opens in a new tab)" onclick="if(typeof gtag==='function'){gtag('event','click',{event_category:'Under Article',event_label:'Follow on Google'})}">
+						<span class="sse-google-logo"><svg class="sse-icon sse-icon-google " width="22" height="22" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="currentColor"><path fill="currentColor" stroke="none" d="M21.8 12.2c0-.7-.1-1.4-.2-2H12v3.9h5.5a4.7 4.7 0 0 1-2 3.1v2.6h3.3c1.9-1.8 3-4.4 3-7.6z"/><path fill="currentColor" stroke="none" d="M12 22c2.7 0 5-.9 6.7-2.4l-3.3-2.6c-.9.6-2.1 1-3.4 1-2.6 0-4.8-1.8-5.6-4.1H3v2.6A10 10 0 0 0 12 22z" opacity=".8"/><path fill="currentColor" stroke="none" d="M6.4 13.9a6 6 0 0 1 0-3.8V7.5H3a10 10 0 0 0 0 9z" opacity=".6"/><path fill="currentColor" stroke="none" d="M12 6c1.5 0 2.8.5 3.8 1.5l2.9-2.9A10 10 0 0 0 3 7.5l3.4 2.6C7.2 7.8 9.4 6 12 6z" opacity=".9"/></svg></span>
+						<span class="sse-google-text sans"><span class="sse-google-over">Preferred sources</span><span class="sse-google-title serif">Follow Sanjay Shankar on Google</span></span>
+						<span class="sse-google-arrow"><svg class="sse-icon sse-icon-arrow-up-right " width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M8 7h9v9"/></svg></span>
+					</a>
+
+					<div class="sse-author">
+						<img class="sse-author-img" src="https://gravatar.com/avatar/ed6b8bb8fba09d0472aa16e6f638ce274cb0beba1e2cea56d990174af206b75e?s=88&#038;d=mm" srcset="https://gravatar.com/avatar/ed6b8bb8fba09d0472aa16e6f638ce274cb0beba1e2cea56d990174af206b75e?s=176&#038;d=mm 2x" alt="Sanjay Shankar" title="Sanjay Shankar" width="88" height="88" loading="lazy" decoding="async">						<div>
+							<span class="sse-overline-sans">Written by</span>
+							<h3 class="sse-author-name">Sanjay Shankar</h3>
+							<p class="sse-author-bio">Tech manager and agentic SEO specialist building AI agents that compound visibility and team productivity.</p>
+							<div class="sse-author-links sans">
+								<a class="sse-link" href="https://sanjayshankar.me/about/" title="About Sanjay Shankar">About me <svg class="sse-icon sse-icon-arrow-right " width="14" height="14" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+								<a class="sse-link" href="https://www.linkedin.com/in/sanjay-shankar-a6885224/" target="_blank" rel="noopener me" title="Sanjay Shankar on LinkedIn (opens in a new tab)">LinkedIn <svg class="sse-icon sse-icon-arrow-up-right " width="14" height="14" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M8 7h9v9"/></svg></a>							</div>
+						</div>
+					</div>
+				</footer>
+			</div>
+		</div>
+
+		<nav class="sse-post-nav sse-wrap-wide sse-focus-hide" aria-label="Adjacent entries">
+							<a class="sse-post-nav-card" href="https://sanjayshankar.me/tech-leader-india-startup-ecosystem-lessons/" rel="prev" title="Previous post: Tech Leader in India: Lessons From 14 Years of Building Teams"><span class="sans"><svg class="sse-icon sse-icon-arrow-left " width="14" height="14" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 6l-6 6 6 6"/></svg> Previous</span><strong>Tech Leader in India: Lessons From 14 Years of Building Teams</strong></a>
+										<a class="sse-post-nav-card is-next" href="https://sanjayshankar.me/how-traditional-seo-works-pillars/" rel="next" title="Next post: How Traditional SEO Works: 4 Pillars That Still Matter in 2026"><span class="sans">Next <svg class="sse-icon sse-icon-arrow-right " width="14" height="14" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span><strong>How Traditional SEO Works: 4 Pillars That Still Matter in 2026</strong></a>
+					</nav>
+
+				<section class="sse-related sse-wrap-wide sse-focus-hide" aria-label="Related journals">
+			<div class="sse-section-head"><span class="sse-overline">Keep reading</span><h2>You may also enjoy</h2></div>
+			<div class="sse-grid sse-related-grid">
+				<article class="sse-card sse-card-post tone-5 sse-reveal post-554 post type-post status-publish format-standard has-post-thumbnail hentry category-technical tag-ai-search tag-ai-visibility tag-entity-seo tag-generative-engine-optimization tag-geo tag-rag">
+	<a class="sse-card-media" href="https://sanjayshankar.me/how-geo-works-ai-visibility-mechanics/" tabindex="-1" aria-hidden="true" title="Read: How GEO Works: The Mechanics of AI Visibility in 2026">
+					<img width="480" height="270" src="https://sanjayshankar.me/wp-content/uploads/2026/08/how-geo-works-hero.webp" class="attachment-sse-thumb size-sse-thumb wp-post-image" alt="How GEO Works: The Mechanics of AI Visibility in 2026" loading="lazy" title="How GEO Works: The Mechanics of AI Visibility in 2026" decoding="async" srcset="https://sanjayshankar.me/wp-content/uploads/2026/08/how-geo-works-hero.webp 1672w, https://sanjayshankar.me/wp-content/uploads/2026/08/how-geo-works-hero-300x169.webp 300w, https://sanjayshankar.me/wp-content/uploads/2026/08/how-geo-works-hero-1024x576.webp 1024w, https://sanjayshankar.me/wp-content/uploads/2026/08/how-geo-works-hero-768x432.webp 768w, https://sanjayshankar.me/wp-content/uploads/2026/08/how-geo-works-hero-1536x864.webp 1536w" sizes="auto, (max-width: 480px) 100vw, 480px" />			</a>
+	<div class="sse-card-body">
+		<div class="sse-meta">
+										<a class="sse-chip sse-chip-cat" href="https://sanjayshankar.me/category/technical/" title="All posts in Technical">Technical</a>
+						<time datetime="2026-08-11T06:39:05+00:00">Aug 11, 2026</time>
+		</div>
+		<h3 class="sse-card-title"><a href="https://sanjayshankar.me/how-geo-works-ai-visibility-mechanics/" title="Read: How GEO Works: The Mechanics of AI Visibility in 2026">How GEO Works: The Mechanics of AI Visibility in 2026</a></h3>
+				<div class="sse-card-foot sans">
+			<span class="sse-card-stats">
+				<span><svg class="sse-icon sse-icon-clock " width="13" height="13" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg> 7 min</span>
+				<span><svg class="sse-icon sse-icon-eye " width="13" height="13" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg> 52 views</span>			</span>
+			<a class="sse-card-read" href="https://sanjayshankar.me/how-geo-works-ai-visibility-mechanics/" title="Read: How GEO Works: The Mechanics of AI Visibility in 2026">Read <svg class="sse-icon sse-icon-arrow-right " width="14" height="14" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+		</div>
+	</div>
+</article>
+<article class="sse-card sse-card-post tone-3 sse-reveal post-781 post type-post status-publish format-standard has-post-thumbnail hentry category-ai-automation category-technical tag-agentic-seo tag-ai-search tag-ai-visibility tag-geo tag-measurement">
+	<a class="sse-card-media" href="https://sanjayshankar.me/geo-visibility-score-drops/" tabindex="-1" aria-hidden="true" title="Read: GEO Visibility Score Drops: 7 Proven Causes to Check">
+					<img width="480" height="300" src="https://sanjayshankar.me/wp-content/uploads/2026/09/geo-visibility-score-drops-hero-480x300.webp" class="attachment-sse-thumb size-sse-thumb wp-post-image" alt="GEO Visibility Score Drops: 7 Proven Causes to Check" loading="lazy" title="GEO Visibility Score Drops: 7 Proven Causes to Check" decoding="async" srcset="https://sanjayshankar.me/wp-content/uploads/2026/09/geo-visibility-score-drops-hero-480x300.webp 480w, https://sanjayshankar.me/wp-content/uploads/2026/09/geo-visibility-score-drops-hero-800x500.webp 800w" sizes="auto, (max-width: 480px) 100vw, 480px" />			</a>
+	<div class="sse-card-body">
+		<div class="sse-meta">
+										<a class="sse-chip sse-chip-cat" href="https://sanjayshankar.me/category/technical/ai-automation/" title="All posts in AI &amp; Automation">AI &amp; Automation</a>
+						<time datetime="2026-09-21T15:42:20+00:00">Sep 21, 2026</time>
+		</div>
+		<h3 class="sse-card-title"><a href="https://sanjayshankar.me/geo-visibility-score-drops/" title="Read: GEO Visibility Score Drops: 7 Proven Causes to Check">GEO Visibility Score Drops: 7 Proven Causes to Check</a></h3>
+				<div class="sse-card-foot sans">
+			<span class="sse-card-stats">
+				<span><svg class="sse-icon sse-icon-clock " width="13" height="13" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg> 9 min</span>
+				<span><svg class="sse-icon sse-icon-eye " width="13" height="13" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg> 3 views</span>			</span>
+			<a class="sse-card-read" href="https://sanjayshankar.me/geo-visibility-score-drops/" title="Read: GEO Visibility Score Drops: 7 Proven Causes to Check">Read <svg class="sse-icon sse-icon-arrow-right " width="14" height="14" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+		</div>
+	</div>
+</article>
+<article class="sse-card sse-card-post tone-1 sse-reveal post-603 post type-post status-publish format-standard has-post-thumbnail hentry category-ai-automation category-technical tag-agentic-seo tag-ai-mode tag-ai-overviews tag-ai-search tag-ai-visibility tag-geo tag-google-preferred-sources tag-google-spam-update">
+	<a class="sse-card-media" href="https://sanjayshankar.me/google-preferred-sources-geo-guide/" tabindex="-1" aria-hidden="true" title="Read: Google Preferred Sources: The Critical GEO Signal for 2026">
+					<img width="480" height="270" src="https://sanjayshankar.me/wp-content/uploads/2026/08/google-preferred-sources-hero.webp" class="attachment-sse-thumb size-sse-thumb wp-post-image" alt="Google Preferred Sources: The Critical GEO Signal for 2026" loading="lazy" title="Google Preferred Sources: The Critical GEO Signal for 2026" decoding="async" srcset="https://sanjayshankar.me/wp-content/uploads/2026/08/google-preferred-sources-hero.webp 1672w, https://sanjayshankar.me/wp-content/uploads/2026/08/google-preferred-sources-hero-300x169.webp 300w, https://sanjayshankar.me/wp-content/uploads/2026/08/google-preferred-sources-hero-1024x576.webp 1024w, https://sanjayshankar.me/wp-content/uploads/2026/08/google-preferred-sources-hero-768x432.webp 768w, https://sanjayshankar.me/wp-content/uploads/2026/08/google-preferred-sources-hero-1536x864.webp 1536w" sizes="auto, (max-width: 480px) 100vw, 480px" />			</a>
+	<div class="sse-card-body">
+		<div class="sse-meta">
+										<a class="sse-chip sse-chip-cat" href="https://sanjayshankar.me/category/technical/ai-automation/" title="All posts in AI &amp; Automation">AI &amp; Automation</a>
+						<time datetime="2026-08-21T12:05:21+00:00">Aug 21, 2026</time>
+		</div>
+		<h3 class="sse-card-title"><a href="https://sanjayshankar.me/google-preferred-sources-geo-guide/" title="Read: Google Preferred Sources: The Critical GEO Signal for 2026">Google Preferred Sources: The Critical GEO Signal for 2026</a></h3>
+				<div class="sse-card-foot sans">
+			<span class="sse-card-stats">
+				<span><svg class="sse-icon sse-icon-clock " width="13" height="13" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg> 8 min</span>
+				<span><svg class="sse-icon sse-icon-eye " width="13" height="13" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg> 27 views</span>			</span>
+			<a class="sse-card-read" href="https://sanjayshankar.me/google-preferred-sources-geo-guide/" title="Read: Google Preferred Sources: The Critical GEO Signal for 2026">Read <svg class="sse-icon sse-icon-arrow-right " width="14" height="14" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+		</div>
+	</div>
+</article>
+<article class="sse-card sse-card-post tone-3 sse-reveal post-459 post type-post status-publish format-standard has-post-thumbnail hentry category-technical tag-aeo tag-agentic-seo tag-ai-search tag-ai-visibility tag-geo tag-hybrid-teams tag-seo-strategy">
+	<a class="sse-card-media" href="https://sanjayshankar.me/geo-vs-aeo-vs-agentic-seo/" tabindex="-1" aria-hidden="true" title="Read: GEO vs AEO vs Agentic SEO: 3 Critical Differences Explained">
+					<img width="480" height="270" src="https://sanjayshankar.me/wp-content/uploads/2026/07/geo-vs-aeo-vs-agentic-hero.webp" class="attachment-sse-thumb size-sse-thumb wp-post-image" alt="GEO vs AEO vs Agentic SEO: 3 Critical Differences Explained" loading="lazy" title="GEO vs AEO vs Agentic SEO: 3 Critical Differences Explained" decoding="async" srcset="https://sanjayshankar.me/wp-content/uploads/2026/07/geo-vs-aeo-vs-agentic-hero.webp 1672w, https://sanjayshankar.me/wp-content/uploads/2026/07/geo-vs-aeo-vs-agentic-hero-300x169.webp 300w, https://sanjayshankar.me/wp-content/uploads/2026/07/geo-vs-aeo-vs-agentic-hero-1024x576.webp 1024w, https://sanjayshankar.me/wp-content/uploads/2026/07/geo-vs-aeo-vs-agentic-hero-768x432.webp 768w, https://sanjayshankar.me/wp-content/uploads/2026/07/geo-vs-aeo-vs-agentic-hero-1536x864.webp 1536w" sizes="auto, (max-width: 480px) 100vw, 480px" />			</a>
+	<div class="sse-card-body">
+		<div class="sse-meta">
+										<a class="sse-chip sse-chip-cat" href="https://sanjayshankar.me/category/technical/" title="All posts in Technical">Technical</a>
+						<time datetime="2026-07-15T04:44:02+00:00">Jul 15, 2026</time>
+		</div>
+		<h3 class="sse-card-title"><a href="https://sanjayshankar.me/geo-vs-aeo-vs-agentic-seo/" title="Read: GEO vs AEO vs Agentic SEO: 3 Critical Differences Explained">GEO vs AEO vs Agentic SEO: 3 Critical Differences Explained</a></h3>
+				<div class="sse-card-foot sans">
+			<span class="sse-card-stats">
+				<span><svg class="sse-icon sse-icon-clock " width="13" height="13" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg> 6 min</span>
+				<span><svg class="sse-icon sse-icon-eye " width="13" height="13" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg> 57 views</span>			</span>
+			<a class="sse-card-read" href="https://sanjayshankar.me/geo-vs-aeo-vs-agentic-seo/" title="Read: GEO vs AEO vs Agentic SEO: 3 Critical Differences Explained">Read <svg class="sse-icon sse-icon-arrow-right " width="14" height="14" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+		</div>
+	</div>
+</article>
+			</div>
+		</section>
+		
+			</article>
+	</main>
+
+<footer class="sse-footer" id="sseFooter">
+	<div class="sse-footer-inner">
+		<div class="sse-footer-grid">
+			<div class="sse-footer-brand">
+				<a class="sse-wordmark" href="https://sanjayshankar.me/" rel="home" title="Sanjay Shankar — home">Sanjay Shankar<span class="sse-wordmark-dot">.</span></a>
+				<p class="sse-footer-bio">Tech manager and agentic SEO specialist building AI agents that compound visibility and team productivity.</p>
+
+			</div>
+
+			<nav class="sse-footer-col sans" aria-label="Explore">
+				<span class="sse-footer-h">Explore</span>
+				<ul id="menu-headermenu-1" class="sse-footer-list"><li id="menu-item-370" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-home menu-item-370"><a href="https://sanjayshankar.me/" title="Home">Home</a></li>
+<li id="menu-item-20" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-20"><a href="https://sanjayshankar.me/about/" title="About">About</a></li>
+<li id="menu-item-25" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-25"><a href="https://sanjayshankar.me/products/" title="Products">Products</a></li>
+<li id="menu-item-28" class="menu-item menu-item-type-post_type menu-item-object-page current_page_parent menu-item-28"><a href="https://sanjayshankar.me/blog/" title="Blog">Blog</a></li>
+<li id="menu-item-18" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-18"><a href="https://sanjayshankar.me/contact/" title="Contact">Contact</a></li>
+</ul>			</nav>
+
+			<div class="sse-footer-col sans">
+				<span class="sse-footer-h">Connect</span>
+				<ul class="sse-footer-list">
+					<li><a href="mailto:me@sanjayshankar.me" title="Email Sanjay Shankar">me@sanjayshankar.me</a></li>
+					<li><a href="https://wa.me/919745145445" target="_blank" rel="noopener" title="Chat on WhatsApp (opens in a new tab)">WhatsApp</a></li>
+					<li><a href="tel:+919745145445" title="Call Sanjay Shankar">+91 9745 145 445</a></li>
+						<li><span class="sse-footer-muted">Kozhikode, Kerala, India</span></li>
+				</ul>
+			</div>
+
+			<nav class="sse-footer-col sans" aria-label="Links">
+				<span class="sse-footer-h">Links</span>
+				<ul class="sse-footer-list">
+											<li><a href="https://x.com/sanjayshankarr" target="_blank" rel="noopener me" title="Sanjay Shankar on X (Twitter) (opens in a new tab)">X (Twitter)</a></li>
+											<li><a href="https://www.linkedin.com/in/sanjay-shankar-a6885224/" target="_blank" rel="noopener me" title="Sanjay Shankar on LinkedIn (opens in a new tab)">LinkedIn</a></li>
+											<li><a href="https://github.com/sanjuacodez" target="_blank" rel="noopener me" title="Sanjay Shankar on GitHub (opens in a new tab)">GitHub</a></li>
+											<li><a href="https://www.instagram.com/sanjushankar/" target="_blank" rel="noopener me" title="Sanjay Shankar on Instagram (opens in a new tab)">Instagram</a></li>
+											<li><a href="https://www.facebook.com/mesanjayshankar" target="_blank" rel="noopener me" title="Sanjay Shankar on Facebook (opens in a new tab)">Facebook</a></li>
+											<li><a href="https://profiles.wordpress.org/sanju-shankar/" target="_blank" rel="noopener me" title="Sanjay Shankar on WordPress.org (opens in a new tab)">WordPress.org</a></li>
+										<li><a class="sse-footer-all" href="https://sanjayshankar.me/links/" title="Every profile and contact route in one place">All my links <svg class="sse-icon sse-icon-arrow-right " width="13" height="13" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a></li>
+				</ul>
+			</nav>
+
+			<div class="sse-footer-col sans">
+				<span class="sse-footer-h">For AI agents</span>
+				<ul class="sse-footer-list">
+					<li><a href="https://sanjayshankar.me/llms.txt" title="llms.txt — a short site map written for language models">llms.txt</a></li>
+					<li><a href="https://sanjayshankar.me/llms-full.txt" title="llms-full.txt — every page of this site as plain Markdown">llms-full.txt</a></li>
+					<li><a href="https://sanjayshankar.me/.well-known/agent-card.json" title="Agent card — machine-readable capabilities of this site">Agent card</a></li>
+					<li><a href="https://sanjayshankar.me/auth.md" title="auth.md — how agents authenticate with this site">auth.md</a></li>
+					<li><a href="https://sanjayshankar.me/feed/" title="RSS feed of the journal">RSS</a></li>
+				</ul>
+			</div>
+		</div>
+
+		<div class="sse-footer-bottom sans">
+			<span>© 2026 Sanjay Shankar. Architecting growth.</span>
+			<span class="sse-footer-clock"><svg class="sse-icon sse-icon-clock " width="13" height="13" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg> <span data-sse-clock>17:52</span> IST</span>
+			<a class="sse-carbon" href="https://www.websitecarbon.com/website/sanjayshankar.me" target="_blank" rel="noopener" title="Measured by Website Carbon"><span class="sse-carbon-leaf"><svg class="sse-icon sse-icon-leaf " width="12" height="12" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.5 19 2c1 2 2 4.2 2 8 0 5.5-4.8 10-10 10z"/><path d="M2 21c0-3 1.9-5.5 5-6.5"/></svg></span><span><b>0.03g CO₂</b> per view · cleaner than 96% of pages</span></a>		</div>
+	</div>
+</footer>
+
+<button type="button" class="sse-totop" id="sseToTop" aria-label="Back to top" title="Back to top" hidden><svg class="sse-icon sse-icon-arrow-up-right " width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M8 7h9v9"/></svg></button>
+
+<div class="sse-chat" id="sseChat">
+	<button type="button" class="sse-chat-launch" id="sseChatLaunch" data-sse-chat-open aria-label="Ask about my work" title="Ask the assistant about Sanjay Shankar: work, services and products" aria-expanded="false" aria-controls="sseChatPanel">
+		<span class="sse-chat-launch-ring" aria-hidden="true"></span>
+		<svg class="sse-icon sse-icon-chat sse-chat-launch-icon" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H8l-5 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>	</button>
+	<div class="sse-chat-panel" id="sseChatPanel" hidden></div>
+</div>
+
+<script type="speculationrules">
+{"prefetch":[{"source":"document","where":{"and":[{"href_matches":"/*"},{"not":{"href_matches":["/wp-*.php","/wp-admin/*","/wp-content/uploads/*","/wp-content/*","/wp-content/plugins/*","/wp-content/themes/sanjay-shankar-editorial/*","/*\\?(.+)"]}},{"not":{"selector_matches":"a[rel~=\"nofollow\"]"}},{"not":{"selector_matches":".no-prefetch, .no-prefetch a"}}]},"eagerness":"conservative"}]}
+</script>
+<script id="sse-core-js-before">
+window.SSE={"home":"https:\/\/sanjayshankar.me\/","rest":"https:\/\/sanjayshankar.me\/wp-json\/sse\/v1\/","nonce":"8de9bd74b0","ver":"3.0.0","assets":{"searchJs":"https:\/\/sanjayshankar.me\/wp-content\/themes\/sanjay-shankar-editorial\/assets\/js\/search.js?v=1788623450","searchCss":"https:\/\/sanjayshankar.me\/wp-content\/themes\/sanjay-shankar-editorial\/assets\/css\/search.css?v=1788623450","chatJs":"https:\/\/sanjayshankar.me\/wp-content\/themes\/sanjay-shankar-editorial\/assets\/js\/chat.js?v=1788623450","chatCss":"https:\/\/sanjayshankar.me\/wp-content\/themes\/sanjay-shankar-editorial\/assets\/css\/chat.css?v=1788623450","emotions":"https:\/\/sanjayshankar.me\/wp-content\/themes\/sanjay-shankar-editorial\/assets\/images\/emotions\/"},"chat":{"enabled":true,"welcome":"Hi! I'm Sanjay's assistant. Ask me about his work, services or products.","suggestions":["What services do you offer?","What is agentic SEO?","How can I contact Sanjay?"],"whatsapp":"https:\/\/wa.me\/919745145445","email":"me@sanjayshankar.me","phone":"+919745145445"},"postId":535,"exp":{"start":"2012-06-01"},"tz":"IST","i18n":{"noResults":"No results. Try a different phrase.","searching":"Searching\u2026","copied":"Link copied","chatError":"Something went wrong. Please try again or use the contact options below."}};
+//# sourceURL=sse-core-js-before
+</script>
+<script data-wp-strategy="defer" defer id="sse-core-js" src="https://sanjayshankar.me/wp-content/themes/sanjay-shankar-editorial/assets/js/core.js?ver=1788623450"></script>
+<script data-wp-strategy="defer" defer id="sse-single-js" src="https://sanjayshankar.me/wp-content/themes/sanjay-shankar-editorial/assets/js/single.js?ver=1788623450"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag('js',new Date());gtag('config','G-M053XS9BBS',{anonymize_ip:true});(function(){var l=false;function load(){if(l)return;l=true;var s=document.createElement('script');s.async=true;s.src='https://www.googletagmanager.com/gtag/js?id=G-M053XS9BBS';document.head.appendChild(s)}['scroll','keydown','pointerdown','touchstart'].forEach(function(e){addEventListener(e,load,{once:true,passive:true})});setTimeout(load,3500)})();</script>
+		</body>
+</html>

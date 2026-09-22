@@ -1,0 +1,26 @@
+{
+  // Test-only config.
+  //
+  // Deliberately OMITS the `ai` binding. Its presence makes Wrangler open a remote
+  // proxy session to Cloudflare, which requires auth and an account_id — that would
+  // break the rule that a contributor can clone, `npm test`, and get a green run
+  // offline with no key and no cost (AGENTS.md §8).
+  //
+  // Tests use the `replay` backend, so no decision model is ever contacted.
+  "name": "siteclarity-test",
+  "main": "src/index.ts",
+  "compatibility_date": "2025-09-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "vars": {
+    "DECISION_BACKEND": "replay",
+    "DECISION_MODEL": "jev-latest",
+    "MAX_PAGE_BYTES": "300000",
+    "MAX_REDIRECTS": "5",
+    "FETCH_TIMEOUT_MS": "10000",
+    "MAX_CONCURRENT_DECISIONS": "14",
+    "CONFIDENCE_THRESHOLD": "0.6",
+    "STATE_TOKEN_BUDGET": "24000",
+    "MAX_SECTIONS": "40",
+    "MIN_SECTION_WORDS": "12"
+  }
+}
