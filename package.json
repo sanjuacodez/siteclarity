@@ -11,7 +11,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "analyze": "node scripts/analyze.mjs"
+    "analyze": "node scripts/analyze.mjs",
+    "calibrate:live": "node scripts/calibrate-live.mjs"
   },
   "dependencies": {
     "hono": "^4.6.0",
