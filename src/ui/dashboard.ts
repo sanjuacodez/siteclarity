@@ -156,8 +156,6 @@ blockquote { background:var(--bg); border-left:2px solid var(--border); margin:0
 .footlinks { display:flex; gap:16px; flex-wrap:wrap; justify-content:center; margin:8px 0 }
 .footlinks a { color:var(--muted); text-decoration:none; border-bottom:1px solid transparent }
 .footlinks a:hover { color:var(--accent); border-bottom-color:var(--accent) }
-.footlinks .coffee { color:var(--warn) }
-.footlinks .coffee:hover { border-bottom-color:var(--warn) }
 .report-actions { display:flex; flex-direction:column; align-items:flex-end; gap:10px }
 .exports { display:flex; align-items:center; gap:6px; flex-wrap:wrap; justify-content:flex-end }
 .exportl { font-size:.64rem; letter-spacing:.08em; text-transform:uppercase; color:var(--muted);
@@ -371,13 +369,6 @@ footer a { color:var(--muted) }
 <p class="footlinks">
   <a href="/checks">Checks &amp; limitations</a>
   <a href="https://github.com/sanjuacodez/siteclarity" target="_blank" rel="noopener noreferrer">Source</a>
-  <a href="https://github.com/doable-team/" target="_blank" rel="noopener noreferrer">doable.team</a>
-</p>
-<p class="footlinks">
-  <a href="https://sanjayshankar.me" target="_blank" rel="noopener noreferrer">sanjayshankar.me</a>
-  <a href="https://x.com/sanjayshankarr/" target="_blank" rel="noopener noreferrer">X</a>
-  <a href="https://www.linkedin.com/in/sanjay-shankar-a6885224/" target="_blank" rel="noopener noreferrer">LinkedIn</a>
-  <a class="coffee" href="https://buymeacoffee.com/sanjayshankar" target="_blank" rel="noopener noreferrer">Buy me a coffee</a>
 </p>
 <p class="muted">Decisions by a System One model. No generative AI, so evidence cannot be invented. Reports stay in this tab.</p>
 </footer></div>
