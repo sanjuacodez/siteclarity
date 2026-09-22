@@ -168,3 +168,12 @@ with no API key, quotes must be verbatim, and the report never shows a score.
 ## Licence
 
 MIT
+
+---
+
+Built by **[Sanjay Shankar M](https://sanjayshankar.me)** · [doable.team](https://github.com/doable-team/)
+
+[sanjayshankar.me](https://sanjayshankar.me) · [X](https://x.com/sanjayshankarr/) · [LinkedIn](https://www.linkedin.com/in/sanjay-shankar-a6885224/) · [GitHub](https://github.com/sanjuacodez)
+
+If SiteClarity saved you some time, you can
+[buy me a coffee](https://buymeacoffee.com/sanjayshankar).
