@@ -8,7 +8,7 @@ import type { Question } from '../provider/types'
  * here needs free text.
  */
 
-export const QUESTION_CATALOGUE_VERSION = '0.1.0'
+export const QUESTION_CATALOGUE_VERSION = '0.2.0'
 
 /** Asked once per page, against page-scope state. */
 export const PAGE_QUESTIONS: Record<string, Question> = {
@@ -38,14 +38,24 @@ export const PAGE_QUESTIONS: Record<string, Question> = {
 
 /** Asked once per section, against section-scope state. */
 export const SECTION_QUESTIONS: Record<string, Question> = {
+  /**
+   * NOTE: this question deliberately does NOT mention position.
+   *
+   * It used to ask whether the answer appeared "near the start", and live calibration
+   * showed the model ignoring that — it returned 0.86 (yes) at 0.72 confidence for a
+   * section whose answer arrived only in the final sentence. Judged on "is the answer
+   * present" that is correct; it simply was not what the wording claimed.
+   *
+   * Position is `extraction_readiness`'s job, and it labelled that same text `buried`.
+   * Asking one question per property keeps both answerable.
+   */
   answers_heading: {
     type: 'noul',
-    instructions:
-      'The text directly answers the question or topic posed by its heading, near the start.',
+    instructions: 'The text under this heading answers what the heading asks or names.',
     criteria: {
-      true: 'A reader gets the answer from this section without hunting elsewhere.',
+      true: 'A reader looking for what the heading promises finds it in this text.',
       false:
-        'The heading promises something the text does not deliver, or the answer is buried or absent.',
+        'The heading promises something this text never delivers, however far down you read.',
     },
   },
   self_contained: {

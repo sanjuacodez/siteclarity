@@ -1,5 +1,52 @@
 # Decision-layer calibration baseline
 
+## 2026-09-23 (later) · after F27 and F28 · 19 cases
+
+```
+Agreement        18/19  (95%)     was 12/14 (86%)
+False positives  0                unchanged — the number that matters
+Overconfident    0                was 1
+Input tokens     8,028
+```
+
+| Question | Agreement |
+| --- | --- |
+| answers_heading | 4/4 |
+| self_contained | 3/3 |
+| extraction_readiness | 3/4 |
+| promotional_intensity | 4/4 |
+| entity_clarity | 2/2 |
+| claim_specificity | 2/2 |
+
+**Five adversarial near-misses were added** specifically to check that lowering the
+Choice threshold does not start inventing problems: a terse-but-complete answer, a
+compact list, prose that mentions "each rule" without being unresolved, dry technical
+copy, and mild positive framing carrying real figures. All five passed. Zero false
+positives held.
+
+### The one remaining failure is deliberate
+
+`extraction_readiness/buried` still fails. The answer genuinely sits behind three
+sentences of preamble, so `"buried"` is the right label — but the model returns
+`"ready"` at 0.39 and `"buried"` at 0.34 across runs, never confident either way. **It
+is weak at detecting burial.**
+
+Relabelling it to match the output would make the score look better and hide a real
+limitation. It stays red. Because the confidence is below the bar, the pipeline
+discards the answer rather than reporting the wrong one, so no user is misled — the
+finding is simply missing.
+
+### One label was changed, for a reason worth stating
+
+`answers_heading/answer-is-late` was relabelled from ambiguous to `true` **because the
+question changed meaning** under F27, not because of an output. It no longer claims the
+answer must appear "near the start", so a section that answers in its final sentence is
+now unambiguously a yes. Changing a label to match a reworded question is legitimate;
+changing one to match a result is not.
+
+---
+
+
 Run with `npm run calibrate:live`. Needs a real key and spends real money, so it is
 deliberately outside `npm test`.
 

@@ -2,6 +2,7 @@ import type { DecisionBackend, Question, Answer } from '../provider/types'
 import { BackendUnavailable } from '../provider/types'
 import type { ScopedState } from './state'
 import { logger } from '../lib/logger'
+import { thresholdFor } from './thresholds'
 
 export interface DecisionOutcome {
   refId: string
@@ -78,9 +79,13 @@ export async function runDecisions(
 }
 
 /**
- * Confidence gate. Below the threshold the answer is discarded rather than reported —
+ * Confidence gate. Below the bar the answer is discarded rather than reported —
  * `cannot_assess` is a first-class outcome and is always preferable to a guess.
+ *
+ * The bar varies by primitive: a four-option Choice cannot reach the same confidence
+ * as a two-way Noul, and holding both to one number silently threw away correct
+ * answers (finding F28). See `thresholds.ts`.
  */
-export function isConfident(answer: Answer, threshold: number): boolean {
-  return answer.confidence >= threshold
+export function isConfident(answer: Answer, fallback: number): boolean {
+  return answer.confidence >= thresholdFor(answer, fallback)
 }

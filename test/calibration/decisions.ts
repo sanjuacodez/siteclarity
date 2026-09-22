@@ -55,8 +55,12 @@ export const DECISION_CASES: DecisionCase[] = [
       'Browser support is something we take seriously, and our approach has evolved a lot ' +
       'over the years as the web has changed and standards have matured across vendors. ' +
       'Acme Checkout supports Chrome, Firefox, Safari and Edge from their last two releases.'),
-    expect: null,
-    why: 'The answer is present but buried behind filler — a defensible yes or no.',
+    expect: true,
+    why:
+      'RELABELLED 2026-09-23 because the QUESTION changed, not because of an output. ' +
+      'It used to claim the answer must appear "near the start", which made this case ' +
+      'ambiguous. It now asks whether the answer is present at all, however far down — ' +
+      'and it plainly is. Burial is `extraction_readiness`\u2019s job.',
   },
 
   // ---- self_contained ------------------------------------------------------
@@ -106,7 +110,13 @@ export const DECISION_CASES: DecisionCase[] = [
       'the host platform, which has guided every decision we have made since 2019. ' +
       'Yes, Acme Checkout works with WooCommerce 7.0 and later.'),
     expect: 'buried',
-    why: 'The answer exists but sits behind three sentences of preamble.',
+    why:
+      'KNOWN FAILURE, kept deliberately. The answer sits behind three sentences of ' +
+      'preamble, so "buried" is right — but the model returns "ready" at 0.39 and ' +
+      '"buried" at 0.34 across runs, never confident either way. It is weak at ' +
+      'detecting burial. Relabelling this to match the output would hide a real ' +
+      'limitation; leaving it red keeps the gap visible. The low confidence means the ' +
+      'pipeline discards it rather than reporting the wrong thing, so nobody is misled.',
   },
 
   // ---- promotional_intensity (rubric index, 0 = factual, 4 = all superlatives)
@@ -157,6 +167,54 @@ export const DECISION_CASES: DecisionCase[] = [
     },
     expect: false,
     why: 'Only "we" and "our platform"; nothing identifies the subject.',
+  },
+
+  // ---- adversarial: near-misses that must NOT fire --------------------------
+  //
+  // Added to validate the per-primitive thresholds from F28. Lowering the Choice bar
+  // recovers correct answers like `buried`; these exist to prove it does not also
+  // start reporting problems that are not there.
+  {
+    id: 'adversarial/short-but-complete',
+    question: 'answers_heading',
+    state: sec('Is there a free trial?', 'No. Acme Checkout has no free trial, but every licence is refundable for 30 days.'),
+    expect: true,
+    why: 'Terse is not the same as unanswered — a two-sentence answer is still an answer.',
+  },
+  {
+    id: 'adversarial/list-answer',
+    question: 'extraction_readiness',
+    state: sec('Which payment gateways are supported?',
+      'Acme Checkout works with Stripe, PayPal, Adyen and Mollie. Support for Klarna is planned for 2026.'),
+    expect: 'ready',
+    why: 'A compact factual list is the most extractable shape there is; flagging it would be a false positive.',
+  },
+  {
+    id: 'adversarial/confident-prose',
+    question: 'self_contained',
+    state: sec('Validation rules',
+      'Validation rules run when a buyer submits the checkout form. Each rule names the field it ' +
+      'guards, so a rule can be read on its own without seeing the others.'),
+    expect: true,
+    why: 'Mentions "each rule" but defines it in place; not every reference is an unresolved one.',
+  },
+  {
+    id: 'adversarial/technical-not-promotional',
+    question: 'promotional_intensity',
+    state: sec('Caching behaviour',
+      'Field definitions are cached for 300 seconds. The cache is cleared automatically when a ' +
+      'rule changes, and can be flushed manually from the settings screen.'),
+    expect: 0,
+    why: 'Dry technical prose. Scoring this as promotional would be a clear false positive.',
+  },
+  {
+    id: 'adversarial/mild-positive',
+    question: 'promotional_intensity',
+    state: sec('Why merchants use it',
+      'Acme Checkout is a reliable way to add checkout fields. Most stores finish setup in ' +
+      'about ten minutes, and the plugin has 40,000 active installs.'),
+    expect: 1,
+    why: 'Light positive framing carrying real figures — not the same as empty hype.',
   },
 
   // ---- claim specificity ---------------------------------------------------

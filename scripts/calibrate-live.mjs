@@ -17,7 +17,7 @@
  */
 import { readFileSync } from 'node:fs'
 
-const CONFIDENCE_THRESHOLD = 0.6
+const GLOBAL_THRESHOLD = 0.6
 
 function loadEnv() {
   const cfg = {}
@@ -62,6 +62,15 @@ async function loadCatalogue() {
 
 const loadCases = () => loadTs('test/calibration/decisions.ts', 'DECISION_CASES')
 
+/**
+ * The reporting bar must be the SAME one the app uses, or this measures a pipeline
+ * nobody runs. Loaded from source rather than re-typed.
+ */
+let thresholdFor = null
+async function loadThresholds() {
+  thresholdFor = await loadTs('src/semantic/thresholds.ts', 'thresholdFor')
+}
+
 async function ask(env, state, id, question) {
   const res = await fetch('https://api.typesafe.ai/v1/systemone', {
     method: 'POST',
@@ -81,7 +90,7 @@ async function ask(env, state, id, question) {
 }
 
 function verdict(c, a) {
-  const confident = a.confidence >= CONFIDENCE_THRESHOLD
+  const confident = a.confidence >= thresholdFor(a, GLOBAL_THRESHOLD)
   if (c.expect === null) {
     return confident
       ? { ok: false, kind: 'overconfident', got: describe(a) }
@@ -122,6 +131,7 @@ async function main() {
     process.exit(1)
   }
 
+  await loadThresholds()
   const catalogue = await loadCatalogue()
   const cases = await loadCases()
 
@@ -138,7 +148,8 @@ async function main() {
       const v = verdict(c, a)
       rows.push({ c, v })
       const flag = v.ok ? '  ok  ' : ' FAIL '
-      console.log(`${flag}${c.id.padEnd(40)} ${v.got.padEnd(14)} conf ${a.confidence.toFixed(2)}  ${v.kind}`)
+      const bar = thresholdFor(a, GLOBAL_THRESHOLD)
+      console.log(`${flag}${c.id.padEnd(40)} ${v.got.padEnd(14)} conf ${a.confidence.toFixed(2)}/${bar.toFixed(2)}  ${v.kind}`)
       if (!v.ok) console.log(`        expected ${JSON.stringify(c.expect)} — ${c.why}`)
     } catch (e) {
       console.log(` ERR  ${c.id.padEnd(40)} ${e.message}`)
