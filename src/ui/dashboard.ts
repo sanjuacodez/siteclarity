@@ -153,6 +153,32 @@ blockquote { background:var(--bg); border-left:2px solid var(--border); margin:0
   padding:7px 14px; font-size:.78rem; font-weight:650; border-radius:9px; cursor:pointer }
 .copy-all:hover { border-color:var(--accent) }
 .prompt-hint { font-size:.7rem }
+.progress-card { background:var(--surface); border:1px solid var(--border); border-radius:14px;
+  padding:20px 22px }
+.progress-head { display:flex; justify-content:space-between; align-items:baseline; gap:12px }
+.elapsed { font-variant-numeric:tabular-nums; color:var(--muted); font-size:.82rem }
+.stages { list-style:none; margin:16px 0 0; padding:0; display:flex; flex-direction:column; gap:9px }
+.stage { display:flex; align-items:center; gap:10px; font-size:.86rem; color:var(--muted);
+  opacity:.5; transition:opacity .18s, color .18s }
+.stage.active, .stage.done { opacity:1 }
+.stage.active { color:var(--text) }
+.stage.done { color:var(--accent) }
+.dot { width:9px; height:9px; border-radius:50%; background:var(--border); flex:none;
+  transition:background .18s, box-shadow .18s }
+.stage.active .dot { background:var(--accent); box-shadow:0 0 0 4px var(--accent-soft);
+  animation:pulse 1s ease-in-out infinite }
+.stage.done .dot { background:var(--accent) }
+@keyframes pulse { 0%,100% { box-shadow:0 0 0 2px var(--accent-soft) }
+  50% { box-shadow:0 0 0 6px var(--accent-soft) } }
+.pbar { height:3px; background:var(--border); border-radius:99px; margin-top:18px; overflow:hidden }
+.pbar div { height:100%; width:0; background:var(--accent); border-radius:99px;
+  transition:width .14s linear }
+.speedline { font-size:.76rem; color:var(--muted); margin:8px 0 0 }
+.speedline strong { color:var(--accent); font-weight:650 }
+@media (prefers-reduced-motion: reduce) {
+  .stage, .dot, .pbar div { transition:none }
+  .stage.active .dot { animation:none }
+}
 .footlinks { display:flex; gap:16px; flex-wrap:wrap; justify-content:center; margin:8px 0 }
 .footlinks a { color:var(--muted); text-decoration:none; border-bottom:1px solid transparent }
 .footlinks a:hover { color:var(--accent); border-bottom-color:var(--accent) }
@@ -412,12 +438,102 @@ function setBusy(value) {
   $('f').setAttribute('aria-busy', String(value));
 }
 function showOutput(html, focus) {
+  // Any render that is not the loading card means the work is over.
+  if (html.indexOf('progress-card') === -1) stopStages();
   $('empty').hidden = true; $('out').hidden = false; $('out').innerHTML = html;
   if (focus) { $('out').focus({ preventScroll: true }); $('out').scrollIntoView({ block:'start' }); }
 }
 function announce(message) { $('status').textContent = message; }
+/**
+ * Loading state, paced against what the pipeline actually costs.
+ *
+ * Measured on a real page: fetching it ~500 ms, extraction ~10 ms, and Jev ~395 ms for
+ * five calls. A single indeterminate spinner hides that and makes a sub-second audit
+ * feel slow; showing the stages lets the fast ones visibly snap past, which is the
+ * honest impression.
+ *
+ * These durations only pace the display. The moment the response lands the strip jumps
+ * to done, so the animation can finish early but never lag reality — an animation that
+ * outlives its request is just a lie about how long the work took.
+ */
+const STAGES = [
+  { id: 'fetch', label: 'Fetching the page', ms: 550 },
+  { id: 'read', label: 'Reading structure', ms: 60 },
+  { id: 'static', label: 'Checking markup and language', ms: 90 },
+  { id: 'judge', label: 'Judging each section', ms: 420 },
+];
+
+let stageTimer = null;
+let stageStart = 0;
+let speedHtml = '';
+
 function loading(title, detail) {
-  return '<div class="card progress"><span class="spin" aria-hidden="true"></span><div><strong id="progress-title">' + esc(title) + '</strong><p id="progress-detail">' + esc(detail) + '</p></div></div>';
+  return '<div class="card progress-card">' +
+    '<div class="progress-head"><strong id="progress-title">' + esc(title) + '</strong>' +
+    '<span class="elapsed" id="progress-elapsed">0.0s</span></div>' +
+    '<p class="sub" id="progress-detail">' + esc(detail) + '</p>' +
+    '<ol class="stages" id="stages">' +
+    STAGES.map(st => '<li class="stage" data-s="' + st.id + '">' +
+      '<span class="dot" aria-hidden="true"></span>' +
+      '<span class="stage-label">' + esc(st.label) + '</span></li>').join('') +
+    '</ol><div class="pbar"><div id="pbar-fill"></div></div></div>';
+}
+
+function startStages() {
+  // Decoration must never be able to break an audit, so every entry point here is
+  // guarded and any failure simply means no animation.
+  if (typeof setInterval !== 'function' || !document.querySelectorAll) return;
+  stopStages();
+  stageStart = Date.now();
+  const total = STAGES.reduce((n, st) => n + st.ms, 0);
+  let reduced = false;
+  try {
+    reduced = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  } catch (err) { reduced = true; }
+
+  const tick = () => {
+    try { paint(); } catch (err) { stopStages(); }
+  };
+
+  const paint = () => {
+    const elapsed = Date.now() - stageStart;
+    const el = $('progress-elapsed');
+    if (el) el.textContent = (elapsed / 1000).toFixed(1) + 's';
+    if (!document.querySelector) return;
+
+    let acc = 0;
+    for (const st of STAGES) {
+      const node = document.querySelector('.stage[data-s="' + st.id + '"]');
+      if (!node || !node.classList) continue;
+      const done = elapsed > acc + st.ms;
+      const active = !done && elapsed > acc;
+      node.classList.toggle('done', done);
+      node.classList.toggle('active', active);
+      acc += st.ms;
+    }
+    const fill = $('pbar-fill');
+    // Hold short of the end: the request, not the clock, decides when this finishes.
+    if (fill && fill.style) fill.style.width = Math.min(92, (elapsed / total) * 92) + '%';
+  };
+
+  tick();
+  if (!reduced) stageTimer = setInterval(tick, 80);
+}
+
+function stopStages() {
+  if (stageTimer) { clearInterval(stageTimer); stageTimer = null; }
+}
+
+/** Snap everything to complete, however early the response arrived. */
+function finishStages() {
+  stopStages();
+  try {
+    document.querySelectorAll('.stage').forEach(n => {
+      n.classList.toggle('done', true); n.classList.toggle('active', false);
+    });
+    const fill = $('pbar-fill');
+    if (fill && fill.style) fill.style.width = '100%';
+  } catch (err) { /* nothing to finish */ }
 }
 function renderErr(data) {
   return '<div class="card err" role="alert"><h2>We couldn’t complete this audit</h2><p>' +
@@ -519,10 +635,12 @@ $('f').addEventListener('submit', async e => {
   setBusy(true); activeReport = null; exportCtx = null; activeFilter = 'all'; announce('Audit started.');
   try {
     if (currentMode() === 'page') {
-      showOutput(loading('Reading your page…', 'Checking structure, content and answer readiness. Keep this tab open.'), false);
+      showOutput(loading('Auditing your page', 'Structure and language checks run locally; each section is judged separately.'), false);
+      startStages();
       const data = await requestPage($('u').value.trim());
       activeReport = data;
       exportCtx = { kind: 'page', reports: [data] };
+      try { finishStages(); speedHtml = speedLine(data); } catch (err) { speedHtml = ''; }
       showOutput(render(data), true); announce('Audit complete. ' + data.findings.length + ' findings.');
     } else if (currentMode() === 'site') {
       await scanSite($('us').value.trim(), Number($('np').value));
@@ -579,9 +697,30 @@ function summaryCards(c) {
     [['',c.count,'Total findings'],['high',c.high,'Fix first'],['medium',c.medium,'Worth doing'],['low',c.low,'Minor']].map(x =>
     '<div class="metric ' + x[0] + '"><b>' + x[1] + '</b><span>' + x[2] + '</span></div>').join('') + '</div>';
 }
+/**
+ * The speed line. Jev is the fast part of this pipeline — showing the measured figure
+ * is more convincing than any animation, and it is a real number from the response
+ * rather than a claim.
+ */
+function speedLine(d) {
+  const t = d.timings || {};
+  const p = d.provider || {};
+  if (!t.totalMs) return '';
+  const bits = [];
+  if (p.calls) {
+    bits.push('<strong>' + p.calls + '</strong> section' + (p.calls === 1 ? '' : 's') +
+      ' judged in <strong>' + t.decideMs + ' ms</strong>');
+  }
+  bits.push('page fetched in ' + Math.max(0, t.totalMs - (t.extractMs || 0) - (t.decideMs || 0)) + ' ms');
+  bits.push('read in ' + (t.extractMs || 0) + ' ms');
+  return '<p class="speedline">' + bits.join(' · ') + ' · <strong>' +
+    (t.totalMs / 1000).toFixed(1) + 's</strong> total' +
+    (p.model ? ' · ' + esc(p.model) : '') + '</p>';
+}
+
 function reportHeading(title, description, badge) {
   return '<div class="report-top"><div><div class="eyebrow">Your audit report</div><h2>' + esc(title) +
-    '</h2><p class="sub">' + esc(description) + '</p></div>' +
+    '</h2><p class="sub">' + esc(description) + '</p>' + (speedHtml || '') + '</div>' +
     '<div class="report-actions"><span class="badge">' + esc(badge) + '</span>' +
     '<div class="exports"><span class="exportl">Save as</span>' +
     '<button type="button" class="exp" data-x="md">Markdown</button>' +
@@ -721,6 +860,7 @@ function findingsBody(d, filter) {
 }
 function renderSite(results, sm, failures, partial) {
   activeReport = null;
+  speedHtml = '';
   exportCtx = { kind: 'site', reports: results, meta: sm };
   const all = results.flatMap(r => r.findings);
   const c = countFindings(all);

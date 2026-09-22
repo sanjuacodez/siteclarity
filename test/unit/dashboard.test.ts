@@ -624,3 +624,53 @@ describe('export', () => {
     expect(js).toContain('r.limits.statements')
   })
 })
+
+describe('loading animation', () => {
+  const js = script
+
+  it('shows the real pipeline stages, not a bare spinner', () => {
+    expect(js).toContain('Fetching the page')
+    expect(js).toContain('Reading structure')
+    expect(js).toContain('Judging each section')
+  })
+
+  it('paces stages against measured durations', () => {
+    // fetch ~500ms, extract ~10ms, jev ~395ms on a real page. The fast stages must be
+    // visibly fast or a sub-second audit feels slow.
+    const stages = new Function(
+      js.slice(js.indexOf('const STAGES =')).split('\nlet stageTimer')[0] + '; return STAGES;',
+    )()
+    const fetchMs = stages.find((s: { id: string }) => s.id === 'fetch').ms
+    const readMs = stages.find((s: { id: string }) => s.id === 'read').ms
+    expect(readMs).toBeLessThan(fetchMs / 4)
+    expect(stages.reduce((n: number, s: { ms: number }) => n + s.ms, 0)).toBeLessThan(1500)
+  })
+
+  it('never outlives the request', () => {
+    // The bar holds short of the end and only completes when the response lands, so
+    // the animation can finish early but never lag reality.
+    expect(js).toContain('Math.min(92,')
+    expect(js).toContain('function finishStages')
+    expect(js).toContain("fill.style.width = '100%'")
+  })
+
+  it('cannot break an audit if the DOM is unlike a browser', () => {
+    expect(js).toContain("typeof setInterval !== 'function'")
+    expect(js).toMatch(/try \{ paint\(\); \} catch/)
+  })
+
+  it('stops the timer as soon as anything else renders', () => {
+    expect(js).toContain("if (html.indexOf('progress-card') === -1) stopStages()")
+  })
+
+  it('reports the measured speed rather than claiming it', () => {
+    expect(js).toContain('function speedLine')
+    expect(js).toContain('judged in <strong>')
+    expect(js).toContain('t.decideMs')
+  })
+
+  it('respects reduced motion', () => {
+    expect(js).toContain('prefers-reduced-motion')
+    expect(DASHBOARD_HTML).toContain('@media (prefers-reduced-motion: reduce)')
+  })
+})
