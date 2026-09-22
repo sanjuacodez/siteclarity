@@ -9,7 +9,7 @@ traffic estimate. It answers one question: *what should I change next?*
 Free, open source, and built as a practical application of
 **[Jev](https://typesafe.ai)** — TypeSafe AI's System One decision model.
 
-> **Live:** _pending first deploy_
+> **Live:** https://siteclarity.sanjay-shankar.workers.dev
 > **Source:** https://github.com/sanjuacodez/siteclarity
 
 ---
@@ -82,11 +82,17 @@ page's findings.
 
 ## Your own API key, stored in your browser
 
-The hosted instance holds **no credentials**. Paste your own
-[TypeSafe Jev](https://typesafe.ai) key into the API key box and it is saved in your
-browser's local storage — sent with each audit request, never stored on the server.
+The hosted instance holds **no credentials at all**, so it cannot spend anyone's quota
+but your own. Paste your [TypeSafe Jev](https://typesafe.ai) key into the API key box
+and it is saved in your browser's local storage — sent with each audit request, never
+written to the server.
 
-Without a key you still get the full deterministic analysis, clearly marked as partial.
+It is stored in `localStorage` rather than a cookie on purpose: a cookie is attached
+automatically to every request the browser makes to the origin, which puts the key in
+far more places than it needs to be.
+
+**Without a key** you still get the full structural analysis — structured data, heading
+hierarchy, extractability, vague language — clearly marked as partial in the report.
 
 ## Swap the model
 
