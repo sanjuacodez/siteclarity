@@ -498,3 +498,30 @@ describe('bring-your-own API key', () => {
     expect(DASHBOARD_HTML).toMatch(/shared machine|can read the key/i)
   })
 })
+
+describe('key requirement gate', () => {
+  const js = script
+
+  it('reads the requirement from a server-stamped meta tag, not a network probe', () => {
+    expect(DASHBOARD_HTML).toContain('name="sc-requires-key" content="0"')
+    expect(js).toContain('readNeedsKey')
+    // A probe would race first paint and consume a request on every page load.
+    expect(js).not.toContain("fetch('/health')")
+  })
+
+  it('blocks submission when a key is required but not saved', () => {
+    expect(js).toContain('if (needsKey && !loadKey() && !skipKeyOnce) { promptForKey(); return; }')
+    expect(js).toContain('Add your Jev API key to run an audit.')
+  })
+
+  it('still offers the deterministic-only path', () => {
+    // The static layer works with no model at all; hiding that would be dishonest.
+    expect(js).toContain("id=\"skip-key\"")
+    expect(js).toContain('Run structure checks only, without a key')
+    expect(js).toContain('skipKeyOnce = true')
+  })
+
+  it('uses classList.toggle only, which is what elements here implement', () => {
+    expect(js).not.toMatch(/classList\.(add|remove)\(/)
+  })
+})

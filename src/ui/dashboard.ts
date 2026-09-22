@@ -7,6 +7,7 @@ export const DASHBOARD_HTML = `<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<meta name="sc-requires-key" content="0">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light dark">
 <title>SiteClarity — Answer readiness audit</title>
@@ -152,6 +153,8 @@ blockquote { background:var(--bg); border-left:2px solid var(--border); margin:0
   padding:7px 14px; font-size:.78rem; font-weight:650; border-radius:9px; cursor:pointer }
 .copy-all:hover { border-color:var(--accent) }
 .prompt-hint { font-size:.7rem }
+.keybox.needed { border-color:var(--warn); background:var(--warn-soft) }
+.keybox.needed > summary { color:var(--warn) }
 .keybox { border:1px solid var(--border); border-radius:12px; margin:0 0 14px; background:var(--surface) }
 .keybox > summary { cursor:pointer; padding:11px 15px; font-size:.82rem; font-weight:600; list-style:none }
 .keybox > summary::-webkit-details-marker { display:none }
@@ -278,7 +281,7 @@ footer a { color:var(--muted) }
         <button type="button" id="tab-site" class="mtab" role="tab" aria-selected="false" aria-controls="pane-site" tabindex="-1" data-m="site">Site scan</button>
         <button type="button" id="tab-list" class="mtab" role="tab" aria-selected="false" aria-controls="pane-list" tabindex="-1" data-m="list">URL list</button>
       </div>
-<details class="keybox">
+<details class="keybox" id="keybox">
   <summary>API key <span class="muted" id="key-status"></span></summary>
   <div class="keybody">
     <p class="muted">Paste your own <a href="https://typesafe.ai" target="_blank" rel="noopener noreferrer">TypeSafe Jev</a> key to run audits against your own account. It is stored in this browser only, sent with each audit request, and never saved on the server.</p>
@@ -398,6 +401,13 @@ document.addEventListener('input', e => {
 document.addEventListener('click', e => {
   // Copy-prompt lives inside the existing delegated handler on purpose: a second
   // document-level click listener competes with this one rather than composing with it.
+  if (e.target.id === 'skip-key') {
+    // The deterministic layer genuinely works without a model, so offer it rather than
+    // implying a key is the only route to anything useful.
+    skipKeyOnce = true;
+    $('f').dispatchEvent(new Event('submit', { cancelable: true }));
+    return;
+  }
   if (e.target.id === 'key-save') {
     const input = $('key-input');
     const value = input.value.trim();
@@ -442,6 +452,8 @@ $('f').addEventListener('submit', async e => {
   e.preventDefault();
   if (busy) return;
   if (currentMode() === 'list' && !validateList()) { $('ul').reportValidity(); return; }
+  if (needsKey && !loadKey() && !skipKeyOnce) { promptForKey(); return; }
+  skipKeyOnce = false;
   setBusy(true); activeReport = null; activeFilter = 'all'; announce('Audit started.');
   try {
     if (currentMode() === 'page') {
@@ -575,6 +587,20 @@ function pageRow(r, i) {
  */
 const KEY_STORE = 'siteclarity.jevKey';
 
+/**
+ * Whether this deployment expects the visitor to supply their own key.
+ *
+ * Read from a meta tag the Worker stamps at serve time, not probed over the network:
+ * it costs no request and is correct on first paint.
+ */
+let needsKey = false;
+let skipKeyOnce = false;
+
+function readNeedsKey() {
+  const m = document.querySelector('meta[name="sc-requires-key"]');
+  return !!m && m.getAttribute('content') === '1';
+}
+
 function loadKey() {
   try { return localStorage.getItem(KEY_STORE) || ''; } catch (err) { return ''; }
 }
@@ -584,6 +610,22 @@ function saveKey(value) {
     return true;
   } catch (err) { return false; }
 }
+function promptForKey() {
+  const box = $('keybox');
+  if (box) { box.open = true; box.classList.toggle('needed', true); }
+  showOutput(
+    '<div class="card err"><strong>Add your Jev API key to run an audit.</strong>' +
+    '<p class="sub">This site keeps no keys of its own, so audits run on your own ' +
+    '<a href="https://typesafe.ai" target="_blank" rel="noopener noreferrer">TypeSafe</a> ' +
+    'account. Paste your key in the API key box above — it is saved in this browser only.</p>' +
+    '<p><button type="button" id="skip-key" class="ghost">Run structure checks only, without a key</button></p></div>',
+    true,
+  );
+  announce('An API key is required before running an audit.');
+  const input = $('key-input');
+  if (input) input.focus();
+}
+
 function analyzeHeaders() {
   const h = { 'content-type': 'application/json' };
   const k = loadKey();
@@ -600,16 +642,21 @@ function renderKeyState() {
   const status = $('key-status');
   const input = $('key-input');
   if (!status || !input) return;
+  const box = $('keybox');
+  if (box) box.classList.toggle('needed', needsKey && !k);
   if (k) {
     status.textContent = 'Saved in this browser: ' + maskKey(k);
     input.value = '';
     input.placeholder = 'Enter a new key to replace it';
   } else {
-    status.textContent = 'No key saved. This deployment will use its own configured model.';
+    status.textContent = needsKey
+      ? '— required to run a full audit'
+      : 'No key saved. This deployment uses its own configured model.';
     input.placeholder = 'Paste your TypeSafe Jev API key';
   }
 }
 
+needsKey = readNeedsKey();
 renderKeyState();
 
 function resetPrompts() { __prompts.length = 0; }

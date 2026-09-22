@@ -10,6 +10,10 @@ export interface FetchedPage {
   finalUrl: string
   html: string
   bytes: number
+  /** Bytes the page actually had, when more than we read. */
+  totalBytes: number | null
+  /** True when only the first `bytes` of the page were analysed. */
+  truncated: boolean
   redirectChain: string[]
   robotsAllowed: boolean
   robotsReason: string | null
@@ -62,10 +66,7 @@ export async function fetchPage(start: URL, config: Config): Promise<Result<Fetc
       return err('not_html', `Expected HTML, got "${contentType || 'unknown'}"`)
     }
 
-    const declared = Number(res.headers.get('content-length') ?? '0')
-    if (declared > config.maxPageBytes) {
-      return err('too_large', `Page is ${declared} bytes, limit is ${config.maxPageBytes}`)
-    }
+    const declared = Number(res.headers.get('content-length') ?? '0') || null
 
     const read = await readCapped(res, config.maxPageBytes)
     if (!read.ok) return read
@@ -75,6 +76,8 @@ export async function fetchPage(start: URL, config: Config): Promise<Result<Fetc
       finalUrl: current.toString(),
       html: read.value.text,
       bytes: read.value.bytes,
+      totalBytes: declared,
+      truncated: read.value.truncated,
       redirectChain: chain,
       robotsAllowed: robots.allowed,
       robotsReason: robots.reason,
@@ -85,27 +88,40 @@ export async function fetchPage(start: URL, config: Config): Promise<Result<Fetc
   return err('fetch_failed', `Exceeded ${config.maxRedirects} redirects`)
 }
 
-/** Stream with a hard byte cap so an oversized body is never fully buffered. */
+/**
+ * Read up to `maxBytes` and stop.
+ *
+ * Real marketing pages routinely run past a megabyte, and the byte cap exists for the
+ * 10 ms CPU limit, not because a large page is suspicious. Rejecting one outright made
+ * the tool useless on most of the sites people actually want to audit — cloudflare.com
+ * is 1.3 MB. So we analyse what fits and disclose the truncation in the limits block.
+ *
+ * HTMLRewriter tolerates HTML that stops mid-document, and the cut always lands after
+ * the head and the opening body content, which is where the analysable material is.
+ */
 async function readCapped(
   res: Response,
   maxBytes: number,
-): Promise<Result<{ text: string; bytes: number }>> {
+): Promise<Result<{ text: string; bytes: number; truncated: boolean }>> {
   const reader = res.body?.getReader()
   if (!reader) return err('fetch_failed', 'Response had no body')
 
   const chunks: Uint8Array[] = []
   let total = 0
+  let truncated = false
   while (true) {
     const { done, value } = await reader.read()
     if (done) break
-    if (value) {
-      total += value.byteLength
-      if (total > maxBytes) {
-        await reader.cancel()
-        return err('too_large', `Page exceeds ${maxBytes} bytes`)
-      }
-      chunks.push(value)
+    if (!value) continue
+    if (total + value.byteLength > maxBytes) {
+      chunks.push(value.subarray(0, maxBytes - total))
+      total = maxBytes
+      truncated = true
+      await reader.cancel()
+      break
     }
+    total += value.byteLength
+    chunks.push(value)
   }
 
   const buf = new Uint8Array(total)
@@ -114,7 +130,7 @@ async function readCapped(
     buf.set(c, offset)
     offset += c.byteLength
   }
-  return ok({ text: new TextDecoder().decode(buf), bytes: total })
+  return ok({ text: new TextDecoder().decode(buf), bytes: total, truncated })
 }
 
 /**

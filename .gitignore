@@ -15,3 +15,7 @@ dist/
 # OS / editor
 .DS_Store
 *.log
+
+# Working backups of planning docs — history lives in git, not in .prev files
+*.prev
+*.rev[0-9]

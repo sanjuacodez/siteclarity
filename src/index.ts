@@ -31,7 +31,17 @@ import { renderChecksPage } from './ui/checks'
 
 const app = new Hono<{ Bindings: AppEnv }>()
 
-app.get('/', (c) => c.html(DASHBOARD_HTML))
+app.get('/', (c) => {
+  const config = loadConfig(c.env)
+  // Tell the page up front whether this deployment has any credentials of its own.
+  // Stamping it here avoids a client-side probe and is correct on first paint.
+  const requiresKey = !config.jevApiKey && !c.env.AI
+  return c.html(
+    requiresKey
+      ? DASHBOARD_HTML.replace('name="sc-requires-key" content="0"', 'name="sc-requires-key" content="1"')
+      : DASHBOARD_HTML,
+  )
+})
 
 app.get('/checks', (c) => c.html(renderChecksPage()))
 
@@ -235,6 +245,7 @@ app.post('/api/analyze', async (c) => {
       statements: buildLimitStatements({
         degraded,
         degradedReason,
+        needsKey: !config.jevApiKey && !c.env.AI,
         stateSplit,
         langSupported,
         lang: doc.lang,
@@ -243,6 +254,9 @@ app.post('/api/analyze', async (c) => {
         sectionsTotal: substantiveTotal,
         testimonialSections: testimonialSections.size,
         linkCardSections: linkCardSections.size,
+        truncated: fetched.value.truncated,
+        bytesRead: fetched.value.bytes,
+        totalBytes: fetched.value.totalBytes,
       }),
       decisionsRan: !degraded && sectionRun.outcomes.length > 0,
       sectionsAnalyzed: sectionRun.outcomes.length,
@@ -295,6 +309,7 @@ app.post('/api/analyze', async (c) => {
 function buildLimitStatements(ctx: {
   degraded: boolean
   degradedReason: string | null
+  needsKey: boolean
   stateSplit: boolean
   langSupported: boolean
   lang: string | null
@@ -303,13 +318,20 @@ function buildLimitStatements(ctx: {
   sectionsTotal: number
   testimonialSections: number
   linkCardSections: number
+  truncated: boolean
+  bytesRead: number
+  totalBytes: number | null
 }): string[] {
   const out = [
     'Only the single page you submitted was analysed. This is not an assessment of the whole site.',
   ]
   if (ctx.degraded) {
+    // Say what the reader can do about it. "AI binding not configured" is true but
+    // useless to someone who just wants a full report.
     out.push(
-      `The decision model was unavailable (${ctx.degradedReason ?? 'unknown'}), so only deterministic checks ran. Semantic judgments are missing.`,
+      ctx.needsKey
+        ? 'No API key was supplied, so only the structural checks ran. Add your Jev API key to also check whether each section actually answers its heading, reads on its own, and avoids empty marketing language.'
+        : `The decision model could not be reached (${ctx.degradedReason ?? 'unknown reason'}), so only the structural checks ran. The meaning-based findings are missing from this report.`,
     )
   }
   if (ctx.stateSplit) {
@@ -323,6 +345,11 @@ function buildLimitStatements(ctx: {
   if (ctx.testimonialSections > 0) {
     out.push(
       `${ctx.testimonialSections} ${ctx.testimonialSections === 1 ? 'section looks' : 'sections look'} like customer reviews or testimonials and ${ctx.testimonialSections === 1 ? 'was' : 'were'} skipped — they are not content you can rewrite.`,
+    )
+  }
+  if (ctx.truncated) {
+    out.push(
+      `This page is larger than we can process in one pass, so only the first ${Math.round(ctx.bytesRead / 1000)} KB were analysed${ctx.totalBytes ? ` of about ${Math.round(ctx.totalBytes / 1000)} KB` : ''}. Anything further down the page was not looked at.`,
     )
   }
   if (ctx.linkCardSections > 0) {
