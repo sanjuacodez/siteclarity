@@ -5,35 +5,37 @@
 ```bash
 npm install
 npm test        # must pass offline, with no API key and no cost
-npm run dev
+npm run dev     # http://localhost:8787
 ```
 
-If `npm test` needs a key or a network call, that is a bug — please report it. Tests use the
-`replay` backend against recorded fixtures, and `wrangler.test.jsonc` deliberately omits the
-`ai` binding so no remote session is opened.
-
-## Before you start
-
-Read **`AGENTS.md`** in full. It is the working agreement for everyone — human or AI — and
-covers the invariants, scope rules, and what "done" means. It is short.
-
-Then: `planning/DECISIONS.md` for frozen decisions, `tasks/INDEX.md` for current status.
+If `npm test` ever needs a key or a network call, that is a bug — please report it. Tests
+use a `replay` backend against recorded fixtures, and `wrangler.test.jsonc` deliberately
+omits the Workers AI binding so no remote session is opened.
 
 ## The rules that matter most
 
-1. **Evidence is never model-authored.** Quotes are verbatim substrings of stored passages, looked up by ID.
-2. **No scores.** No grade, rank, percentage, or overall rating — anywhere.
-3. **Free tier only.** Nothing requiring a paid plan or a card on file.
-4. **10 ms CPU.** A correctness limit, not a performance target: exceeding it fails the request.
-5. **Stay in scope.** Found something else broken? Log it in `tasks/FINDINGS.md` and carry on.
+1. **Evidence is never invented.** Every quote must be a verbatim substring of a stored
+   passage, looked up by ID. The decision model returns typed values only and cannot
+   write prose — keep it that way.
+2. **No scores.** No grade, rank, percentage or overall rating, anywhere, including in
+   the UI. A per-question rubric `score` is an index into a legend, not a page grade;
+   render the label, never the number.
+3. **Free tier only.** Nothing that requires a paid Cloudflare plan or a card on file.
+4. **10 ms CPU per request.** This is a correctness limit, not a performance target —
+   exceeding it fails the request outright. `npm test` enforces an 8 ms budget.
+5. **Say what was not checked.** Every report carries a limits block. Keep it honest.
+
+## Editing the interface
+
+`src/ui/dashboard.ts` is a TypeScript template literal containing HTML, CSS and
+JavaScript, so **a single backslash in your JavaScript is consumed before the browser
+sees it**. Inside a regex, double every backslash: `\\s`, `\\/`, `\\n`, `\\]`. Never let
+`$` and `{` sit adjacent.
+
+A syntax error anywhere in that script means nothing renders at all — no error, just an
+inert page. `npm test` compiles the emitted script and fails on it; never skip it.
 
 ## Pull requests
 
-One task per branch. Include the real output of your task's validation commands — not a
-summary, and never with failing or skipped tests.
-
-```
-SC-104: extract sections and stable passage IDs
-
-Task: tasks/SC-104.md
-```
+One change per branch. Include the real output of the tests, and never open a PR with
+failing or skipped tests.

@@ -125,7 +125,7 @@ export const SectionReport = z.object({
 })
 
 export const ProviderInfo = z.object({
-  backend: z.enum(['workersai', 'systemone', 'replay', 'none']),
+  backend: z.enum(['workersai', 'systemone', 'laya', 'replay', 'none']),
   model: z.string().nullable(),
   calls: z.number().int().nonnegative(),
   inputTokens: z.number().int().nonnegative(),

@@ -14,13 +14,14 @@
   "vars": {
     "DECISION_BACKEND": "replay",
     "DECISION_MODEL": "jev-latest",
-    "MAX_PAGE_BYTES": "300000",
+    "MAX_PAGE_BYTES": "250000",
     "MAX_REDIRECTS": "5",
     "FETCH_TIMEOUT_MS": "10000",
     "MAX_CONCURRENT_DECISIONS": "14",
     "CONFIDENCE_THRESHOLD": "0.6",
     "STATE_TOKEN_BUDGET": "24000",
     "MAX_SECTIONS": "40",
-    "MIN_SECTION_WORDS": "12"
+    "MIN_SECTION_WORDS": "12",
+    "ALLOW_PRIVATE_BACKEND": "true"
   }
 }

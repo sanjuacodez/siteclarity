@@ -12,6 +12,12 @@ Free, open source, and built as a practical application of
 > **Live:** https://siteclarity.sanjay-shankar.workers.dev
 > **Source:** https://github.com/sanjuacodez/siteclarity
 
+### See it run
+
+https://github.com/sanjuacodez/siteclarity/raw/main/siteclarity-video.mp4
+
+_A full audit from URL to findings — structural checks, meaning checks, and the copy-prompt output._
+
 ---
 
 ## Why this exists
@@ -58,8 +64,9 @@ long to quote.
 isolation · is the subject clearly named · is a claim specific enough to check · how
 promotional is the language · how ready is the section to be quoted.
 
-**Full list, always current:** [`/checks`](docs/FEATURES.md) on the running app is
-generated from the code itself, so it can never claim a check that doesn't exist.
+**Full list, always current:** the [`/checks`](https://siteclarity.sanjay-shankar.workers.dev/checks)
+page on the running app is generated from the code itself, so it can never claim a check
+that doesn't exist.
 
 ## What it deliberately ignores
 
@@ -94,18 +101,32 @@ far more places than it needs to be.
 **Without a key** you still get the full structural analysis — structured data, heading
 hierarchy, extractability, vague language — clearly marked as partial in the report.
 
-## Swap the model
+## Swap the model, from the dashboard
 
-Jev, **Kev** and **Decider** all speak TypeSafe's `POST /v1/systemone` format, so
-switching is a base-URL change. **Laya** (Apache-2.0, runs on your own GPU) is adapted
-behind the same interface.
+Open **API key** in the app and pick a decision model. The choice is stored in your
+browser and sent with each audit — nothing is configured server-side, so two people can
+point the same deployment at different models.
 
-| Model | Licence | Runs on |
-| --- | --- | --- |
-| Jev | proprietary | TypeSafe API, or Cloudflare Workers AI |
-| Kev | self-hosted, Qwen3.5 | your GPU |
-| Decider | Apache-2.0 | your GPU |
-| Laya | Apache-2.0 | your GPU |
+| Model | Licence | Runs on | Wire format |
+| --- | --- | --- | --- |
+| **Jev** | proprietary | TypeSafe hosted API | `POST /v1/systemone` |
+| **Kev** | self-hosted, Qwen3.5 (0.8B/4B/9B) | your hardware | same as Jev — base URL only |
+| **Decider** | Apache-2.0, 2B | your hardware | same as Jev — base URL only |
+| **Laya** | Apache-2.0, 421M | your hardware | `POST /ai/run` — own adapter |
+
+Kev and Decider implement TypeSafe's format, so switching to them is nothing but a
+different server URL. **Laya is not wire-compatible** — it nests the request under
+`input` and uses a different endpoint — so it has its own adapter.
+
+One practical difference worth knowing: Jev has a 32k context, while a local Laya
+checkpoint has **512 tokens** (about 320 for the state). SiteClarity sends each question
+the smallest state that can answer it — section states measure around 300 tokens — which
+is why Laya works at all. Very long sections may still be rejected, and Laya returns an
+explicit error rather than silently truncating.
+
+A server URL you enter is validated with the same host rules as page fetching, so a
+hosted instance cannot be used to reach private addresses. Running both locally? Set
+`ALLOW_PRIVATE_BACKEND=true` to permit `localhost`.
 
 ## Run it locally
 
@@ -125,15 +146,10 @@ A free Cloudflare account is enough. No credit card. Set `account_id` in
 `wrangler.jsonc` to your own, then either let visitors bring their own keys (the default)
 or uncomment the `ai` binding to use your free Workers AI allowance.
 
-## Documentation
+## Contributing
 
-| | |
-| --- | --- |
-| [`docs/FEATURES.md`](docs/FEATURES.md) | every feature and deliberate non-feature |
-| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | how a URL becomes a report |
-| [`docs/UI.md`](docs/UI.md) | **read before touching the interface** |
-| [`AGENTS.md`](AGENTS.md) | working rules for humans and AI agents |
-| [`tasks/INDEX.md`](tasks/INDEX.md) | build status · [`tasks/FINDINGS.md`](tasks/FINDINGS.md) known issues |
+See [`CONTRIBUTING.md`](CONTRIBUTING.md). The short version: `npm test` must pass offline
+with no API key, quotes must be verbatim, and the report never shows a score.
 
 ## Status
 

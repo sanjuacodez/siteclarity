@@ -510,7 +510,9 @@ describe('key requirement gate', () => {
   })
 
   it('blocks submission when a key is required but not saved', () => {
-    expect(js).toContain('if (needsKey && !loadKey() && !skipKeyOnce) { promptForKey(); return; }')
+    // Gated only for the hosted provider — a self-hosted server usually needs no key.
+    expect(js).toContain("loadSettings().provider === 'systemone'")
+    expect(js).toContain('promptForKey(); return;')
     expect(js).toContain('Add your Jev API key to run an audit.')
   })
 
@@ -523,5 +525,63 @@ describe('key requirement gate', () => {
 
   it('uses classList.toggle only, which is what elements here implement', () => {
     expect(js).not.toMatch(/classList\.(add|remove)\(/)
+  })
+})
+
+describe('decision model settings', () => {
+  const js = script
+
+  it('offers Jev, a self-hosted System One server, and Laya', () => {
+    expect(DASHBOARD_HTML).toContain('value="systemone"')
+    expect(DASHBOARD_HTML).toContain('value="systemone-self"')
+    expect(DASHBOARD_HTML).toContain('value="laya"')
+    expect(DASHBOARD_HTML).toContain('id="server-input"')
+    expect(DASHBOARD_HTML).toContain('id="model-input"')
+  })
+
+  it('maps the self-hosted System One choice onto the same backend as Jev', () => {
+    const headers = new Function(
+      js.slice(js.indexOf('const SETTINGS_STORE')).split('\nconst PROVIDER_NOTES')[0] +
+      `
+      ;globalThis.localStorage = { getItem: (k) => k === 'siteclarity.settings'
+        ? JSON.stringify({ provider: 'systemone-self', server: 'https://kev.example.com', model: 'kev-9b' })
+        : null };
+      ;function loadKey(){ return 'jevtok_' + 'x'.repeat(30) }
+      ;return analyzeHeaders;`,
+    )()
+    const h = headers()
+    // Kev and Decider share Jev's wire format; only the base URL differs.
+    expect(h['x-sc-backend']).toBe('systemone')
+    expect(h['x-sc-base-url']).toBe('https://kev.example.com')
+    expect(h['x-sc-model']).toBe('kev-9b')
+  })
+
+  it('sends the laya backend when Laya is chosen', () => {
+    const headers = new Function(
+      js.slice(js.indexOf('const SETTINGS_STORE')).split('\nconst PROVIDER_NOTES')[0] +
+      `
+      ;globalThis.localStorage = { getItem: () => JSON.stringify({ provider: 'laya', server: 'https://laya.example.com', model: '' }) };
+      ;function loadKey(){ return '' }
+      ;return analyzeHeaders;`,
+    )()
+    const h = headers()
+    expect(h['x-sc-backend']).toBe('laya')
+    expect(h['x-sc-base-url']).toBe('https://laya.example.com')
+    expect(h['x-sc-model']).toBeUndefined()
+  })
+
+  it('never sends a server URL for the hosted provider', () => {
+    const headers = new Function(
+      js.slice(js.indexOf('const SETTINGS_STORE')).split('\nconst PROVIDER_NOTES')[0] +
+      `
+      ;globalThis.localStorage = { getItem: () => JSON.stringify({ provider: 'systemone', server: 'https://stale.example.com', model: '' }) };
+      ;function loadKey(){ return '' }
+      ;return analyzeHeaders;`,
+    )()
+    expect(headers()['x-sc-base-url']).toBeUndefined()
+  })
+
+  it('warns that Laya has a much smaller context', () => {
+    expect(js).toMatch(/smaller context/i)
   })
 })

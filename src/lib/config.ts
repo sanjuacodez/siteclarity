@@ -14,6 +14,7 @@ export interface AppEnv {
   MAX_SECTIONS?: string
   MIN_SECTION_WORDS?: string
   JEV_API_KEY?: string
+  ALLOW_PRIVATE_BACKEND?: string
   SYSTEMONE_BASE_URL?: string
 }
 
@@ -25,9 +26,9 @@ const numeric = (fallback: number) =>
     .pipe(z.number().finite().positive())
 
 const ConfigSchema = z.object({
-  backend: z.enum(['workersai', 'systemone', 'replay']).default('workersai'),
+  backend: z.enum(['workersai', 'systemone', 'laya', 'replay']).default('workersai'),
   model: z.string().min(1).default('jev-latest'),
-  maxPageBytes: numeric(300_000),
+  maxPageBytes: numeric(250_000),
   maxRedirects: numeric(5),
   fetchTimeoutMs: numeric(10_000),
   maxConcurrentDecisions: numeric(14),
@@ -40,6 +41,8 @@ const ConfigSchema = z.object({
   maxSections: numeric(40),
   minSectionWords: numeric(12),
   jevApiKey: z.string().optional(),
+  /** Permit a loopback/private decision-server URL. Local development only. */
+  allowPrivateBackend: z.string().optional().transform((v) => v === 'true' || v === '1'),
   systemOneBaseUrl: z.string().url().optional(),
 })
 
@@ -62,6 +65,7 @@ export function loadConfig(env: AppEnv): Config {
     maxSections: env.MAX_SECTIONS,
     minSectionWords: env.MIN_SECTION_WORDS,
     jevApiKey: env.JEV_API_KEY || undefined,
+    allowPrivateBackend: env.ALLOW_PRIVATE_BACKEND,
     systemOneBaseUrl: env.SYSTEMONE_BASE_URL || undefined,
   })
 }
@@ -84,6 +88,44 @@ export function loadConfig(env: AppEnv): Config {
 export function withCallerKey(config: Config, key: string | null): Config {
   if (!key) return config
   return { ...config, backend: 'systemone', jevApiKey: key }
+}
+
+export interface CallerSettings {
+  backend: 'systemone' | 'laya' | null
+  baseUrl: string | null
+  model: string | null
+  key: string | null
+}
+
+/**
+ * Apply per-request model settings supplied by the visitor's browser.
+ *
+ * Order matters: an explicit backend choice wins, then a key implies the hosted Jev
+ * API, then the deployment's own configuration stands.
+ */
+export function withCallerSettings(config: Config, s: CallerSettings): Config {
+  let next = config
+  if (s.key) next = { ...next, jevApiKey: s.key, backend: 'systemone' }
+  if (s.backend) next = { ...next, backend: s.backend }
+  if (s.baseUrl) next = { ...next, systemOneBaseUrl: s.baseUrl }
+  if (s.model) next = { ...next, model: s.model }
+  // Laya's own endpoint needs a server to talk to; without one it cannot run.
+  if (next.backend === 'laya' && !next.systemOneBaseUrl) {
+    next = { ...next, systemOneBaseUrl: 'http://localhost:8000' }
+  }
+  return next
+}
+
+export function readCallerBackend(header: string | null): 'systemone' | 'laya' | null {
+  const v = (header ?? '').trim().toLowerCase()
+  return v === 'systemone' || v === 'laya' ? v : null
+}
+
+/** Model ids are opaque but bounded; reject anything that is not one. */
+export function readCallerModel(header: string | null): string | null {
+  const v = (header ?? '').trim()
+  if (!v || v.length > 80) return null
+  return /^[A-Za-z0-9._\/-]+$/.test(v) ? v : null
 }
 
 /** A Jev key looks like a long opaque token; reject anything obviously not one. */

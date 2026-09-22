@@ -163,6 +163,11 @@ blockquote { background:var(--bg); border-left:2px solid var(--border); margin:0
 .keybox .muted { font-weight:400 }
 .keybody { padding:0 15px 15px; border-top:1px solid var(--border) }
 .keybody p { font-size:.78rem; margin:12px 0 10px }
+.fieldlabel { display:block; font-size:.7rem; letter-spacing:.06em; text-transform:uppercase;
+  color:var(--muted); font-weight:650; margin:12px 0 5px }
+.field { width:100%; padding:9px 12px; font:inherit; font-size:.86rem; background:var(--bg);
+  color:var(--text); border:1px solid var(--border); border-radius:9px }
+.providernote { font-size:.74rem !important; margin:7px 0 0 !important }
 .keybody input { flex:1 1 260px; padding:9px 12px; font:inherit; font-size:.86rem;
   background:var(--bg); color:var(--text); border:1px solid var(--border); border-radius:9px }
 .keybody button { padding:9px 15px; font-size:.8rem; font-weight:650; border-radius:9px;
@@ -285,8 +290,26 @@ footer a { color:var(--muted) }
   <summary>API key <span class="muted" id="key-status"></span></summary>
   <div class="keybody">
     <p class="muted">Paste your own <a href="https://typesafe.ai" target="_blank" rel="noopener noreferrer">TypeSafe Jev</a> key to run audits against your own account. It is stored in this browser only, sent with each audit request, and never saved on the server.</p>
+    <label class="fieldlabel" for="provider-select">Decision model</label>
+    <select id="provider-select" class="field">
+      <option value="systemone">Jev — TypeSafe hosted API (needs a key)</option>
+      <option value="systemone-self">Kev or Decider — your own server</option>
+      <option value="laya">Laya — your own server</option>
+    </select>
+    <p class="muted providernote" id="provider-note"></p>
+
+    <div id="server-row" hidden>
+      <label class="fieldlabel" for="server-input">Server URL</label>
+      <input type="url" id="server-input" class="field" placeholder="https://your-server.example.com"
+             autocomplete="off" spellcheck="false">
+    </div>
+
+    <label class="fieldlabel" for="model-input">Model <span class="muted">(optional)</span></label>
+    <input type="text" id="model-input" class="field" autocomplete="off" spellcheck="false">
+
+    <label class="fieldlabel" for="key-input">API key <span class="muted">(optional for your own server)</span></label>
     <div class="row">
-      <input type="password" id="key-input" autocomplete="off" spellcheck="false" aria-label="Jev API key">
+      <input type="password" id="key-input" autocomplete="off" spellcheck="false" aria-label="API key">
       <button type="button" id="key-save">Save</button>
       <button type="button" id="key-clear" class="ghost">Remove</button>
     </div>
@@ -395,6 +418,15 @@ function validateList() {
   $('ulcount').textContent = urls.length + (urls.length === 1 ? ' URL' : ' URLs') + (urls.length > 25 ? ' · limit is 25' : '');
   return !message;
 }
+document.addEventListener('change', e => {
+  if (e.target && e.target.id === 'provider-select') {
+    const s = loadSettings();
+    // Model ids are provider-specific, so clear it when the provider changes.
+    saveSettings({ provider: e.target.value, server: s.server, model: '' });
+    renderSettingsState();
+  }
+});
+
 document.addEventListener('input', e => {
   if (e.target.id === 'ul') validateList();
 });
@@ -411,7 +443,12 @@ document.addEventListener('click', e => {
   if (e.target.id === 'key-save') {
     const input = $('key-input');
     const value = input.value.trim();
-    const ok = saveKey(value);
+    const sel = $('provider-select');
+    const ok = saveKey(value) && (!sel || saveSettings({
+      provider: sel.value,
+      server: (($('server-input') || {}).value || '').trim(),
+      model: (($('model-input') || {}).value || '').trim(),
+    }));
     renderKeyState();
     announce(ok ? (value ? 'API key saved in this browser.' : 'API key removed.')
                 : 'Could not save the key — browser storage is unavailable.');
@@ -452,7 +489,10 @@ $('f').addEventListener('submit', async e => {
   e.preventDefault();
   if (busy) return;
   if (currentMode() === 'list' && !validateList()) { $('ul').reportValidity(); return; }
-  if (needsKey && !loadKey() && !skipKeyOnce) { promptForKey(); return; }
+  // Only the hosted provider needs a key; a self-hosted server usually has none.
+  if (needsKey && loadSettings().provider === 'systemone' && !loadKey() && !skipKeyOnce) {
+    promptForKey(); return;
+  }
   skipKeyOnce = false;
   setBusy(true); activeReport = null; activeFilter = 'all'; announce('Audit started.');
   try {
@@ -626,10 +666,35 @@ function promptForKey() {
   if (input) input.focus();
 }
 
+const SETTINGS_STORE = 'siteclarity.settings';
+
+/**
+ * Model settings, stored beside the key and sent as headers with each audit. Nothing
+ * is remembered server-side, so two visitors can point the same deployment at
+ * different models.
+ */
+function loadSettings() {
+  try {
+    const raw = localStorage.getItem(SETTINGS_STORE);
+    const p = raw ? JSON.parse(raw) : {};
+    return { provider: p.provider || 'systemone', server: p.server || '', model: p.model || '' };
+  } catch (err) { return { provider: 'systemone', server: '', model: '' }; }
+}
+function saveSettings(v) {
+  try { localStorage.setItem(SETTINGS_STORE, JSON.stringify(v)); return true; } catch (err) { return false; }
+}
+function isSelfHosted(provider) { return provider === 'systemone-self' || provider === 'laya'; }
+
 function analyzeHeaders() {
   const h = { 'content-type': 'application/json' };
   const k = loadKey();
+  const s = loadSettings();
   if (k) h['x-jev-key'] = k;
+  // 'systemone-self' is a UI distinction only: same wire format as hosted Jev,
+  // pointed at a different base URL.
+  h['x-sc-backend'] = s.provider === 'laya' ? 'laya' : 'systemone';
+  if (isSelfHosted(s.provider) && s.server) h['x-sc-base-url'] = s.server;
+  if (s.model) h['x-sc-model'] = s.model;
   return h;
 }
 function maskKey(k) {
@@ -637,7 +702,32 @@ function maskKey(k) {
   return k.length <= 10 ? '•'.repeat(k.length) : k.slice(0, 4) + '•'.repeat(10) + k.slice(-4);
 }
 
+const PROVIDER_NOTES = {
+  'systemone': 'Runs on TypeSafe\u2019s hosted Jev. Needs your own API key.',
+  'systemone-self': 'Kev and Decider speak the same wire format as Jev, so only the server URL changes.',
+  'laya': 'Laya is Apache-2.0 and runs on your own hardware. Different endpoint (/ai/run) and a much smaller context, so very long sections may be rejected rather than truncated.',
+};
+
+function renderSettingsState() {
+  const s = loadSettings();
+  const sel = $('provider-select');
+  if (!sel) return;
+  const row = $('server-row'), note = $('provider-note');
+  const server = $('server-input'), model = $('model-input');
+  sel.value = s.provider;
+  if (row) row.hidden = !isSelfHosted(s.provider);
+  if (note) note.textContent = PROVIDER_NOTES[s.provider] || '';
+  if (server) server.value = s.server;
+  if (model) {
+    model.value = s.model;
+    model.placeholder = s.provider === 'laya'
+      ? 'laya (default) · laya/english · laya/multilingual'
+      : 'jev-latest (default)';
+  }
+}
+
 function renderKeyState() {
+  renderSettingsState();
   const k = loadKey();
   const status = $('key-status');
   const input = $('key-input');

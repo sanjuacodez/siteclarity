@@ -108,6 +108,43 @@ export function normalizeUrl(input: string): Result<NormalizedUrl> {
   return ok({ url, href: url.toString() })
 }
 
+/**
+ * Validate a decision-model server URL supplied by the caller's browser.
+ *
+ * This is a genuine SSRF vector: the visitor tells our Worker which host to POST to.
+ * The same host rules as page fetching apply, so a hosted instance cannot be used to
+ * probe private space.
+ *
+ * `allowPrivate` exists for local development, where a self-hosted Laya or Kev really
+ * does live on localhost and the Worker really is on the same machine. It defaults to
+ * off and must be turned on deliberately.
+ */
+export function validateBackendUrl(
+  raw: string,
+  allowPrivate: boolean,
+): Result<string> {
+  const trimmed = raw.trim()
+  if (!trimmed) return err('invalid_url', 'Server URL is empty')
+
+  let url: URL
+  try {
+    url = new URL(trimmed)
+  } catch {
+    return err('invalid_url', 'Server URL is not a valid URL')
+  }
+  if (!ALLOWED_PROTOCOLS.has(url.protocol)) {
+    return err('blocked_url', 'Server URL must use http or https')
+  }
+  if (url.username || url.password) {
+    return err('blocked_url', 'Server URL must not embed credentials')
+  }
+  if (allowPrivate) return ok(url.origin + url.pathname.replace(/\/$/, ''))
+
+  const guard = guardUrl(url)
+  if (!guard.ok) return guard
+  return ok(url.origin + url.pathname.replace(/\/$/, ''))
+}
+
 /** Applied to the initial URL and again to every redirect hop. */
 export function guardUrl(url: URL): Result<true> {
   if (!ALLOWED_PROTOCOLS.has(url.protocol)) {

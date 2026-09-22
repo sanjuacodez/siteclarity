@@ -19,3 +19,10 @@ dist/
 # Working backups of planning docs — history lives in git, not in .prev files
 *.prev
 *.rev[0-9]
+
+# Internal planning and working notes — kept local, not published
+/AGENTS.md
+/CLAUDE.md
+/docs/
+/planning/
+/tasks/

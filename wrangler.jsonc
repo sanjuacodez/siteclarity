@@ -21,7 +21,7 @@
     // "workersai" (default, no key) | "systemone" (Jev API, Kev, Decider) | "replay"
     "DECISION_BACKEND": "workersai",
     "DECISION_MODEL": "jev-latest",
-    "MAX_PAGE_BYTES": "300000",
+    "MAX_PAGE_BYTES": "250000",
     "MAX_REDIRECTS": "5",
     "FETCH_TIMEOUT_MS": "10000",
     "MAX_CONCURRENT_DECISIONS": "14",

@@ -54,7 +54,7 @@ export interface DecideResponse {
 }
 
 export interface DecisionBackend {
-  readonly name: 'workersai' | 'systemone' | 'replay'
+  readonly name: 'workersai' | 'systemone' | 'laya' | 'replay'
   decide(req: DecideRequest): Promise<DecideResponse>
 }
 

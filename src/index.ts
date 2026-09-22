@@ -1,8 +1,15 @@
 import { Hono } from 'hono'
-import { loadConfig, withCallerKey, readCallerKey, type AppEnv } from './lib/config'
+import {
+  loadConfig,
+  withCallerSettings,
+  readCallerKey,
+  readCallerBackend,
+  readCallerModel,
+  type AppEnv,
+} from './lib/config'
 import { AppError, statusFor } from './lib/errors'
 import { logger } from './lib/logger'
-import { normalizeUrl } from './intake/normalize'
+import { normalizeUrl, validateBackendUrl } from './intake/normalize'
 import { fetchPage } from './intake/fetch'
 import { discoverUrls } from './intake/sitemap'
 import { extract } from './extract/extract'
@@ -82,10 +89,26 @@ app.get('/api/sitemap', async (c) => {
 
 app.post('/api/analyze', async (c) => {
   const started = Date.now()
-  // Bring-your-own-key: a visitor's own Jev key, supplied per request and used only
-  // for this request. Never stored, never logged (see redactSecrets).
-  const callerKey = readCallerKey(c.req.header('x-jev-key') ?? null)
-  const config = withCallerKey(loadConfig(c.env), callerKey)
+  // Bring-your-own model settings, supplied per request by the visitor's browser and
+  // used only for this request. Never stored, never logged (see redactSecrets).
+  const base = loadConfig(c.env)
+  const rawBaseUrl = (c.req.header('x-sc-base-url') ?? '').trim()
+
+  let callerBaseUrl: string | null = null
+  if (rawBaseUrl) {
+    // The caller chooses which host we POST to, so this is a real SSRF vector on a
+    // hosted instance and gets the same host rules as page fetching.
+    const checked = validateBackendUrl(rawBaseUrl, base.allowPrivateBackend)
+    if (!checked.ok) return c.json(checked.error.toJSON(), statusFor(checked.error.code) as 400)
+    callerBaseUrl = checked.value
+  }
+
+  const config = withCallerSettings(base, {
+    key: readCallerKey(c.req.header('x-jev-key') ?? null),
+    backend: readCallerBackend(c.req.header('x-sc-backend') ?? null),
+    baseUrl: callerBaseUrl,
+    model: readCallerModel(c.req.header('x-sc-model') ?? null),
+  })
 
   const body = await c.req.json<{ url?: string }>().catch(() => ({}) as { url?: string })
   if (!body.url) {
