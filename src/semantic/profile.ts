@@ -141,3 +141,52 @@ export const ABSENT_REASONS: Record<ProfileDimension, string> = {
 }
 
 export const BUSINESS_TYPE_LABELS = BUSINESS_TYPES
+
+/**
+ * What each dimension asks of the page, for the checks page.
+ *
+ * The profile section used to render unlike every other section — a bare label and an
+ * absent reason, where the rest show what is asked, why it matters and what to do. A
+ * reader should not have to notice that this module is built differently; only that it
+ * describes rather than faults.
+ */
+export const DIMENSION_DOCS: Record<
+  ProfileDimension,
+  { asks: string; whyItMatters: string; ifMissing: string }
+> = {
+  business_type: {
+    asks: 'What kind of business or offering is this page for?',
+    whyItMatters:
+      'Everything else on the page is read against this. A reader who cannot tell whether they are looking at software, a service or a shop has to work the rest out from scratch.',
+    ifMissing:
+      'Say plainly what you are, early. One clause in the opening line is enough.',
+  },
+  what_it_does: {
+    asks: 'Which sentence best says what this product or service does?',
+    whyItMatters:
+      'This is the sentence a search engine or AI assistant quotes when someone asks what you are. If no sentence says it, they quote something else — usually a claim or a call to action.',
+    ifMissing:
+      'Write one plain sentence describing what it does, and put it near the top.',
+  },
+  who_its_for: {
+    asks: 'Which sentence best says who this is for?',
+    whyItMatters:
+      'A reader decides whether to keep reading by finding themselves on the page. Without that sentence they have to guess, and most guess wrong or leave.',
+    ifMissing:
+      'Name the reader — the role, the size of business, the situation. One sentence.',
+  },
+  problem_solved: {
+    asks: 'Which sentence describes a difficulty the reader has, rather than a thing the product does?',
+    whyItMatters:
+      'People search for their problem long before they search for a product. A page that only lists capabilities is invisible to everyone still describing the difficulty.',
+    ifMissing:
+      'State what goes wrong today for the person you are writing for, before describing the fix.',
+  },
+  differentiator: {
+    asks: 'Which sentence names something this does that alternatives do not, or a trade-off it makes?',
+    whyItMatters:
+      'Every competitor claims to be powerful and easy, so those words distinguish nothing. Without a specific difference a reader has no basis for choosing.',
+    ifMissing:
+      'Name one concrete difference, and be willing to state the trade-off that comes with it.',
+  },
+}

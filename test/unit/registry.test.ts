@@ -11,6 +11,7 @@ import {
   PROFILE_MODULES,
 } from '../../src/checks/registry'
 import { renderChecksPage } from '../../src/ui/checks'
+import { DIMENSION_DOCS } from '../../src/semantic/profile'
 import { ProfileDimension } from '../../src/contracts'
 
 /**
@@ -101,6 +102,29 @@ describe('catalogue registry', () => {
     for (const id of allCheckIds()) {
       expect(page, `${id} is registered but not documented`).toContain(`Check: <code>${id}</code>`)
     }
+  })
+
+  it('documents every profile dimension with the same anatomy as a check', () => {
+    // The profile section shipped rendering unlike every other one: a bare label and an
+    // absent reason, where the rest show what is asked, why it matters and what to do.
+    // A reader should not have to notice that this module is built differently.
+    const page = renderChecksPage()
+    const section = page.slice(page.indexOf('<section id="profile"'))
+    const body = section.slice(0, section.indexOf('</section>'))
+    for (const d of ProfileDimension.options) {
+      expect(body, `${d} is a dimension but not documented`).toContain(
+        `Dimension: <code>${d}</code>`,
+      )
+      expect(DIMENSION_DOCS[d].asks.length).toBeGreaterThan(20)
+      expect(body).toContain(DIMENSION_DOCS[d].whyItMatters)
+      expect(body).toContain(DIMENSION_DOCS[d].ifMissing)
+    }
+    // Same card shape as every other catalogue section.
+    const cards = body.match(/<details class="check">/g) ?? []
+    expect(cards.length).toBe(ProfileDimension.options.length)
+    expect((body.match(/class="tag /g) ?? []).length).toBe(cards.length)
+    expect((body.match(/<div class="action">/g) ?? []).length).toBe(cards.length)
+    expect((body.match(/Why it matters/g) ?? []).length).toBe(cards.length)
   })
 
   it('documents every registered question on the checks page', () => {

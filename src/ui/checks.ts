@@ -2,7 +2,7 @@ import { CHECKS } from '../assemble/checks'
 import { QUESTION_CATALOGUE_VERSION } from '../semantic/questions'
 import type { Question } from '../provider/types'
 import { ProfileDimension } from '../contracts'
-import { DIMENSION_LABELS, ABSENT_REASONS } from '../semantic/profile'
+import { DIMENSION_LABELS, ABSENT_REASONS, DIMENSION_DOCS } from '../semantic/profile'
 import {
   TEMPLATE_GROUPS,
   QUESTION_GROUPS,
@@ -126,9 +126,13 @@ ${TEMPLATE_GROUPS.map((group) => `
           does not say. That is the answer, not a failure to report. A closed list of business types is the one
           exception, because that genuinely is a fixed set.</p>
           ${ProfileDimension.options.map((d) => `<details class="check">
-<summary><span class="tag low">Describes</span><span>${esc(DIMENSION_LABELS[d])}</span></summary>
-<div class="detail-body"><p class="detail-label">When the page does not say</p><p>${esc(ABSENT_REASONS[d])}</p>
-<p class="source">Dimension: <code>${esc(d)}</code></p></div>
+<summary><span>${esc(DIMENSION_LABELS[d])}</span><span class="tag low">Describes</span></summary>
+<div class="detail-body">
+  <p class="detail-label">What is asked</p><p class="observation">${esc(DIMENSION_DOCS[d].asks)}</p>
+  <p class="detail-label">Why it matters</p><p>${esc(DIMENSION_DOCS[d].whyItMatters)}</p>
+  <div class="action"><p class="detail-label">If the page does not say it</p><p>${esc(DIMENSION_DOCS[d].ifMissing)}</p></div>
+  <p class="source">Dimension: <code>${esc(d)}</code> &middot; reported as &ldquo;${esc(ABSENT_REASONS[d])}&rdquo;</p>
+</div>
 </details>`).join('')}
         </section>
 
