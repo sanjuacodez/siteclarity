@@ -174,6 +174,14 @@ blockquote { background:var(--bg); border-left:2px solid var(--border); margin:0
 .focusbody textarea { width:100%; padding:9px 12px; font:inherit; font-size:.86rem;
   background:var(--bg); color:var(--text); border:1px solid var(--border);
   border-radius:9px; resize:vertical }
+.cvg .prow { grid-template-columns:minmax(0,1fr) auto; align-items:start }
+.cvg .qtext { font-size:.86rem }
+.cvg .qarea { font-size:.7rem; color:var(--muted); margin-top:3px }
+.cvg .qpages { font-size:.7rem; color:var(--muted); margin-top:3px }
+.cstat { font-size:.64rem; letter-spacing:.03em; font-weight:650; padding:3px 7px; border-radius:5px; white-space:nowrap }
+.cstat.answered { color:var(--good); background:var(--good-soft) }
+.cstat.unanswered { color:var(--bad); background:var(--bad-soft) }
+.cstat.absent { color:var(--warn); background:var(--warn-soft) }
 .prow { display:grid; grid-template-columns:180px minmax(0,1fr); gap:16px; padding:13px 0;
   border-top:1px solid var(--border) }
 .plabel { font-size:.8rem; font-weight:620; color:var(--muted) }
@@ -1000,6 +1008,45 @@ function findingsBody(d, filter) {
     '</h3><p>' + (filter === 'all' ? 'This does not guarantee readiness. Review the scope and limitations above.' : 'Choose another priority to continue reviewing this page.') + '</p></div>';
   return renderGroups(list, d.sections);
 }
+/**
+ * Module 5's coverage table.
+ *
+ * Every question here was written by a person and lives in the repository; the model
+ * only decided whether a page answers one. Shown in full rather than as gaps alone,
+ * because "you already answer these eleven" is the context that makes the gaps
+ * readable — and because a bare list of what you have not written is the "create more
+ * content" advice this module exists to replace.
+ */
+var COVERAGE_STATUS = {
+  answered: 'Answered',
+  unanswered: 'Raised, not answered',
+  absent: 'Not addressed',
+};
+
+function coverageCard(site) {
+  var rows = (site && site.coverage) || [];
+  if (!rows.length) return '';
+  var order = { unanswered: 0, absent: 1, answered: 2 };
+  var counts = { answered: 0, unanswered: 0, absent: 0 };
+  rows.forEach(function (r) { counts[r.status] = (counts[r.status] || 0) + 1; });
+  var body = rows.slice().sort(function (a, b) {
+    return order[a.status] - order[b.status];
+  }).map(function (r) {
+    var pages = r.status === 'unanswered' && r.pages.length
+      ? '<p class="qpages">Raised on ' + r.pages.length + (r.pages.length === 1 ? ' page' : ' pages') + '</p>'
+      : r.status === 'answered' && r.pages.length
+        ? '<p class="qpages">Answered on ' + pageLink(r.pages[0]) + '</p>'
+        : '';
+    return '<div class="prow"><div><p class="qtext">' + esc(r.text) + '</p>' +
+      '<p class="qarea">' + esc(r.area.replace(/_/g, ' ')) + '</p>' + pages + '</div>' +
+      '<span class="cstat ' + r.status + '">' + esc(COVERAGE_STATUS[r.status] || r.status) + '</span></div>';
+  }).join('');
+  return '<section class="card profile cvg"><div class="section-label"><h2>Questions buyers ask</h2>' +
+    '<span>' + counts.answered + ' answered · ' + counts.unanswered + ' left open · ' + counts.absent + ' untouched</span></div>' +
+    '<p class="sub">A fixed list of questions people ask before choosing. Each was checked against the pages that raise it — nothing here was written by a model.</p>' +
+    body + '</section>';
+}
+
 function renderSite(results, sm, failures, partial, site) {
   activeReport = null;
   speedHtml = '';
@@ -1037,7 +1084,7 @@ function renderSite(results, sm, failures, partial, site) {
   if (!results.length) return h + '<div class="empty-result"><h3>No page reports are available</h3><p>Review the errors above and try again. No conclusion can be drawn about these pages.</p></div>';
   // Site-wide findings come before the table: they are about the site, not about any
   // one row in it.
-  h += summaryCards(c) + siteBlock + '<div class="card tbl-card"><div class="table-title"><h2>Choose a page to work on</h2><p class="sub">Ordered by “Fix first” findings, then total findings. Open a page for its report and scope.</p></div>' +
+  h += summaryCards(c) + siteBlock + coverageCard(site) + '<div class="card tbl-card"><div class="table-title"><h2>Choose a page to work on</h2><p class="sub">Ordered by “Fix first” findings, then total findings. Open a page for its report and scope.</p></div>' +
     '<div class="tscroll" role="region" aria-label="Page reports, scroll horizontally on small screens" tabindex="0"><table class="tbl"><thead><tr>' +
     '<th scope="col">Page</th><th scope="col" class="c-n">Fix first</th><th scope="col" class="c-n">Worth doing</th><th scope="col" class="c-n">Minor</th><th scope="col" class="c-n">Total</th>' +
     '</tr></thead><tbody>' + rows.map(pageRow).join('') + '</tbody></table></div></div>';

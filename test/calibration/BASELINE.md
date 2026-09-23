@@ -1,5 +1,48 @@
 # Decision-layer calibration baseline
 
+## 2026-09-23 · 85 cases · module 5 added
+
+```
+Agreement        76/85  (89%)
+False positives  0
+Overconfident    2
+Input tokens     ~37,900
+```
+
+Module 5's eight cases passed 8/8 at first run, and its three options separated cleanly
+— the confidences were 0.82 to 1.00 with no hedging between `mentions_only` and
+`not_addressed`. That separation is what the module depends on: `mentions_only` is the
+only answer that produces a page finding, so an option boundary that blurred would show
+up directly as findings on pages that answer their questions.
+
+| Question | | Question | |
+| --- | --- | --- | --- |
+| q_what_it_costs | 3/3 | q_data_safety | 2/2 |
+| q_how_to_start | 1/1 | q_vs_alternatives | 1/1 |
+| q_support | 1/1 | | |
+
+### One case was wrong, not the model
+
+`q_support` was written as ambiguous, expecting a hedge on "Support is included with
+every licence." The model answered `mentions_only` at 0.86 and is right: that sentence
+settles whether support exists, and the question asks what help you get when something
+breaks. The case was relabelled and the reasoning recorded next to it.
+
+Relabelling to match an output is usually how a corpus stops measuring anything. The
+test is whether the question's own wording supports the change, and here it does —
+the same standard applied to `messaging/implicit-difference` below.
+
+### What the run did not cover
+
+The eight cases put the model in front of a state that already contains the relevant
+text. They do not measure the deterministic half of the module — whether trigger terms
+find that text in the first place. A page discussing cost entirely as "investment" would
+never reach the model at all, and no live case here would notice. That gap is in the
+unit tests and in the module's stated limits, not in this corpus.
+
+---
+
+
 ## 2026-09-23 · 77 cases · all four modules, every question measured
 
 ```

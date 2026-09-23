@@ -6,7 +6,7 @@ import type { PageSummary } from '../../src/contracts'
 const page = (journeyStage: string | null): PageSummary => ({
   url: 'https://e.com/a', title: 'A', purpose: 'explain', businessType: 'saas',
   topicTerms: [], audienceNamed: null, hasAction: true, journeyStage,
-  findingCounts: { count: 0, high: 0 },
+  findingCounts: { count: 0, high: 0 }, coverage: null,
 })
 
 describe('Module 6 — buyer journey', () => {

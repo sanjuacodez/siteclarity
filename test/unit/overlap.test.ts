@@ -5,7 +5,7 @@ import type { PageSummary } from '../../src/contracts'
 const page = (o: Partial<PageSummary>): PageSummary => ({
   url: 'https://e.com/a', title: 'A', purpose: 'explain', businessType: 'saas',
   topicTerms: [], audienceNamed: null, hasAction: true, journeyStage: 'education',
-  findingCounts: { count: 0, high: 0 }, ...o,
+  findingCounts: { count: 0, high: 0 }, coverage: null, ...o,
 })
 
 describe('Module 9 — content overlap', () => {

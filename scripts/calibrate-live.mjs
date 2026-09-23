@@ -60,7 +60,10 @@ async function loadTs(path, exportName) {
 async function loadCatalogue() {
   const names = ['PAGE_QUESTIONS', 'SECTION_QUESTIONS', 'PASSAGE_QUESTIONS', 'EVIDENCE_QUESTIONS', 'MESSAGING_QUESTIONS']
   const parts = await Promise.all(names.map((n) => loadTs('src/semantic/questions.ts', n)))
-  return Object.assign({}, ...parts)
+  // Module 5's questions are built from the bank by the same function the audit uses,
+  // so calibrating them measures the real prompt rather than a copy of it.
+  const coverage = await loadTs('src/semantic/coverage.ts', 'COVERAGE_QUESTIONS_DOC')
+  return Object.assign({}, ...parts, coverage)
 }
 
 const loadCases = () => loadTs('test/calibration/decisions.ts', 'DECISION_CASES')

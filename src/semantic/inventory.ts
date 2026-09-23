@@ -52,6 +52,7 @@ export function buildPageSummary(input: {
   journeyStage: string | null
   count: number
   high: number
+  coverage: { raised: string[]; answered: string[] } | null
 }): PageSummary {
   return {
     url: input.url,
@@ -63,6 +64,7 @@ export function buildPageSummary(input: {
     hasAction: input.hasAction,
     journeyStage: input.journeyStage,
     findingCounts: { count: input.count, high: input.high },
+    coverage: input.coverage,
   }
 }
 

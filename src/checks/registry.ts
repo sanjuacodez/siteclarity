@@ -29,6 +29,13 @@ import {
   EVIDENCE_QUESTIONS,
   MESSAGING_QUESTIONS,
 } from '../semantic/questions'
+import {
+  COVERAGE_TEMPLATES,
+  COVERAGE_SITE_TEMPLATES,
+  COVERAGE_QUESTIONS_DOC,
+  QUESTION_BANK,
+  MAX_QUESTIONS_PER_PAGE,
+} from '../semantic/coverage'
 import { CHECKS } from '../assemble/checks'
 import type { Question } from '../provider/types'
 import { ProfileDimension, type ModuleId } from '../contracts'
@@ -113,6 +120,14 @@ export const TEMPLATE_GROUPS: CatalogueGroup[] = [
     templates: OVERLAP_TEMPLATES,
   },
   {
+    id: 'coverage',
+    title: 'Customer questions',
+    module: 'question_coverage',
+    description:
+      `A bank of ${QUESTION_BANK.length} questions buyers ask, written by people and kept in the repository — nothing here is generated. A question is only put to the model when the page's own words raise it, so a page is never faulted for being about something else.`,
+    templates: { ...COVERAGE_TEMPLATES, ...COVERAGE_SITE_TEMPLATES },
+  },
+  {
     id: 'messaging',
     title: 'Messaging',
     module: 'messaging',
@@ -162,6 +177,12 @@ export const QUESTION_GROUPS: QuestionGroup[] = [
     description:
       'Asked against the page-scope state. These are properties of the whole argument rather than of one section.',
     catalogue: MESSAGING_QUESTIONS,
+  },
+  {
+    title: 'Customer questions',
+    description:
+      `The full bank. At most ${MAX_QUESTIONS_PER_PAGE} are asked of any one page — only those its own text raises — and they ride in the existing page-scope call, so the module adds no calls of its own.`,
+    catalogue: COVERAGE_QUESTIONS_DOC,
   },
 ]
 
@@ -277,4 +298,7 @@ export const REGISTERED_EXPORTS = [
   'JOURNEY_TEMPLATES',
   'JOURNEY_QUESTIONS',
   'OVERLAP_TEMPLATES',
+  'COVERAGE_TEMPLATES',
+  'COVERAGE_SITE_TEMPLATES',
+  'COVERAGE_QUESTIONS_DOC',
 ] as const

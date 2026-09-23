@@ -71,6 +71,13 @@ constraint shaped the design rather than being worked around: a generated paraph
 would mean nothing in a report could be trusted as verbatim, and the guarantee is not
 divisible.
 
+**Customer questions** — a fixed bank of questions buyers ask before choosing, written
+by people and kept in the repository. A question is only put to the model when your own
+page raises it, so a post about API design is never faulted for skipping refunds. What
+you get back is the case worth acting on: *this page raises "what does it cost?" and
+never answers it.* Across a site the same arithmetic says which questions are answered
+somewhere, which keep coming up unanswered, and which the site never touches.
+
 **Full list, always current:** the [`/checks`](https://siteclarity.sanjay-shankar.workers.dev/checks)
 page on the running app is generated from the code itself, so it can never claim a check
 that doesn't exist.
@@ -198,16 +205,16 @@ with no API key, quotes must be verbatim, and the report never shows a score.
 
 ## Status
 
-**Pre-alpha.** Seven of ten planned modules are built — answer readiness, evidence &
-trust, messaging, website understanding, audience coverage, buyer journey, and content
-overlap.
+**Pre-alpha.** Eight of ten planned modules are built — answer readiness, evidence &
+trust, messaging, website understanding, customer question coverage, audience coverage,
+buyer journey, and content overlap.
 
 Every check the product can emit is documented at
 [`/checks`](https://siteclarity.sanjay-shankar.workers.dev/checks), generated from the
 same catalogues the analysis uses, so that page cannot claim a check that does not exist
 or omit one that does.
 
-Accuracy is measured rather than asserted: a hand-written corpus of 58 cases is run
+Accuracy is measured rather than asserted: a hand-written corpus of 85 cases is run
 against the live model with `npm run calibrate:live`, and the current baseline is
 recorded in the repository. False positives are tracked separately from overall
 agreement, because reporting a problem that is not there costs more trust than missing

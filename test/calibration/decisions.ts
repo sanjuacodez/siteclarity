@@ -959,4 +959,131 @@ export const DECISION_CASES: DecisionCase[] = [
     expect: 0,
     why: 'No figure, no baseline, no conditions.',
   },
+
+  // ---- module 5, customer question coverage --------------------------------
+  // The three options must separate cleanly, and the middle one is the whole point:
+  // a page that brings a question up and leaves it open is the finding.
+  {
+    id: 'q_what_it_costs/answered',
+    question: 'q_what_it_costs',
+    state: {
+      url: 'https://acme.test/pricing',
+      title: 'Acme Checkout pricing',
+      headings: ['Simple pricing', 'What is included'],
+      relevant_text: [
+        'Acme Checkout is $49 per site per year, or $129 for five sites.',
+        'Every tier includes updates and support for twelve months.',
+      ],
+    },
+    expect: 'answers_it',
+    why: 'The figure and what it covers are both stated; a buyer could act on this.',
+  },
+  {
+    id: 'q_what_it_costs/mentions-only',
+    question: 'q_what_it_costs',
+    state: {
+      url: 'https://acme.test/',
+      title: 'Acme Checkout',
+      headings: ['Affordable for every store'],
+      relevant_text: [
+        'Acme Checkout is affordable for stores of any size, with pricing that scales as you grow.',
+        'Get in touch and we will put together a plan that suits you.',
+      ],
+    },
+    expect: 'mentions_only',
+    why: 'Price is raised twice and never given. This is the case the module exists for.',
+  },
+  {
+    id: 'q_what_it_costs/not-addressed',
+    question: 'q_what_it_costs',
+    state: {
+      url: 'https://acme.test/blog/fields',
+      title: 'Designing conditional checkout fields',
+      headings: ['Why conditional fields', 'How the rules engine works'],
+      relevant_text: [
+        'Conditional fields appear only when an earlier answer makes them relevant.',
+        'The rules engine evaluates each condition in order and stops at the first match.',
+      ],
+    },
+    expect: 'not_addressed',
+    why: 'Nothing here touches price. A page about something else is not failing.',
+  },
+  {
+    id: 'q_data_safety/mentions-only',
+    question: 'q_data_safety',
+    state: {
+      url: 'https://acme.test/',
+      title: 'Acme Checkout',
+      headings: ['Enterprise-grade security'],
+      relevant_text: [
+        'Your data is safe with us. We take security seriously and follow industry best practices.',
+        'Thousands of stores trust Acme with their checkout every day.',
+      ],
+    },
+    expect: 'mentions_only',
+    why: 'Security is claimed and nothing is said: no location, no encryption, no retention.',
+  },
+  {
+    id: 'q_data_safety/answered',
+    question: 'q_data_safety',
+    state: {
+      url: 'https://acme.test/security',
+      title: 'Security at Acme',
+      headings: ['Where your data lives'],
+      relevant_text: [
+        'Order data is stored in your own WooCommerce database and never leaves your server.',
+        'Acme sends nothing to our servers except an anonymous licence check once a day.',
+      ],
+    },
+    expect: 'answers_it',
+    why: 'It says where the data is, what leaves, and how often. That is the answer.',
+  },
+  {
+    id: 'q_how_to_start/mentions-only',
+    question: 'q_how_to_start',
+    state: {
+      url: 'https://acme.test/',
+      title: 'Acme Checkout',
+      headings: ['Get started in minutes'],
+      relevant_text: [
+        'Getting started with Acme Checkout is quick and painless.',
+        'Join thousands of stores already using Acme.',
+      ],
+    },
+    expect: 'mentions_only',
+    why: '"Quick and painless" is a claim about setup, not an account of it.',
+  },
+  {
+    id: 'q_vs_alternatives/answered',
+    question: 'q_vs_alternatives',
+    state: {
+      url: 'https://acme.test/compare',
+      title: 'Acme versus the alternatives',
+      headings: ['How Acme differs'],
+      relevant_text: [
+        'Unlike Checkout Manager, Acme does not store order data on our servers, which means it cannot offer cross-site reporting.',
+        'If you need reporting across several stores, Checkout Manager is the better choice.',
+      ],
+    },
+    expect: 'answers_it',
+    why: 'It names an alternative, a concrete difference, and the trade-off that comes with it.',
+  },
+  {
+    id: 'q_support/mentions-only',
+    question: 'q_support',
+    /**
+     * Written as an ambiguous case expecting a hedge; the model answered
+     * `mentions_only` at 0.86 and was right. "Support is included" settles whether
+     * support exists, not what you get when something breaks, and the question asks
+     * the second. The case was wrong, not the answer.
+     */
+    state: {
+      url: 'https://acme.test/',
+      title: 'Acme Checkout',
+      headings: ['Support'],
+      relevant_text: ['Support is included with every licence.'],
+    },
+    expect: 'mentions_only',
+    why: 'It says support exists and not what it is. A reader still does not know what they get.',
+  },
 ]

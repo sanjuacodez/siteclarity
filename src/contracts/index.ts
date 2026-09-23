@@ -196,6 +196,14 @@ export const PageSummary = z.object({
     count: z.number().int().nonnegative(),
     high: z.number().int().nonnegative(),
   }),
+  /**
+   * Module 5: which bank questions this page raises, and which it answers. Ids only —
+   * the question text lives in the bank, so the inventory stays small.
+   */
+  coverage: z
+    .object({ raised: z.array(z.string()), answered: z.array(z.string()) })
+    .nullable()
+    .default(null),
 })
 export type PageSummary = z.infer<typeof PageSummary>
 

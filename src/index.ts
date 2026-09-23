@@ -35,6 +35,15 @@ import {
 import { ProfileDimension, type ProfileEntry } from './contracts'
 import { buildPageSummary } from './semantic/inventory'
 import {
+  selectCoverageQuestions,
+  buildCoverageQuestions,
+  buildCoverageState,
+  COVERAGE_TEMPLATES,
+  COVERAGE_SITE_TEMPLATES,
+  rollUpCoverage,
+  absentWorthReporting,
+} from './semantic/coverage'
+import {
   readSiteSignals,
   buildSiteState,
   SITE_QUESTIONS,
@@ -266,6 +275,48 @@ app.post('/api/site', async (c) => {
     )
   }
 
+  /**
+   * Module 5, site half. Set arithmetic over what each page raised and answered — no
+   * model, nothing re-read.
+   *
+   * Two different claims come out of it, and they are worded differently because they
+   * are different failures: a question the site keeps bringing up and never settles,
+   * and one it never touches at all.
+   */
+  const coverage = rollUpCoverage(summaries)
+  const reportable = [
+    ...coverage.filter((r) => r.status === 'unanswered'),
+    ...absentWorthReporting(coverage),
+  ]
+  for (const row of reportable) {
+    const unanswered = row.status === 'unanswered'
+    const checkId = unanswered ? 'question_unanswered_sitewide' : 'question_absent_sitewide'
+    const tpl = unanswered
+      ? COVERAGE_SITE_TEMPLATES.question_unanswered_sitewide!
+      : COVERAGE_SITE_TEMPLATES.question_absent_sitewide!
+    findings.push({
+      id: `${checkId}:${row.id}`,
+      module: 'question_coverage',
+      checkId,
+      observation: fillSlots(tpl.observation, {
+        question: row.text,
+        pages: row.pages.length === 1 ? 'one page' : `${row.pages.length} pages`,
+      }),
+      evidence: [],
+      whyItMatters: tpl.whyItMatters,
+      recommendedAction: tpl.recommendedAction,
+      // An absent question is about the site, so it affects every page; an unanswered
+      // one names the pages that raise it, because that is where it gets fixed.
+      affects: (unanswered ? row.pages : summaries.map((x) => x.url)).map((url) => ({
+        pageUrl: url,
+      })),
+      priority: tpl.priority,
+      confidence: 'high',
+      highlights: [],
+      copySource: 'template',
+    })
+  }
+
   // Module 9: pages competing for the same ground. Three signals must agree.
   for (const pair of findOverlaps(summaries)) {
     const label = (x: typeof pair.a) => x.title?.slice(0, 60) ?? x.url
@@ -323,6 +374,7 @@ app.post('/api/site', async (c) => {
   return c.json({
     findings,
     signals: { ...signals, stages: counts },
+    coverage,
     limits: [
       `Site-level checks read ${signals.pages} page summaries, not the pages themselves.`,
       ...(siteRun.stats.degraded
@@ -423,10 +475,25 @@ app.post('/api/analyze', async (c) => {
     : []
   const focusQuestions = buildFocusQuestions(focusItems, focusCandidates)
 
+  /**
+   * Module 5: the bank questions this page raises, by literal term match.
+   *
+   * Business type is not known yet — it is decided in this very batch — so the type
+   * filter is not applied here. The cost of that is asking a nonprofit page about
+   * pricing on the rare occasion it uses pricing words; the filter does apply in the
+   * site roll-up, where the type is known.
+   */
+  const coverageSelected = selectCoverageQuestions(doc, null)
+  const coverageQuestions = buildCoverageQuestions(coverageSelected)
+  // Its own state, not the page state: the page state stops after the opening, and a
+  // price halfway down would be reported as missing. See semantic/coverage.ts.
+  const coverageStates = coverageSelected.length ? [buildCoverageState(doc, coverageSelected)] : []
+
   const backend = createBackend(c.env, config)
   const tDecide = Date.now()
 
-  const [pageRun, sectionRun, passageRun, claimRun, profileRun, focusRun] = await Promise.all([
+  const [pageRun, sectionRun, passageRun, claimRun, profileRun, focusRun, coverageRun] =
+    await Promise.all([
     // Module 3's dimensions are properties of the whole page's argument, so they ride
     // with the page state rather than needing a call of their own.
     runDecisions(
@@ -440,12 +507,15 @@ app.post('/api/analyze', async (c) => {
     runDecisions(backend, claimStates, EVIDENCE_QUESTIONS, config.maxConcurrentDecisions),
     runDecisions(backend, profileStates, profileQuestions, 1),
     runDecisions(backend, focusStates, focusQuestions, 1),
+    runDecisions(backend, coverageStates, coverageQuestions, 1),
   ])
   const decideMs = Date.now() - tDecide
 
+  const allRuns = [pageRun, sectionRun, passageRun, claimRun, profileRun, focusRun, coverageRun]
   const degraded =
     pageRun.stats.degraded || sectionRun.stats.degraded || passageRun.stats.degraded ||
-    claimRun.stats.degraded || profileRun.stats.degraded || focusRun.stats.degraded
+    claimRun.stats.degraded || profileRun.stats.degraded || focusRun.stats.degraded ||
+    coverageRun.stats.degraded
   const degradedReason =
     pageRun.stats.degradedReason ?? sectionRun.stats.degradedReason ?? passageRun.stats.degradedReason
 
@@ -631,7 +701,54 @@ app.post('/api/analyze', async (c) => {
     }
   }
 
-  const withEvidence = [...merged, ...irrelevant, ...messaging, ...focusFindings]
+  /**
+   * Module 5, page half: a question this page raises and leaves hanging.
+   *
+   * Only this case. "This page does not cover security" is not a claim worth making
+   * about one page — a page is allowed to be about something else — so absence is
+   * reported only across a site, in the roll-up.
+   */
+  const coverageFindings: typeof merged = []
+  const coverageRaised: string[] = []
+  const coverageAnswered: string[] = []
+  const coverageOutcome = coverageRun.outcomes[0]
+  if (coverageOutcome) {
+    for (const q of coverageSelected) {
+      const answer = coverageOutcome.answers[q.id]
+      if (!answer || !isConfident(answer, config.confidenceThreshold)) continue
+      const choice = String(answer.choice ?? '')
+      // `not_addressed` means the trigger term was a coincidence — "plan your
+      // migration" is not the page raising pricing — so it counts as not raised at
+      // all. Treating it as raised would let the site roll-up claim the site keeps
+      // bringing a subject up when it never does.
+      if (choice !== 'answers_it' && choice !== 'mentions_only') continue
+      coverageRaised.push(q.id)
+      if (choice === 'answers_it') {
+        coverageAnswered.push(q.id)
+        continue
+      }
+
+      const tpl = COVERAGE_TEMPLATES.question_raised_unanswered!
+      coverageFindings.push({
+        id: `question_raised_unanswered:${q.id}`,
+        module: 'question_coverage',
+        checkId: 'question_raised_unanswered',
+        observation: tpl.observation.replace('{question}', q.text),
+        evidence: [],
+        whyItMatters: tpl.whyItMatters,
+        recommendedAction: tpl.recommendedAction,
+        affects: [{ pageUrl: fetched.value.finalUrl }],
+        priority: tpl.priority,
+        confidence: answer.confidence >= 0.85 ? 'high' : 'medium',
+        highlights: [],
+        copySource: 'template',
+      })
+    }
+  }
+
+  const withEvidence = [
+    ...merged, ...irrelevant, ...messaging, ...focusFindings, ...coverageFindings,
+  ]
   const findings = withEvidence.sort((a, b) =>
     compareByImpact(a, b, countOccurrences(withEvidence)),
   )
@@ -750,19 +867,18 @@ app.post('/api/analyze', async (c) => {
       journeyStage: readChoice(pageOutcome?.answers.journey_stage),
       count: findings.length,
       high: findings.filter((f) => f.priority === 'high').length,
+      coverage: coverageSelected.length
+        ? { raised: coverageRaised, answered: coverageAnswered }
+        : null,
     }),
     provider: {
       backend: degraded ? ('none' as const) : backend.name,
       model: pageRun.stats.model ?? sectionRun.stats.model,
-      calls:
-        pageRun.stats.calls + sectionRun.stats.calls + passageRun.stats.calls +
-        claimRun.stats.calls,
-      inputTokens:
-        pageRun.stats.inputTokens + sectionRun.stats.inputTokens +
-        passageRun.stats.inputTokens + claimRun.stats.inputTokens,
-      outputTokens:
-        pageRun.stats.outputTokens + sectionRun.stats.outputTokens +
-        passageRun.stats.outputTokens + claimRun.stats.outputTokens,
+      // Every run, not four of them: the reported call count is what a user checks
+      // their own key's usage against, and it undercounted before module 5 existed.
+      calls: allRuns.reduce((n, r) => n + r.stats.calls, 0),
+      inputTokens: allRuns.reduce((n, r) => n + r.stats.inputTokens, 0),
+      outputTokens: allRuns.reduce((n, r) => n + r.stats.outputTokens, 0),
       degraded,
       degradedReason,
     },
