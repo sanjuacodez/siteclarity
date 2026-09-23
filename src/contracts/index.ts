@@ -251,6 +251,14 @@ export const AnalysisResult = z.object({
       }),
     )
     .default([]),
+  /**
+   * What this page concluded about each stated focus. Data, so a site scan can roll it
+   * up and say WHICH page communicates a statement rather than repeating one gap on
+   * every page.
+   */
+  focus: z
+    .array(z.object({ id: z.string(), text: z.string(), found: z.boolean() }))
+    .default([]),
   /** This page reduced to typed values, for the site-level pass. */
   summary_for_site: PageSummary.nullable().default(null),
   provider: ProviderInfo,

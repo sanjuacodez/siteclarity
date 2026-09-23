@@ -37,6 +37,7 @@ import {
   MAX_QUESTIONS_PER_PAGE,
 } from '../semantic/coverage'
 import { OPPORTUNITY_RULES, MAX_OPPORTUNITIES } from '../assemble/opportunities'
+import { FOCUS_TEMPLATES } from '../semantic/focus'
 import { CHECKS } from '../assemble/checks'
 import type { Question } from '../provider/types'
 import { ProfileDimension, type ModuleId } from '../contracts'
@@ -119,6 +120,14 @@ export const TEMPLATE_GROUPS: CatalogueGroup[] = [
     description:
       'Pages competing for the same ground. Reported only when heading vocabulary overlaps heavily AND both pages sit at the same buying stage AND serve the same purpose — any one signal alone is noise.',
     templates: OVERLAP_TEMPLATES,
+  },
+  {
+    id: 'focus',
+    title: 'What you said it should say',
+    module: 'website_understanding',
+    description:
+      'Optional, and only runs when you tell us what your content is meant to communicate. The model is asked which of your own sentences says it; never whether the statement is true, because nothing here can know that. On a site scan the question becomes which page says it, and the finding fires only when none does.',
+    templates: FOCUS_TEMPLATES,
   },
   {
     id: 'coverage',
@@ -326,4 +335,5 @@ export const REGISTERED_EXPORTS = [
   'COVERAGE_TEMPLATES',
   'COVERAGE_SITE_TEMPLATES',
   'COVERAGE_QUESTIONS_DOC',
+  'FOCUS_TEMPLATES',
 ] as const

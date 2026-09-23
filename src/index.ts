@@ -21,9 +21,11 @@ import {
   readFocusItems,
   shortlistForFocus,
   buildFocusQuestions,
+  rollUpFocus,
+    MAX_FOCUS_LENGTH,
   buildFocusState,
   FOCUS_NOT_FOUND,
-  FOCUS_TEMPLATE,
+  FOCUS_TEMPLATES,
 } from './semantic/focus'
 import {
   shortlistPassages,
@@ -168,8 +170,8 @@ app.post('/api/site', async (c) => {
   })
 
   const body = await c.req
-    .json<{ summaries?: unknown; findings?: unknown }>()
-    .catch(() => ({}) as { summaries?: unknown; findings?: unknown })
+    .json<{ summaries?: unknown; findings?: unknown; focus?: unknown }>()
+    .catch(() => ({}) as { summaries?: unknown; findings?: unknown; focus?: unknown })
   const parsed = z.array(PageSummary).max(25).safeParse(body.summaries)
   if (!parsed.success) {
     return c.json(
@@ -197,6 +199,23 @@ app.post('/api/site', async (c) => {
    *
    * Untrusted like any request body: parsed, capped, and used for nothing but grouping.
    */
+  /**
+   * What each page concluded about each stated focus, accumulated by the browser.
+   *
+   * Untrusted like any body: parsed, capped, and used only for counting.
+   */
+  const focusOutcomes = z
+    .array(
+      z.object({
+        id: z.string().min(1).max(20),
+        text: z.string().min(1).max(MAX_FOCUS_LENGTH),
+        pageUrl: z.string().url(),
+        found: z.boolean(),
+      }),
+    )
+    .max(75)
+    .safeParse(body.focus)
+
   const pageFindings = z
     .array(
       z.object({
@@ -398,6 +417,33 @@ app.post('/api/site', async (c) => {
     if (tpl) add(choice === 'drifting' ? 'audience_drifts' : 'audience_none_evident', tpl, {})
   }
 
+  /**
+   * A stated focus that no page communicates. One claim for the site, with the number of
+   * pages checked in it — "no page says so" means something different across three pages
+   * than across twenty-five.
+   */
+  const focusCoverage = rollUpFocus(focusOutcomes.success ? focusOutcomes.data : [])
+  for (const row of focusCoverage) {
+    if (row.pages.length > 0) continue
+    findings.push({
+      id: `focus_not_communicated_sitewide:${row.id}`,
+      module: 'website_understanding',
+      checkId: 'focus_not_communicated_sitewide',
+      observation: fillSlots(FOCUS_TEMPLATES.focus_not_communicated_sitewide.observation, {
+        focus: row.text,
+        checked: row.checked,
+      }),
+      evidence: [],
+      whyItMatters: FOCUS_TEMPLATES.focus_not_communicated_sitewide.whyItMatters,
+      recommendedAction: FOCUS_TEMPLATES.focus_not_communicated_sitewide.recommendedAction,
+      affects: summaries.map((x) => ({ pageUrl: x.url })),
+      priority: FOCUS_TEMPLATES.focus_not_communicated_sitewide.priority,
+      confidence: 'high',
+      highlights: [],
+      copySource: 'template',
+    })
+  }
+
   // Module 10: one plan over everything found, page findings and site findings alike.
   const opportunities = buildOpportunities([...groupable, ...findings], summaries.length)
 
@@ -405,6 +451,7 @@ app.post('/api/site', async (c) => {
   return c.json({
     findings,
     opportunities,
+    focusCoverage,
     signals: { ...signals, stages: counts },
     coverage,
     limits: [
@@ -442,10 +489,19 @@ app.post('/api/analyze', async (c) => {
   })
 
   const body = await c.req
-    .json<{ url?: string; focus?: unknown }>()
-    .catch(() => ({}) as { url?: string; focus?: unknown })
+    .json<{ url?: string; focus?: unknown; partOfScan?: unknown }>()
+    .catch(() => ({}) as { url?: string; focus?: unknown; partOfScan?: unknown })
   // Optional: what the owner says the page is about. URL-only onboarding stays true.
   const focusItems = readFocusItems(body.focus)
+  /**
+   * A page in a scan reports what it found and emits no finding of its own.
+   *
+   * Without this the same statement produces the identical "no sentence here says so" on
+   * every page scanned — the exact noise that kept this feature out of site scans. The
+   * site pass owns the claim instead, because across pages the useful answer is *which
+   * page says it*, not *this one does not*.
+   */
+  const partOfScan = body.partOfScan === true
   if (!body.url) {
     return c.json({ error: { code: 'invalid_url', message: 'Body must include "url"' } }, 400)
   }
@@ -709,23 +765,28 @@ app.post('/api/analyze', async (c) => {
    * to them precisely because they already know it.
    */
   const focusFindings: typeof merged = []
+  const focusRows: { id: string; text: string; found: boolean }[] = []
   const focusOutcome = focusRun.outcomes[0]
   if (focusOutcome) {
     for (const item of focusItems) {
       const answer = focusOutcome.answers[item.id]
       if (!answer || !isConfident(answer, config.confidenceThreshold)) continue
-      if (String(answer.choice ?? '') !== FOCUS_NOT_FOUND) continue
+      const missing = String(answer.choice ?? '') === FOCUS_NOT_FOUND
+      focusRows.push({ id: item.id, text: item.text, found: !missing })
+      if (!missing) continue
+      // In a scan the site pass makes this claim once, with the pages named.
+      if (partOfScan) continue
 
       focusFindings.push({
         id: `focus_not_communicated:${item.id}`,
         module: 'website_understanding',
         checkId: 'focus_not_communicated',
-        observation: FOCUS_TEMPLATE.observation.replace('{focus}', item.text),
+        observation: FOCUS_TEMPLATES.focus_not_communicated.observation.replace('{focus}', item.text),
         evidence: [],
-        whyItMatters: FOCUS_TEMPLATE.whyItMatters,
-        recommendedAction: FOCUS_TEMPLATE.recommendedAction,
+        whyItMatters: FOCUS_TEMPLATES.focus_not_communicated.whyItMatters,
+        recommendedAction: FOCUS_TEMPLATES.focus_not_communicated.recommendedAction,
         affects: [{ pageUrl: fetched.value.finalUrl }],
-        priority: FOCUS_TEMPLATE.priority,
+        priority: FOCUS_TEMPLATES.focus_not_communicated.priority,
         confidence: answer.confidence >= 0.85 ? 'high' : 'medium',
         highlights: [],
         copySource: 'template',
@@ -908,6 +969,7 @@ app.post('/api/analyze', async (c) => {
     sections,
     findings,
     profile,
+    focus: focusRows,
     coverage: coverageRows,
     // Module 10 over one page: rule 1 needs several pages, so this is grouping by
     // subject. Eight findings read better as three subjects even on a single page.

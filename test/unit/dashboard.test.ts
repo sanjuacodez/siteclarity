@@ -40,6 +40,7 @@ function report(overrides: Partial<AnalysisResult> = {}): AnalysisResult {
     input: { requestedUrl: 'https://example.test/page', finalUrl: 'https://example.test/page', fetchedAt: '2026-09-22T00:00:00Z', title: 'Presentation page' },
     limits: { scope: 'single_page', statements: ['Only this synthetic page was examined.'], decisionsRan: true, sectionsAnalyzed: 1, sectionsTotal: 1, stateSplit: false, language: 'en', languageSupported: true, jsDependent: false },
     profile: [],
+    focus: [],
     coverage: [],
     opportunities: [],
     summary_for_site: null,
@@ -517,7 +518,7 @@ describe('the report cards look like one another', () => {
   it('sets one heading size for every card', () => {
     // They were .86, .94, 1.0 and 1.02rem across four cards in the same report, which
     // is the kind of thing nobody can name but everybody notices.
-    expect(DASHBOARD_HTML).toContain('.card h2 { font-size:.94rem')
+    expect(DASHBOARD_HTML).toContain('.card h2 { font-size:var(--section-size)')
     for (const stale of ['.limits h2 { font-size', '.profile h2 { font-size', '.table-title h2 { font-size']) {
       expect(DASHBOARD_HTML, `${stale} reintroduces a second heading size`).not.toContain(stale)
     }
@@ -896,10 +897,14 @@ describe('website understanding profile', () => {
 describe('stated focus input', () => {
   const js = script
 
-  it('offers an optional focus field on the single-page pane', () => {
+  it('offers the optional focus field in every mode, not just single page', () => {
+    // It used to live inside the single-page pane, so a site scan could not use it at
+    // all. Across pages the question becomes the more useful one — which page says it.
     expect(DASHBOARD_HTML).toContain('id="focus"')
-    expect(DASHBOARD_HTML).toMatch(/What should this page say\?/)
     expect(DASHBOARD_HTML).toMatch(/optional/)
+    const panes = DASHBOARD_HTML.indexOf('id="pane-list"')
+    const field = DASHBOARD_HTML.indexOf('id="focus"')
+    expect(field, 'the focus field is inside a single mode pane').toBeGreaterThan(panes)
   })
 
   it('reads at most three usable lines', () => {
@@ -921,12 +926,19 @@ describe('stated focus input', () => {
     expect(items.some((t) => t === 'short')).toBe(false)
   })
 
-  it('sends focus only for a single page, never for a site scan', () => {
-    // Repeating the same statements against every page of a scan would report the
-    // identical gap on all of them.
-    expect(js).toContain('requestPage($(\'u\').value.trim(), readFocus())')
-    expect(js).toContain('await requestPage(url)')
+  it('sends focus in a scan too, but tells each page to defer its finding', () => {
+    // Repeating the same statements against every page would report the identical gap
+    // on all of them, which is why this was single-page only. The page still answers;
+    // it just stops claiming, and the site pass makes the claim once.
+    expect(js).toContain("requestPage($('u').value.trim(), readFocus())")
+    expect(js).toContain('requestPage(url, focusList, true)')
+    expect(js).toContain('body.partOfScan = true')
     expect(js).toContain('focus && focus.length ? { url, focus } : { url }')
+  })
+
+  it('accumulates each page conclusion and sends it with the inventory', () => {
+    expect(js).toContain('focus: focusOutcomes')
+    expect(js).toContain('pageUrl: r.input.finalUrl')
   })
 
   it('omits the field entirely when nothing was typed', () => {

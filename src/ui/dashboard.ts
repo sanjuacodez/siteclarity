@@ -14,17 +14,18 @@ export const DASHBOARD_HTML = `<!doctype html>
 <style>
 :root {
   color-scheme:light dark;
-  --bg:#f7f7fb; --surface:#fff; --soft:#f2f1f8; --border:#e4e3ed; --text:#242330;
-  --muted:#656477; --accent:#6d4aff; --accent-soft:#efebff; --button:#fff;
-  --warn:#926000; --warn-soft:#fff5de; --bad:#b43f4f; --bad-soft:#ffedf0;
-  --good:#267357; --good-soft:#eaf6ef; --shadow:0 8px 32px #29203e06; --radius:18px;
+  --bg:#f6f5f1; --surface:#fff; --soft:#f1f2ed; --border:#dddfd7; --text:#252b27;
+  --muted:#657068; --accent:#305e51; --accent-soft:#edf3ef; --button:#fff;
+  --warn:#8b641e; --warn-soft:#f8f2e5; --bad:#a3473b; --bad-soft:#faefec;
+  --good:#3c6b53; --good-soft:#edf4ee; --shadow:none; --radius:10px;
+  --section-size:1.125rem;
 }
 @media(prefers-color-scheme:dark) {
   :root {
-    --bg:#141419; --surface:#1c1c24; --soft:#24242f; --border:#343440; --text:#efedf7;
-    --muted:#aaa7bd; --accent:#aa96ff; --accent-soft:#302745; --button:#1b1338;
-    --warn:#edc172; --warn-soft:#342b1c; --bad:#f09aab; --bad-soft:#38242d;
-    --good:#8ed4b3; --good-soft:#21332d; --shadow:0 8px 32px #00000012;
+    --bg:#171a18; --surface:#1f2420; --soft:#272d28; --border:#394039; --text:#edf0e9;
+    --muted:#a6b1a7; --accent:#aacbb9; --accent-soft:#29372e; --button:#19281f;
+    --warn:#dbbe87; --warn-soft:#362f22; --bad:#e4a59a; --bad-soft:#3a2924;
+    --good:#a8c9b1; --good-soft:#28382d; --shadow:none;
   }
 }
 * { box-sizing:border-box }
@@ -36,7 +37,7 @@ button,a,input,textarea,summary { -webkit-tap-highlight-color:transparent }
 button { cursor:pointer }
 :focus-visible { outline:3px solid var(--accent); outline-offset:4px }
 button:disabled { opacity:.5; cursor:wait }
-button { border:0; border-radius:10px; padding:11px 18px; background:var(--accent); color:var(--button); font-weight:650 }
+button { border:0; border-radius:7px; padding:11px 18px; background:var(--accent); color:var(--button); font-weight:600 }
 button:hover:not(:disabled) { filter:brightness(.96) }
 input,textarea { min-width:0; border:1px solid var(--border); border-radius:10px; background:var(--bg); color:var(--text); padding:13px 15px; width:100% }
 input::placeholder,textarea::placeholder { color:var(--muted); opacity:.8 }
@@ -45,73 +46,73 @@ textarea { resize:vertical; line-height:1.7; font-size:.9rem }
 label { display:block; font-size:.85rem; font-weight:600; margin-bottom:7px }
 h1,h2,h3,p { margin-top:0 }
 h1,h2,h3 { line-height:1.25 }
-h1 { font-size:clamp(1.9rem,3vw,2.65rem); letter-spacing:-.045em; font-weight:700; margin-bottom:14px }
+h1 { font-size:clamp(1.75rem,3vw,2.25rem); letter-spacing:-.035em; font-weight:650; margin-bottom:14px }
 h2 { font-size:1.15rem; letter-spacing:-.025em; margin-bottom:8px }
 h3 { font-size:1rem; letter-spacing:-.015em }
-.shell { max-width:1120px; margin:auto; padding:0 32px }
+.shell { max-width:1160px; margin:auto; padding:0 40px }
 .topbar { border-bottom:1px solid var(--border); background:var(--surface) }
-.topbar .shell { min-height:78px; display:flex; align-items:center; gap:40px }
+.topbar .shell { min-height:72px; display:flex; align-items:center; gap:40px }
 .brand { color:var(--text); text-decoration:none; font-size:1.15rem; letter-spacing:-.035em; font-weight:750; display:flex; gap:10px; align-items:center }
 .brand-mark { background:var(--accent); color:var(--button); width:30px; height:30px; display:grid; place-items:center; border-radius:9px }
 .brand-mark svg { width:20px; height:20px }
-nav { display:flex; gap:28px; align-self:stretch; align-items:center }
-nav a { text-decoration:none; color:var(--muted); font-size:.85rem; display:flex; height:100%; align-items:center; border-bottom:2px solid transparent; padding-top:2px }
-nav a[aria-current] { color:var(--accent); border-bottom-color:var(--accent); font-weight:600 }
+.topbar nav { display:flex; gap:28px; align-self:stretch; align-items:center }
+.topbar nav a { text-decoration:none; color:var(--muted); font-size:.875rem; display:flex; height:100%; align-items:center; border-bottom:2px solid transparent; padding-top:2px }
+.topbar nav a[aria-current] { color:var(--text); border-bottom-color:var(--accent); font-weight:600 }
 .oss { margin-left:auto; color:var(--muted); font-size:.75rem; padding:4px 10px; border:1px solid var(--border); border-radius:99px; white-space:nowrap }
 .oss::before { content:""; display:inline-block; width:6px; height:6px; background:var(--good); border-radius:50%; margin-right:7px }
-main { padding-top:48px!important; padding-bottom:36px!important }
-.eyebrow { font-size:.7rem; text-transform:uppercase; letter-spacing:.12em; color:var(--accent); font-weight:700; margin-bottom:12px; display:flex; gap:8px; align-items:center }
+main.shell { padding-top:48px; padding-bottom:64px }
+.eyebrow { font-size:.75rem; text-transform:uppercase; letter-spacing:.09em; color:var(--muted); font-weight:600; margin-bottom:14px; display:flex; gap:8px; align-items:center }
 .eyebrow span { width:6px; height:6px; border-radius:50%; background:var(--accent) }
-.intro { max-width:720px; margin-bottom:30px }
+.intro { max-width:720px; margin-bottom:32px }
 .intro p { color:var(--muted); font-size:1rem; max-width:650px; margin-bottom:0 }
 .setup { display:grid; grid-template-columns:minmax(0,1fr) 270px; gap:0; border:1px solid var(--border); border-radius:var(--radius); background:var(--surface); box-shadow:var(--shadow); overflow:hidden }
-.setup-main { padding:26px 28px }
+.setup-main { padding:28px 30px }
 .setup-heading { display:flex; align-items:center; gap:9px; margin-bottom:18px }
-.step { display:grid; place-items:center; width:23px; height:23px; border:1px solid var(--border); color:var(--muted); border-radius:7px; font-size:.72rem }
+.step { display:none }
 .setup-heading h2 { margin:0; font-size:.96rem }
-.modes { display:flex; background:var(--soft); padding:4px; border-radius:11px; gap:4px; margin-bottom:22px }
+.modes { display:flex; background:var(--soft); padding:4px; border-radius:7px; gap:4px; margin-bottom:24px }
 .mtab { flex:1; background:transparent; color:var(--muted); padding:9px 5px; font-size:.84rem; border:1px solid transparent; border-radius:8px; white-space:nowrap }
 .mtab.on { color:var(--text); background:var(--surface); border-color:var(--border); box-shadow:0 2px 4px #00000005 }
 .row { display:flex; gap:10px; align-items:center }
 .row input { flex:1 }
 .row button { min-height:51px; white-space:nowrap; display:flex; gap:15px; align-items:center }
-.field-hint { color:var(--muted); font-size:.78rem; margin:8px 0 0 }
+.field-hint { color:var(--muted); font-size:.8125rem; line-height:1.6; margin:10px 0 0 }
 .input-bottom { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:12px }
 .cnt { display:flex; align-items:center; gap:8px; margin:10px 0 0; font-size:.8rem; color:var(--muted); font-weight:400 }
 .cnt input { width:70px; padding:6px 9px }
 .form-note { display:flex; flex-wrap:wrap; gap:6px 18px; border-top:1px solid var(--border); margin-top:22px; padding-top:15px; font-size:.73rem; color:var(--muted) }
 .form-note span::before { content:"✓"; color:var(--good); margin-right:6px }
-.setup-aside { background:var(--soft); border-left:1px solid var(--border); padding:28px 25px; display:flex; flex-direction:column; justify-content:center }
-.setup-aside h3 { font-size:.84rem; margin-bottom:15px }
+.setup-aside { background:var(--surface); border-left:1px solid var(--border); padding:28px 26px; display:flex; flex-direction:column; justify-content:center }
+.setup-aside h3 { font-size:.9375rem; line-height:1.5; margin-bottom:18px; font-weight:600 }
 .setup-aside ul { padding:0; margin:0 0 18px; list-style:none; display:grid; gap:12px }
-.setup-aside li { display:flex; gap:9px; font-size:.79rem; color:var(--muted) }
+.setup-aside li { display:flex; gap:10px; font-size:.8125rem; color:var(--muted) }
 .setup-aside li b { color:var(--accent); font-weight:600 }
 .setup-aside a { font-size:.78rem; width:fit-content }
-#out { margin-top:30px; scroll-margin-top:24px }
+#out { margin-top:48px; scroll-margin-top:32px }
 #out:focus { outline:none }
 .empty { margin-top:34px }
-.section-label { display:flex; align-items:center; justify-content:space-between; gap:15px; margin-bottom:17px }
-.section-label h2 { font-size:.94rem; margin:0 }
-.section-label span { font-size:.74rem; color:var(--muted) }
+.section-label { display:flex; align-items:baseline; justify-content:space-between; gap:16px; flex-wrap:wrap; margin-bottom:18px }
+.section-label h2 { font-size:var(--section-size); font-weight:600; margin:0 }
+.section-label span { font-size:.8125rem; color:var(--muted) }
 .feature-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:17px }
-.feature { padding:20px; border:1px solid var(--border); border-radius:14px }
-.feature .feature-icon { color:var(--accent); font-size:1.1rem; margin-bottom:12px; display:block }
-.feature h3 { font-size:.88rem; margin-bottom:8px }
-.feature p { font-size:.8rem; color:var(--muted); margin:0; line-height:1.7 }
-.card { padding:22px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); margin-bottom:18px }
+.feature { padding:20px 0; border-top:1px solid var(--border) }
+.feature .feature-icon { display:none }
+.feature h3 { font-size:.9375rem; margin-bottom:9px; font-weight:600 }
+.feature p { font-size:.875rem; color:var(--muted); margin:0; line-height:1.75 }
+.card { padding:28px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); margin-bottom:28px }
 /* Card headings were .86, .94, 1.0 and 1.02rem across four cards in the same report. */
-.card h2 { font-size:.94rem; letter-spacing:-.01em; margin:0 }
+.card h2 { font-size:var(--section-size); font-weight:600; letter-spacing:-.02em; margin:0 }
 .card p:last-child { margin-bottom:0 }
-.report-top { display:flex; gap:16px; justify-content:space-between; align-items:flex-start; margin-bottom:24px }
-.report-top h2 { font-size:1.45rem; margin:6px 0 9px; overflow-wrap:anywhere }
+.report-top { display:grid; grid-template-columns:minmax(0,1fr); gap:20px; margin-bottom:16px }
+.report-top h2 { font-size:1.75rem; line-height:1.35; font-weight:600; margin:8px 0 12px; max-width:840px; overflow-wrap:anywhere }
 .report-top .eyebrow { margin:0 }
-.sub { color:var(--muted); font-size:.85rem; margin:0; overflow-wrap:anywhere }
+.sub { color:var(--muted); font-size:.875rem; line-height:1.7; margin:0; overflow-wrap:anywhere }
 .page-link { font-size:.8rem; overflow-wrap:anywhere }
-.badge { color:var(--accent); background:var(--accent-soft); font-size:.73rem; border-radius:6px; padding:4px 8px; display:inline-block }
+.badge { color:var(--muted); background:transparent; border:1px solid var(--border); font-size:.75rem; border-radius:5px; padding:4px 9px; display:inline-block }
 .summary-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin:0 0 23px }
-.metric { padding:17px 19px; background:var(--surface); border:1px solid var(--border); border-radius:13px }
-.metric b { font-size:1.65rem; display:block; letter-spacing:-.05em; line-height:1.2; margin-bottom:6px; font-variant-numeric:tabular-nums }
-.metric span { color:var(--muted); font-size:.76rem }
+.metric { padding:20px; background:var(--surface); border:1px solid var(--border); border-radius:8px }
+.metric b { font-size:1.75rem; font-weight:600; display:block; letter-spacing:-.04em; line-height:1.2; margin-bottom:8px; font-variant-numeric:tabular-nums }
+.metric span { color:var(--muted); font-size:.8125rem }
 .metric.high b { color:var(--bad) }
 .metric.medium b { color:var(--warn) }
 .metric.low b { color:var(--accent) }
@@ -119,14 +120,14 @@ main { padding-top:48px!important; padding-bottom:36px!important }
 .notice strong { display:block; margin-bottom:3px }
 .notice p { margin:0 }
 .notice.warning { background:var(--warn-soft); border-color:transparent; color:var(--warn) }
-.limits { background:var(--soft); box-shadow:none; font-size:.79rem }
-.limits ul { padding-left:18px; margin:9px 0 0; color:var(--muted) }
+.limits { background:transparent; box-shadow:none; font-size:.875rem; line-height:1.75 }
+.limits ul { padding-left:18px; margin:16px 0 0; color:var(--muted) }
 .limits li { margin:5px 0; overflow-wrap:anywhere }
 .filters { display:flex; flex-wrap:wrap; gap:7px; margin-bottom:18px }
 .chip { background:transparent; color:var(--muted); border:1px solid var(--border); padding:7px 12px; font-size:.77rem; border-radius:8px }
 .chip.on { color:var(--accent); background:var(--accent-soft); border-color:var(--accent) }
 .chip span { margin-left:7px; opacity:.85; font-variant-numeric:tabular-nums }
-.grp { background:var(--surface); border:1px solid var(--border); border-radius:14px; margin-bottom:12px; overflow:hidden }
+.grp { background:var(--surface); border:1px solid var(--border); border-radius:8px; margin-bottom:12px; overflow:hidden }
 .group-summary { list-style:none; cursor:pointer; padding:20px 22px; position:relative }
 .group-summary::-webkit-details-marker { display:none }
 .group-summary::after { content:"+"; color:var(--muted); position:absolute; right:22px; top:19px; font-size:1.2rem }
@@ -137,8 +138,8 @@ main { padding-top:48px!important; padding-bottom:36px!important }
 .tag.high { color:var(--bad); background:var(--bad-soft) }
 .tag.medium { color:var(--warn); background:var(--warn-soft) }
 .tag.low { color:var(--accent); background:var(--accent-soft) }
-.group-summary h3 { margin:0 0 7px; font-size:.98rem }
-.group-summary p { font-size:.8rem; color:var(--muted); margin:0; max-width:860px }
+.group-summary h3 { margin:0 0 9px; font-size:1rem; line-height:1.5; font-weight:600 }
+.group-summary p { font-size:.875rem; line-height:1.7; color:var(--muted); margin:0; max-width:860px }
 .ins { padding:20px 22px; border-top:1px solid var(--border) }
 .insh { font-size:.8rem; font-weight:600; margin-bottom:10px; overflow-wrap:anywhere }
 .evl,.fixl { display:block; font-size:.64rem; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); margin-bottom:6px; font-weight:600 }
@@ -163,7 +164,12 @@ blockquote { background:var(--bg); border-left:2px solid var(--border); margin:0
 .sitewide { margin-bottom:20px }
 .sitewide .grp { background:var(--bg) }
 .sitewide .scope-note { margin-top:14px }
-.profile { margin-bottom:20px }
+.profile { margin-bottom:28px }
+.report-section-head { display:flex; align-items:baseline; justify-content:space-between; gap:20px; margin-bottom:26px }
+.report-section-head>div { min-width:0 }
+.report-section-head .sub { margin-top:10px; max-width:68ch }
+.section-meta { flex-shrink:0; font-size:.8125rem; color:var(--muted); font-variant-numeric:tabular-nums }
+.profile-rows { margin:0 }
 .focusbox { margin-top:12px; border:1px solid var(--border); border-radius:10px }
 .focusbox > summary { cursor:pointer; padding:10px 14px; font-size:.82rem; font-weight:600; list-style:none }
 .focusbox > summary::-webkit-details-marker { display:none }
@@ -174,34 +180,48 @@ blockquote { background:var(--bg); border-left:2px solid var(--border); margin:0
 .focusbody textarea { width:100%; padding:9px 12px; font:inherit; font-size:.86rem;
   background:var(--bg); color:var(--text); border:1px solid var(--border);
   border-radius:9px; resize:vertical }
-.cvg .drow { grid-template-columns:minmax(0,1fr) auto; align-items:start }
-.plan { margin-bottom:20px }
+.plan { margin-bottom:28px }
+.plan>.sub { margin-bottom:22px }
 .planlist { list-style:none; margin:0; padding:0; counter-reset:none }
 .planitem { display:grid; grid-template-columns:auto minmax(0,1fr) auto; gap:14px;
   align-items:start; padding:14px 0; border-top:1px solid var(--border) }
 .plann { display:grid; place-items:center; width:22px; height:22px; border-radius:7px;
   background:var(--accent-soft); color:var(--accent); font-size:.72rem; font-weight:700 }
-.plantitle { font-size:.9rem; font-weight:620; margin:0 0 4px }
-.planwhy { font-size:.82rem; color:var(--muted); margin:0 }
+.plantitle { font-size:.9375rem; font-weight:600; margin:0 0 8px }
+.planwhy { font-size:.875rem; line-height:1.7; color:var(--muted); margin:0 }
 .planfrom { font-size:.7rem; color:var(--muted); margin:5px 0 0 }
 .planwhere { font-size:.7rem; color:var(--muted); white-space:nowrap }
 @media (max-width:620px) { .planitem { grid-template-columns:auto minmax(0,1fr) } .planwhere { display:none } }
-.cvg .qtext { font-size:.86rem }
-.cvg .qarea { font-size:.7rem; color:var(--muted); margin-top:3px }
-.cvg .qpages { font-size:.7rem; color:var(--muted); margin-top:3px }
-.cstat { font-size:.64rem; letter-spacing:.03em; font-weight:650; padding:3px 7px; border-radius:5px; white-space:nowrap }
-.cstat.answered { color:var(--good); background:var(--good-soft) }
-.cstat.unanswered { color:var(--bad); background:var(--bad-soft) }
-.cstat.absent { color:var(--warn); background:var(--warn-soft) }
+.coverage-columns,.coverage-row { display:grid; grid-template-columns:minmax(0,1fr) 180px; gap:24px }
+.coverage-columns { color:var(--muted); font-size:.75rem; padding-bottom:12px }
+.coverage-row { padding:22px 0; align-items:baseline; border-top:1px solid var(--border) }
+.coverage-row:last-child { padding-bottom:2px }
+.cvg .qtext { font-size:.9375rem; font-weight:500; color:var(--text); line-height:1.6; margin:0; overflow-wrap:anywhere }
+.cvg .qarea { font-size:.8125rem; line-height:1.5; color:var(--muted); margin:6px 0 0 }
+.cvg .qpages { font-size:.8125rem; color:var(--muted); margin:8px 0 0; overflow-wrap:anywhere }
+.cstat { display:inline-flex; align-items:baseline; gap:8px; font-size:.8125rem; font-weight:500; line-height:1.6; width:fit-content }
+.cstat::before { content:""; width:6px; height:6px; border-radius:50%; background:currentColor; flex-shrink:0 }
+.cstat.answered { color:var(--good) }
+.cstat.unanswered { color:var(--warn) }
+.cstat.absent { color:var(--muted) }
 /* Detail row inside the profile and coverage cards. NOT .prow: that is the page
    table's <tr>, and making a table row a grid stops it being a row at all. */
-.drow { display:grid; grid-template-columns:180px minmax(0,1fr); gap:16px; padding:13px 0;
+.drow { display:grid; grid-template-columns:190px minmax(0,1fr); gap:32px; padding:24px 0;
   border-top:1px solid var(--border) }
-.plabel { font-size:.8rem; font-weight:620; color:var(--muted) }
-.pval { font-size:.9rem; overflow-wrap:anywhere }
-.pval blockquote { margin:0 }
-.pval.missing { color:var(--muted); font-style:italic }
-@media (max-width:620px) { .drow { grid-template-columns:1fr; gap:6px } }
+.drow:last-child { padding-bottom:2px }
+.plabel { font-size:.875rem; font-weight:500; color:var(--muted); line-height:1.7 }
+.pval { font-size:.9375rem; line-height:1.75; margin:0; min-width:0; overflow-wrap:anywhere }
+.pval blockquote { margin:0; background:transparent; color:var(--text); padding:0 0 0 18px; border-left:2px solid var(--border); border-radius:0; font-size:inherit; line-height:inherit; max-width:72ch }
+.pval .evidence-ref { margin:12px 0 0; padding-left:20px; font-size:.75rem; line-height:1.6 }
+.pval .evidence-ref code { font-size:inherit }
+.pval.missing { color:var(--muted) }
+@media (max-width:700px) {
+  .drow { grid-template-columns:1fr; gap:10px; padding:22px 0 }
+  .plabel { color:var(--text); font-weight:600 }
+  .report-section-head { flex-direction:column; align-items:flex-start; gap:12px; margin-bottom:24px }
+  .coverage-columns { display:none }
+  .coverage-row { grid-template-columns:1fr; gap:12px; padding:20px 0 }
+}
 .progress-card { background:var(--surface); border:1px solid var(--border); border-radius:14px;
   padding:20px 22px }
 .progress-head { display:flex; justify-content:space-between; align-items:baseline; gap:12px }
@@ -228,15 +248,12 @@ blockquote { background:var(--bg); border-left:2px solid var(--border); margin:0
   .stage, .dot, .pbar div { transition:none }
   .stage.active .dot { animation:none }
 }
-.footlinks { display:flex; gap:16px; flex-wrap:wrap; justify-content:center; margin:8px 0 }
-.footlinks a { color:var(--muted); text-decoration:none; border-bottom:1px solid transparent }
-.footlinks a:hover { color:var(--accent); border-bottom-color:var(--accent) }
-.report-actions { display:flex; flex-direction:column; align-items:flex-end; gap:10px }
+.report-actions { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px }
 .exports { display:flex; align-items:center; gap:6px; flex-wrap:wrap; justify-content:flex-end }
-.exportl { font-size:.64rem; letter-spacing:.08em; text-transform:uppercase; color:var(--muted);
+.exportl { font-size:.75rem; color:var(--muted);
   font-weight:650 }
 .exp { background:transparent; color:var(--muted); border:1px solid var(--border);
-  padding:5px 10px; font-size:.74rem; font-weight:600; border-radius:7px; cursor:pointer }
+  padding:7px 11px; font-size:.8125rem; font-weight:500; border-radius:5px; cursor:pointer }
 .exp:hover { color:var(--accent); border-color:var(--accent) }
 .keybox.needed { border-color:var(--warn); background:var(--warn-soft) }
 .keybox.needed > summary { color:var(--warn) }
@@ -256,7 +273,7 @@ blockquote { background:var(--bg); border-left:2px solid var(--border); margin:0
 .keybody input { flex:1 1 260px; padding:9px 12px; font:inherit; font-size:.86rem;
   background:var(--bg); color:var(--text); border:1px solid var(--border); border-radius:9px }
 .keybody button { padding:9px 15px; font-size:.8rem; font-weight:650; border-radius:9px;
-  border:1px solid var(--accent); background:var(--accent); color:var(--surface); cursor:pointer }
+  border:1px solid var(--accent); background:var(--accent); color:var(--button); cursor:pointer }
 .keybody button.ghost { background:transparent; color:var(--muted); border-color:var(--border) }
 .keywarn { color:var(--warn) !important; margin-bottom:0 !important }
 mark { background:var(--warn-soft); color:var(--warn); border-radius:3px; font-weight:600 }
@@ -301,9 +318,14 @@ mark { background:var(--warn-soft); color:var(--warn); border-radius:3px; font-w
 .stat span { color:var(--muted); font-size:.7rem }
 .tech p { color:var(--muted); margin:15px 0 0 }
 code { font-family:ui-monospace,SFMono-Regular,monospace; font-size:.85em; overflow-wrap:anywhere }
-footer { border-top:1px solid var(--border); padding:21px 0 27px; color:var(--muted); font-size:.73rem; display:flex; justify-content:space-between; gap:20px }
-footer p { margin:0 }
-footer a { color:var(--muted) }
+.site-footer { border-top:1px solid var(--border); color:var(--muted) }
+.footer-main { display:flex; justify-content:space-between; align-items:center; gap:32px; padding:30px 0 }
+.footer-brand { color:var(--text); text-decoration:none; font-size:1rem; font-weight:650; letter-spacing:-.025em }
+.footer-identity p { font-size:.8125rem; line-height:1.6; margin:6px 0 0 }
+.footer-links { display:flex; gap:24px; flex-wrap:wrap; align-items:center }
+.footer-links a { font-size:.8125rem; color:var(--text); text-decoration:none }
+.footer-links a:hover { text-decoration:underline; text-underline-offset:4px }
+.footer-bottom { display:flex; justify-content:space-between; gap:16px; padding:18px 0 26px; border-top:1px solid var(--border); font-size:.75rem; line-height:1.6 }
 .skip { position:absolute; left:20px; top:-80px; background:var(--surface); padding:10px; z-index:5 }
 .skip:focus { top:10px }
 .sr-status { position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap }
@@ -317,10 +339,10 @@ footer a { color:var(--muted) }
   .topbar .shell { min-height:67px; gap:22px }
   .brand { font-size:1rem; gap:7px }
   .brand-mark { width:27px; height:27px }
-  nav { gap:17px }
-  nav a { font-size:.77rem }
+  .topbar nav { gap:17px }
+  .topbar nav a { font-size:.8125rem }
   .oss { display:none }
-  main { padding-top:32px!important }
+  main.shell { padding-top:32px; padding-bottom:40px }
   .intro { margin-bottom:25px }
   .intro p { font-size:.89rem }
   .setup-main { padding:20px 17px }
@@ -328,24 +350,22 @@ footer a { color:var(--muted) }
   .row input { flex:auto }
   .row button { justify-content:center }
   .feature-grid { grid-template-columns:1fr; gap:10px }
-  .feature { padding:17px 18px }
-  .feature .feature-icon { float:left; margin:0 15px 0 0 }
-  .feature h3,.feature p { margin-left:34px }
+  .feature { padding:18px 0 }
   .feature h3 { margin-bottom:5px }
-  .section-label span { display:none }
+  .section-label { gap:8px }
   .summary-grid { grid-template-columns:repeat(2,1fr); gap:9px }
   .metric { padding:14px 16px }
   .metric b { font-size:1.4rem }
-  .report-top { display:block }
-  .report-top .badge { margin-top:10px }
-  .report-top h2 { font-size:1.2rem }
-  .card { padding:18px }
+  .report-top h2 { font-size:1.4rem }
+  .report-actions { align-items:flex-start; flex-direction:column }
+  .exports { justify-content:flex-start }
+  .card { padding:22px 18px; margin-bottom:22px }
   .tbl-card { padding:18px 0 0 }
   .tbl { min-width:590px }
   .group-summary,.ins { padding:17px }
   .stats { grid-template-columns:repeat(2,1fr) }
-  footer { display:block }
-  footer p+p { margin-top:7px }
+  .footer-main { flex-direction:column; align-items:flex-start; gap:22px; padding:26px 0 }
+  .footer-bottom { flex-direction:column; gap:8px }
 }
 </style>
 </head>
@@ -358,9 +378,9 @@ footer a { color:var(--muted) }
 </div></header>
 <main id="main" class="shell">
   <div class="intro">
-    <div class="eyebrow"><span aria-hidden="true"></span> AI &amp; answer readiness</div>
-    <h1>Good content. Clear answers.</h1>
-    <p>Find what makes your content harder for search and AI systems to understand. Get specific fixes, backed by evidence from your pages.</p>
+    <div class="eyebrow">Content review</div>
+    <h1>Website content audit</h1>
+    <p>Review what your pages communicate, which buyer questions they answer, and what to improve next.</p>
   </div>
   <section class="setup" aria-labelledby="setup-title">
     <div class="setup-main">
@@ -405,17 +425,6 @@ footer a { color:var(--muted) }
           <label for="u">Page URL</label>
           <div class="row"><input type="url" id="u" placeholder="https://example.com/page" required autocomplete="url" aria-describedby="page-hint"><button id="b" type="submit">Audit page <span aria-hidden="true">↗</span></button></div>
           <p class="field-hint" id="page-hint">A focused review of one public page.</p>
-          <details class="focusbox">
-            <summary>What should this page say? <span class="muted">optional</span></summary>
-            <div class="focusbody">
-              <p class="muted">Tell us what you believe this page communicates &mdash; who it is
-              for, the problem it solves, what makes you different. We check whether the page
-              actually says it. One per line, up to three.</p>
-              <textarea id="focus" rows="3" aria-describedby="focus-count" placeholder="We are built for agencies managing many client stores
-We help stores reduce cart abandonment"></textarea>
-              <p class="field-hint" id="focus-count">0 of 3</p>
-            </div>
-          </details>
         </div>
         <div id="pane-site" class="pane" role="tabpanel" aria-labelledby="tab-site" hidden>
           <label for="us">Website URL</label>
@@ -429,6 +438,20 @@ We help stores reduce cart abandonment"></textarea>
           <p class="field-hint" id="list-hint">One URL per line, up to 25 unique pages. Duplicate URLs are removed.</p>
           <div class="input-bottom"><span class="field-hint" id="ulcount">0 URLs</span><button type="submit" disabled>Audit list <span aria-hidden="true">↗</span></button></div>
         </div>
+        <details class="focusbox">
+          <summary>What should this say? <span class="muted">optional</span></summary>
+          <div class="focusbody">
+            <p class="muted">Tell us what you believe your content communicates &mdash; who it is
+            for, the problem it solves, what makes you different. We check whether it actually
+            says so. One per line, up to three.</p>
+            <textarea id="focus" rows="3" aria-describedby="focus-count" placeholder="We are built for agencies managing many client stores
+We help stores reduce cart abandonment"></textarea>
+            <p class="field-hint" id="focus-count">0 of 3</p>
+            <p class="field-hint">On a scan we report <strong>which page</strong> says each one, and
+            flag anything no page says. We never judge whether a statement is true &mdash; only
+            whether your pages say it.</p>
+          </div>
+        </details>
       </form>
       <div class="form-note"><span>Source-backed findings</span><span>Prioritised fixes</span><span>No account needed</span></div>
     </div>
@@ -449,14 +472,16 @@ We help stores reduce cart abandonment"></textarea>
     </div>
   </section>
 </main>
-<div class="shell"><footer>
-<p>Built for clearer content. Free &amp; open source · MIT license</p>
-<p class="footlinks">
-  <a href="/checks">Checks &amp; limitations</a>
-  <a href="https://github.com/sanjuacodez/siteclarity" target="_blank" rel="noopener noreferrer">Source</a>
-</p>
-<p class="muted">Decisions by a System One model. No generative AI, so evidence cannot be invented. Reports stay in this tab.</p>
-</footer></div>
+<footer class="site-footer"><div class="shell">
+  <div class="footer-main">
+    <div class="footer-identity"><a class="footer-brand" href="/">SiteClarity</a><p>A practical workspace for reviewing website content.</p></div>
+    <nav class="footer-links" aria-label="Footer navigation">
+      <a href="/checks">Checks &amp; limitations</a>
+      <a href="https://github.com/sanjuacodez/siteclarity" target="_blank" rel="noopener noreferrer">GitHub <span aria-hidden="true">↗</span></a>
+    </nav>
+  </div>
+  <div class="footer-bottom"><span>Free &amp; open source · MIT license</span><span>Reports stay in this tab. Export a copy to keep it.</span></div>
+</div></footer>
 <script>
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -488,7 +513,7 @@ const MODULE_LABELS = {
 const moduleLabel = (id) => MODULE_LABELS[id] || 'Other';
 
 const PROFILE_LABELS = {
-  business_type: 'What kind of business this is',
+  business_type: 'Business type',
   what_it_does: 'What it does',
   who_its_for: 'Who it is for',
   problem_solved: 'The problem it solves',
@@ -517,22 +542,22 @@ function profileCard(d) {
   const rows = entries.map(e => {
     const label = PROFILE_LABELS[e.dimension] || e.dimension;
     if (e.value) {
-      return '<div class="drow"><div class="plabel">' + esc(label) + '</div>' +
-        '<div class="pval">' + esc(BUSINESS_TYPE_TEXT[e.value] || e.value) + '</div></div>';
+      return '<div class="drow"><dt class="plabel">' + esc(label) + '</dt>' +
+        '<dd class="pval">' + esc(BUSINESS_TYPE_TEXT[e.value] || e.value) + '</dd></div>';
     }
     if (e.quote) {
-      return '<div class="drow"><div class="plabel">' + esc(label) + '</div>' +
-        '<div class="pval"><blockquote>' + esc(e.quote) + '</blockquote>' +
-        '<p class="evidence-ref">Your words \u00b7 passage ' + esc(e.passageId) + '</p></div></div>';
+      return '<div class="drow"><dt class="plabel">' + esc(label) + '</dt>' +
+        '<dd class="pval"><blockquote>' + esc(e.quote) + '</blockquote>' +
+        '<p class="evidence-ref">Your words \u00b7 passage <code>' + esc(e.passageId) + '</code></p></dd></div>';
     }
-    return '<div class="drow"><div class="plabel">' + esc(label) + '</div>' +
-      '<div class="pval missing">' + esc(e.absentReason || 'Not stated on this page.') + '</div></div>';
+    return '<div class="drow"><dt class="plabel">' + esc(label) + '</dt>' +
+      '<dd class="pval missing">' + esc(e.absentReason || 'Not stated on this page.') + '</dd></div>';
   }).join('');
   const stated = entries.filter(e => e.value || e.quote).length;
-  return '<section class="card profile"><div class="section-label"><h2>What this page says it is</h2>' +
-    '<span>' + stated + ' of ' + entries.length + ' stated</span></div>' +
-    '<p class="sub">Asked which of your own sentences states each of these, the model picked ' +
-    'the quotes below. Nothing here is rewritten.</p>' + rows + '</section>';
+  return '<section class="card profile"><div class="report-section-head"><div><h2>What this page says it is</h2>' +
+    '<p class="sub">How your business is described on this page. The selected quotes are your own words, shown verbatim.</p></div>' +
+    '<span class="section-meta">' + stated + ' of ' + entries.length + ' stated</span></div>' +
+    '<dl class="profile-rows">' + rows + '</dl></section>';
 }
 const priorities = { high: 0, medium: 1, low: 2 };
 
@@ -783,8 +808,11 @@ $('f').addEventListener('submit', async e => {
     announce('Audit could not be completed.');
   } finally { setBusy(false); }
 });
-async function requestPage(url, focus) {
+async function requestPage(url, focus, partOfScan) {
   const body = focus && focus.length ? { url, focus } : { url };
+  // In a scan the same statement would otherwise produce the identical "no sentence here
+  // says so" on every page. The site pass makes the claim once, naming the pages.
+  if (partOfScan) body.partOfScan = true;
   const r = await fetch('/api/analyze', { method:'POST', headers:analyzeHeaders(), body:JSON.stringify(body) });
   const d = await r.json();
   if (!r.ok) throw new Error(d.error && d.error.message || 'Unable to analyse this page.');
@@ -792,6 +820,7 @@ async function requestPage(url, focus) {
 }
 async function analyseList(urls, metadata) {
   const results = []; const failures = [];
+  const focusList = readFocus();
   const meta = metadata || { totalFound:urls.length, urls, truncated:false, sitemapUrl:null };
   showOutput(loading('Preparing ' + urls.length + ' pages…', 'Each page is analysed separately. Keep this tab open.'), false);
   let done = 0;
@@ -799,7 +828,7 @@ async function analyseList(urls, metadata) {
   await Promise.all(Array.from({ length:Math.min(3, queue.length) }, async () => {
     while (queue.length) {
       const url = queue.shift();
-      try { results.push(await requestPage(url)); }
+      try { results.push(await requestPage(url, focusList, true)); }
       catch (err) { failures.push({ url, error:{ message:err.message } }); }
       done++;
       const message = done + ' of ' + urls.length + ' pages processed';
@@ -823,7 +852,12 @@ async function analyseList(urls, metadata) {
         id: f.id, checkId: f.checkId, module: f.module,
         pageUrl: (f.affects[0] && f.affects[0].pageUrl) || r.input.finalUrl,
       }))).slice(0, 500);
-      const sr = await fetch('/api/site', { method:'POST', headers:analyzeHeaders(), body:JSON.stringify({ summaries: inventory, findings: grouping }) });
+      // What each page concluded about each stated statement. The roll-up turns these
+      // into the answer a site owner actually wants: which page says it.
+      const focusOutcomes = results.flatMap(r => (r.focus || []).map(x => ({
+        id: x.id, text: x.text, pageUrl: r.input.finalUrl, found: x.found,
+      })));
+      const sr = await fetch('/api/site', { method:'POST', headers:analyzeHeaders(), body:JSON.stringify({ summaries: inventory, findings: grouping, focus: focusOutcomes }) });
       if (sr.ok) site = await sr.json();
     } catch (err) {
       // A site-level failure must not lose the per-page report that already succeeded.
@@ -1073,7 +1107,7 @@ function coverageCard(rows, scope) {
         : r.status === 'answered'
           ? '<p class="qpages">Answered on ' + pageLink(r.pages[0]) + '</p>'
           : '';
-    return '<div class="drow"><div><p class="qtext">' + esc(r.text) + '</p>' +
+    return '<div class="coverage-row" role="listitem"><div><p class="qtext">' + esc(r.text) + '</p>' +
       '<p class="qarea">' + esc(COVERAGE_AREA_LABELS[r.area] || r.area) + '</p>' + pages + '</div>' +
       '<span class="cstat ' + r.status + '">' + esc(COVERAGE_STATUS[r.status] || r.status) + '</span></div>';
   }).join('');
@@ -1082,10 +1116,11 @@ function coverageCard(rows, scope) {
     : counts.answered + ' of ' + rows.length + ' answered here';
   var lead = scope === 'site'
     ? 'A fixed list of questions people ask before choosing. Each was checked against the pages that raise it — nothing here was written by a model.'
-    : 'Questions this page brings up, and whether it answers them. Only questions your own words raise are checked, so a page is never marked down for being about something else.';
-  return '<section class="card profile cvg"><div class="section-label"><h2>Questions buyers ask</h2>' +
-    '<span>' + meta + '</span></div>' +
-    '<p class="sub">' + lead + '</p>' + body + '</section>';
+    : 'Questions from our question bank that this page brings up. See which ones it answers and which it leaves open.';
+  return '<section class="card cvg"><div class="report-section-head"><div><h2>Questions buyers ask</h2>' +
+    '<p class="sub">' + lead + '</p></div><span class="section-meta">' + meta + '</span></div>' +
+    '<div class="coverage-columns" aria-hidden="true"><span>Question</span><span>Coverage</span></div>' +
+    '<div class="coverage-list" role="list" aria-label="Buyer question coverage">' + body + '</div></section>';
 }
 
 /**
@@ -1116,6 +1151,38 @@ function planCard(items, scope) {
     '<span>' + items.length + (items.length === 1 ? ' piece of work' : ' pieces of work') + '</span></div>' +
     '<p class="sub">The findings below, grouped into jobs. In order — not scored.</p>' +
     '<ol class="planlist">' + body + '</ol></section>';
+}
+
+/**
+ * Which page says each thing you told us the site is about.
+ *
+ * The page-level version of this answers yes or no, which is the right answer for one
+ * page and useless across twenty-five. Here the answer is a location: a statement that
+ * lives on exactly one page is worth knowing about as much as one that lives nowhere.
+ */
+function focusCard(rows) {
+  rows = rows || [];
+  if (!rows.length) return '';
+  const said = rows.filter(r => r.pages.length).length;
+  const body = rows.map(r => {
+    const on = r.pages.length;
+    const where = !on
+      ? '<span class="cstat unanswered">No page says it</span>'
+      : on === 1
+        ? '<span class="cstat answered">1 page</span>'
+        : '<span class="cstat answered">' + on + ' pages</span>';
+    const links = on
+      ? '<p class="qpages">' + r.pages.slice(0, 3).map(pageLink).join(' ') +
+        (on > 3 ? ' and ' + (on - 3) + ' more' : '') + '</p>'
+      : '<p class="qpages">Checked against ' + r.checked +
+        (r.checked === 1 ? ' page' : ' pages') + '.</p>';
+    return '<div class="drow"><div><p class="qtext">&ldquo;' + esc(r.text) + '&rdquo;</p>' +
+      links + '</div>' + where + '</div>';
+  }).join('');
+  return '<section class="card profile cvg"><div class="section-label"><h2>What you said it should say</h2>' +
+    '<span>' + said + ' of ' + rows.length + ' found</span></div>' +
+    '<p class="sub">Your own statements, and which pages communicate them. We never judge whether a statement is true — only whether your pages say it.</p>' +
+    body + '</section>';
 }
 
 function renderSite(results, sm, failures, partial, site) {
@@ -1156,6 +1223,7 @@ function renderSite(results, sm, failures, partial, site) {
   // Site-wide findings come before the table: they are about the site, not about any
   // one row in it.
   h += summaryCards(c) + planCard(site && site.opportunities, 'site') + siteBlock +
+    focusCard(site && site.focusCoverage) +
     coverageCard(site && site.coverage, 'site') + '<div class="card tbl-card"><div class="table-title"><h2>Choose a page to work on</h2><p class="sub">Ordered by “Fix first” findings, then total findings. Open a page for its report and scope.</p></div>' +
     '<div class="tscroll" role="region" aria-label="Page reports, scroll horizontally on small screens" tabindex="0"><table class="tbl"><thead><tr>' +
     '<th scope="col">Page</th><th scope="col" class="c-n">Fix first</th><th scope="col" class="c-n">Worth doing</th><th scope="col" class="c-n">Minor</th><th scope="col" class="c-n">Total</th>' +

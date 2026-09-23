@@ -27,6 +27,7 @@ const BLOCKS_WHOLE_PAGE: Record<string, true> = {
   audience_rarely_named: true,
   no_problem_stated: true,
   focus_not_communicated: true,     // nothing on the page can be attributed to a known subject
+  focus_not_communicated_sitewide: true,  // the site never states the thing it is for
 }
 
 /** Costs an entire section: the answer cannot be found or does not exist. */

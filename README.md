@@ -116,16 +116,21 @@ Content you cannot act on is excluded *before* analysis, and the report says so:
 
 ## Tell it what the page should say
 
-Optional, on a single-page audit: write up to three things you believe the page
-communicates — who it is for, the problem it solves, what makes you different.
+Optional, in any mode: write up to three things you believe your content communicates —
+who it is for, the problem it solves, what makes you different.
 
-SiteClarity then checks whether the page actually says them, and reports the gaps:
+SiteClarity then checks whether your content actually says them, and reports the gaps:
 
 > **You said this page is about "we are built for agencies managing many client stores"
 > — but no sentence here says so.**
 
 That gap is invisible to whoever wrote the page, because they already know what they
 meant. It never judges whether the statement is *true* — only whether the page says it.
+
+**On a site scan the answer is a location rather than a yes or no.** Each page is asked the
+same question and reports back without claiming anything; the scan then tells you which
+page communicates each statement, and flags any that no page does. A statement that turns
+out to live on exactly one page of twenty-five is worth knowing about too.
 
 ## Three ways to run it
 

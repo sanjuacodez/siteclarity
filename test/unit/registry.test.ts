@@ -30,8 +30,28 @@ const MODULES = import.meta.glob('../../src/{static,semantic}/**/*.ts', { eager:
   Record<string, unknown>
 >
 
-/** A catalogue is an object export whose values all look like templates or questions. */
+/** True when the object IS a template, rather than a collection of them. */
+function looksLikeTemplate(value: unknown): boolean {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false
+  const o = value as Record<string, unknown>
+  return (
+    typeof o.observation === 'string' &&
+    typeof o.whyItMatters === 'string' &&
+    typeof o.recommendedAction === 'string'
+  )
+}
+
+/**
+ * A catalogue is an object export whose values all look like templates or questions —
+ * OR a single template exported on its own.
+ *
+ * That second case was the hole. `FOCUS_TEMPLATE` was one template object, so its values
+ * were plain strings and discovery skipped it: the stated-focus check shipped
+ * undocumented, invisible on /checks, and nothing failed. A lone template is a catalogue
+ * of one and has to be registered like any other.
+ */
 function isCatalogue(value: unknown): boolean {
+  if (looksLikeTemplate(value)) return true
   if (!value || typeof value !== 'object' || Array.isArray(value)) return false
   const entries = Object.entries(value as Record<string, unknown>)
   if (entries.length === 0) return false
