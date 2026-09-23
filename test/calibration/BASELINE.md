@@ -1,5 +1,62 @@
 # Decision-layer calibration baseline
 
+## 2026-09-23 · 51 cases · modules 1 and 2
+
+```
+Agreement        44/51  (86%)
+False positives  0
+Overconfident    1
+Input tokens     22,254
+```
+
+| Question | Agreement |
+| --- | --- |
+| promotional_intensity | 8/8 |
+| entity_clarity | 4/4 |
+| answers_heading | 8/9 |
+| extraction_readiness | 6/7 |
+| self_contained | 6/7 |
+| claim_specificity | 5/6 |
+| evidence_supports_claim | 4/6 |
+| improvement_type | 3/4 |
+
+### `evidence_supports_claim` fails where failing is harmless
+
+4/6 looks like the weakest question, and the shape of the failures matters more than the
+count.
+
+It caught **both** irrelevant-evidence cases confidently — "40,000 stores have installed
+it" as proof of *speed* scored 0.05 at 0.90 confidence, and "shipping since 2019" as proof
+of *ease of setup* likewise. That is precisely what the question exists to catch, and it
+is the only thing the product reports from it.
+
+Both failures were the opposite direction: under-confident on evidence that genuinely
+does support its claim. `popularity-supports-popularity` came back 0.52 at 0.04
+confidence — effectively a coin flip.
+
+**The pipeline only emits a finding when the model is confident the evidence does NOT
+support the claim.** So an under-confident yes produces silence, which is the correct
+outcome anyway. The question is strong on the side that gets reported and weak on the
+side that never does.
+
+This is worth stating because the raw score understates it. A single agreement number
+treats every error alike; in a product where one direction is published and the other is
+discarded, they are not alike.
+
+### Module 2's split
+
+| Judgement | Made by |
+| --- | --- |
+| Is this a claim? | deterministic — hype term plus a claim family |
+| Is there evidence nearby? | deterministic — figures, sources, docs, certifications, dates |
+| How far away is it? | deterministic — passage distance |
+| **Is the evidence about this claim?** | **the model** |
+
+Proximity is measurable. Relevance is not. That boundary is the whole design.
+
+---
+
+
 ## 2026-09-23 · 45 cases · the honest number
 
 ```

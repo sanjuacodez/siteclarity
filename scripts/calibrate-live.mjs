@@ -54,10 +54,9 @@ async function loadTs(path, exportName) {
 }
 
 async function loadCatalogue() {
-  const page = await loadTs('src/semantic/questions.ts', 'PAGE_QUESTIONS')
-  const section = await loadTs('src/semantic/questions.ts', 'SECTION_QUESTIONS')
-  const passage = await loadTs('src/semantic/questions.ts', 'PASSAGE_QUESTIONS')
-  return { ...page, ...section, ...passage }
+  const names = ['PAGE_QUESTIONS', 'SECTION_QUESTIONS', 'PASSAGE_QUESTIONS', 'EVIDENCE_QUESTIONS']
+  const parts = await Promise.all(names.map((n) => loadTs('src/semantic/questions.ts', n)))
+  return Object.assign({}, ...parts)
 }
 
 const loadCases = () => loadTs('test/calibration/decisions.ts', 'DECISION_CASES')

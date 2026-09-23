@@ -127,6 +127,30 @@ export const SECTION_QUESTIONS: Record<string, Question> = {
   },
 }
 
+/**
+ * Module 2 — Evidence & Trust, semantic half.
+ *
+ * The deterministic side finds claims, finds evidence, and measures the distance
+ * between them. What it cannot judge is RELEVANCE: "we have 40,000 installs" is a real
+ * figure sitting beside a speed claim it does nothing to support. Proximity is
+ * measurable; whether the proof is about the claim is not.
+ *
+ * Asked only where evidence was actually found nearby — there is nothing to judge when
+ * there is no evidence at all.
+ */
+export const EVIDENCE_QUESTIONS: Record<string, Question> = {
+  evidence_supports_claim: {
+    type: 'noul',
+    instructions:
+      'The supporting detail is evidence for THIS claim, not merely a nearby fact.',
+    criteria: {
+      true: 'The detail speaks to the same thing the claim asserts, so a sceptical reader would be satisfied by it.',
+      false:
+        'The detail is real but about something else — a different quality, a different metric — so it does not support this claim even though it sits beside it.',
+    },
+  },
+}
+
 /** Asked per candidate claim passage, against passage-scope state. */
 export const PASSAGE_QUESTIONS: Record<string, Question> = {
   is_claim: {

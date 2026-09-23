@@ -14,7 +14,11 @@ import { fetchPage } from './intake/fetch'
 import { discoverUrls } from './intake/sitemap'
 import { extract } from './extract/extract'
 import { createBackend } from './provider'
+import { findClaims } from './static/evidence/markers'
+import { EVIDENCE_TEMPLATES } from './static/evidence/templates'
+import { makeEvidence, verifyAll } from './assemble/verify'
 import {
+  buildClaimEvidenceStates,
   detectTestimonialSections,
   detectLinkCardSections,
   excludedSections,
@@ -23,7 +27,12 @@ import {
   buildPassageStates,
   selectClaimCandidates,
 } from './semantic/state'
-import { PAGE_QUESTIONS, SECTION_QUESTIONS, PASSAGE_QUESTIONS } from './semantic/questions'
+import {
+  PAGE_QUESTIONS,
+  SECTION_QUESTIONS,
+  PASSAGE_QUESTIONS,
+  EVIDENCE_QUESTIONS,
+} from './semantic/questions'
 import { runDecisions, isConfident } from './semantic/run'
 import { SCHEMA_VERSION, assertNoOverallScore, type Decision } from './contracts'
 import {
@@ -151,17 +160,25 @@ app.post('/api/analyze', async (c) => {
   const claimCandidates = selectClaimCandidates(doc)
   const passageStates = buildPassageStates(doc, claimCandidates)
 
+  // Module 2: only claims whose evidence sits in a DIFFERENT passage need judging —
+  // proximity is already measured, relevance is not.
+  const claims = findClaims(doc, allExcluded)
+  const claimStates = buildClaimEvidenceStates(doc, claims)
+
   const backend = createBackend(c.env, config)
   const tDecide = Date.now()
 
-  const [pageRun, sectionRun, passageRun] = await Promise.all([
+  const [pageRun, sectionRun, passageRun, claimRun] = await Promise.all([
     runDecisions(backend, [pageState], PAGE_QUESTIONS, 1),
     runDecisions(backend, sectionStates, SECTION_QUESTIONS, config.maxConcurrentDecisions),
     runDecisions(backend, passageStates, PASSAGE_QUESTIONS, config.maxConcurrentDecisions),
+    runDecisions(backend, claimStates, EVIDENCE_QUESTIONS, config.maxConcurrentDecisions),
   ])
   const decideMs = Date.now() - tDecide
 
-  const degraded = pageRun.stats.degraded || sectionRun.stats.degraded || passageRun.stats.degraded
+  const degraded =
+    pageRun.stats.degraded || sectionRun.stats.degraded || passageRun.stats.degraded ||
+    claimRun.stats.degraded
   const degradedReason =
     pageRun.stats.degradedReason ?? sectionRun.stats.degradedReason ?? passageRun.stats.degradedReason
 
@@ -250,7 +267,43 @@ app.post('/api/analyze', async (c) => {
   // not fixed — rather than by priority label. See assemble/impact.ts.
   const merged = [...staticFindings, ...decisionFindings]
   const occurrences = countOccurrences(merged)
-  const findings = merged.sort((a, b) => compareByImpact(a, b, occurrences))
+  // A nearby fact that does not support its claim is worse than no fact: the page looks
+  // evidenced when it is not. Reportable only once the model has judged relevance.
+  const irrelevant: typeof merged = []
+  for (const outcome of claimRun.outcomes) {
+    const answer = outcome.answers.evidence_supports_claim
+    if (!answer || !isConfident(answer, config.confidenceThreshold)) continue
+    if ((answer.noul ?? 1) >= 0.5) continue // it does support the claim
+
+    const claim = claims.find((c) => c.passage.id === outcome.refId)
+    if (!claim) continue
+    const tpl = EVIDENCE_TEMPLATES.evidence_irrelevant!
+    const ev = verifyAll(
+      doc,
+      [makeEvidence(doc, claim.passage.id)].filter((e): e is NonNullable<typeof e> => e !== null),
+    )
+    if (ev.length === 0) continue
+
+    irrelevant.push({
+      id: `evidence_irrelevant:${claim.passage.id}`,
+      module: 'evidence_trust',
+      checkId: 'evidence_irrelevant',
+      observation: tpl.observation.replace('{what}', claim.what),
+      evidence: ev,
+      whyItMatters: tpl.whyItMatters,
+      recommendedAction: tpl.recommendedAction.replace('{what}', claim.what),
+      affects: [{ pageUrl: fetched.value.finalUrl, sectionId: claim.passage.sectionId }],
+      priority: tpl.priority,
+      confidence: answer.confidence >= 0.85 ? 'high' : 'medium',
+      highlights: claim.terms,
+      copySource: 'template',
+    })
+  }
+
+  const withEvidence = [...merged, ...irrelevant]
+  const findings = withEvidence.sort((a, b) =>
+    compareByImpact(a, b, countOccurrences(withEvidence)),
+  )
 
   const stateSplit = sectionStates.some((s) => s.refId.includes('#'))
   const langSupported = !doc.lang || doc.lang.toLowerCase().startsWith('en')
@@ -294,11 +347,15 @@ app.post('/api/analyze', async (c) => {
     provider: {
       backend: degraded ? ('none' as const) : backend.name,
       model: pageRun.stats.model ?? sectionRun.stats.model,
-      calls: pageRun.stats.calls + sectionRun.stats.calls + passageRun.stats.calls,
+      calls:
+        pageRun.stats.calls + sectionRun.stats.calls + passageRun.stats.calls +
+        claimRun.stats.calls,
       inputTokens:
-        pageRun.stats.inputTokens + sectionRun.stats.inputTokens + passageRun.stats.inputTokens,
+        pageRun.stats.inputTokens + sectionRun.stats.inputTokens +
+        passageRun.stats.inputTokens + claimRun.stats.inputTokens,
       outputTokens:
-        pageRun.stats.outputTokens + sectionRun.stats.outputTokens + passageRun.stats.outputTokens,
+        pageRun.stats.outputTokens + sectionRun.stats.outputTokens +
+        passageRun.stats.outputTokens + claimRun.stats.outputTokens,
       degraded,
       degradedReason,
     },

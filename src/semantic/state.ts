@@ -308,6 +308,39 @@ export function detectTestimonialSections(doc: ExtractedDoc): Set<string> {
   return skip
 }
 
+/**
+ * Claim-scope state: one claim and the evidence found near it, nothing else.
+ *
+ * Deliberately excludes the rest of the section. The question is whether THIS detail
+ * supports THIS claim; surrounding copy would let the model borrow justification the
+ * reader of a quoted passage would never see.
+ */
+export function buildClaimEvidenceStates(
+  doc: ExtractedDoc,
+  claims: { passage: Passage; what: string; supportId: string | null }[],
+): ScopedState<{ claimId: string }>[] {
+  const out: ScopedState<{ claimId: string }>[] = []
+  for (const c of claims) {
+    // Nothing to judge unless the support sits in a different passage.
+    if (!c.supportId) continue
+    const support = doc.passagesById.get(c.supportId)
+    if (!support) continue
+    const state = {
+      claim: c.passage.text,
+      claim_is_about: c.what,
+      supporting_detail: support.text,
+    }
+    out.push({
+      scope: 'passage',
+      refId: c.passage.id,
+      state,
+      estimatedTokens: estimateTokens(JSON.stringify(state)),
+      meta: { claimId: c.passage.id },
+    })
+  }
+  return out
+}
+
 export function selectClaimCandidates(doc: ExtractedDoc, limit = 25): Passage[] {
   const CLAIM_HINTS =
     /\b(fastest|best|leading|most|only|guarantee|proven|trusted|secure|reliable|award|\d+\s*%|\d+x|\d{3,})\b/i

@@ -429,6 +429,81 @@ export const DECISION_CASES: DecisionCase[] = [
     why: 'Anti-promotional copy. Scoring it as promotional would be a plain error.',
   },
 
+  // ---- evidence_supports_claim (module 2) -----------------------------------
+  //
+  // The one judgement the deterministic side cannot make. Proximity is measured; whether
+  // the proof is ABOUT the claim is not.
+  {
+    id: 'evidence/relevant-figure',
+    question: 'evidence_supports_claim',
+    state: {
+      claim: 'Acme Checkout renders dramatically faster than the default checkout.',
+      claim_is_about: 'speed or efficiency',
+      supporting_detail: 'Rendering completes in 180 ms, down from 420 ms in version 4.1.',
+    },
+    expect: true,
+    why: 'A speed claim backed by a speed measurement.',
+  },
+  {
+    id: 'evidence/wrong-metric',
+    question: 'evidence_supports_claim',
+    state: {
+      claim: 'Acme Checkout renders dramatically faster than the default checkout.',
+      claim_is_about: 'speed or efficiency',
+      supporting_detail: 'Over 40,000 stores have installed Acme Checkout.',
+    },
+    expect: false,
+    why:
+      'The exact failure this question exists for: a real figure that measures ' +
+      'popularity, not speed. A page carrying it looks evidenced while proving nothing.',
+  },
+  {
+    id: 'evidence/popularity-supports-popularity',
+    question: 'evidence_supports_claim',
+    state: {
+      claim: 'Acme Checkout is the most widely used checkout plugin for WooCommerce.',
+      claim_is_about: 'market position',
+      supporting_detail: 'Over 40,000 stores have installed Acme Checkout.',
+    },
+    expect: true,
+    why: 'Same figure as above, now supporting the claim it actually measures.',
+  },
+  {
+    id: 'evidence/date-does-not-prove-ease',
+    question: 'evidence_supports_claim',
+    state: {
+      claim: 'Setting up Acme Checkout is effortless and needs no code at all.',
+      claim_is_about: 'how little effort it takes',
+      supporting_detail: 'Acme has been shipping since 2019.',
+    },
+    expect: false,
+    why: 'Longevity says nothing about ease of setup — near-miss evidence.',
+  },
+  {
+    id: 'evidence/security-certification',
+    question: 'evidence_supports_claim',
+    state: {
+      claim: 'Every order is handled securely and in line with data protection rules.',
+      claim_is_about: 'security or compliance',
+      supporting_detail: 'Acme is SOC 2 Type II audited and GDPR compliant.',
+    },
+    expect: true,
+    why: 'A named audit is the right kind of proof for a security claim.',
+  },
+  {
+    id: 'evidence/ambiguous-support',
+    question: 'evidence_supports_claim',
+    state: {
+      claim: 'Merchants see better conversion after switching to Acme Checkout.',
+      claim_is_about: 'a result for the customer',
+      supporting_detail: 'One store reported a 12% lift in completed orders.',
+    },
+    expect: null,
+    why:
+      'A single store is evidence of something, but not of "merchants" generally. ' +
+      'Either answer is defensible, so the honest outcome is low confidence.',
+  },
+
   // ---- adversarial: near-misses that must NOT fire --------------------------
   //
   // Added to validate the per-primitive thresholds from F28. Lowering the Choice bar
