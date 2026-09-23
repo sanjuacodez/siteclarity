@@ -268,7 +268,14 @@ export const COVERAGE_TEMPLATES: Record<string, StaticTemplate> = {
   },
 }
 
-/** Site-level finding copy, from the roll-up. */
+/**
+ * Site-level finding copy, from the roll-up.
+ *
+ * One template, not two. "Nothing on this site addresses X" was also a finding, and it
+ * made module 5 five of the seven findings in the site block — a list of things you have
+ * not written, which is the advice this module exists to replace. Those rows stay in the
+ * coverage table marked *not addressed*, where they inform without demanding anything.
+ */
 export const COVERAGE_SITE_TEMPLATES: Record<string, StaticTemplate> = {
   question_unanswered_sitewide: {
     priority: 'high',
@@ -278,15 +285,6 @@ export const COVERAGE_SITE_TEMPLATES: Record<string, StaticTemplate> = {
       'The subject runs through the site without ever being settled. Someone comparing options has to ask you directly or assume the worst, and an assistant answering for them has nothing here to quote.',
     recommendedAction:
       'Answer it once, properly, on the page where it most belongs, and point the others at it.',
-  },
-  question_absent_sitewide: {
-    priority: 'medium',
-    pageLevel: true,
-    observation: 'Nothing on this site addresses “{question}”.',
-    whyItMatters:
-      'This is one of the questions buyers ask before choosing. A site that never touches it is invisible to everyone searching for it, and gives an AI assistant nothing to work with when someone asks.',
-    recommendedAction:
-      'Decide whether it applies to you. If it does, one page — or one honest paragraph — is enough to stop being absent from that conversation.',
   },
 }
 
@@ -333,25 +331,6 @@ export function rollUpCoverage(summaries: PageSummary[]): CoverageRow[] {
     }
   })
 }
-
-/**
- * How many "this site never mentions X" findings are worth reporting.
- *
- * The roll-up can mark a dozen questions absent on a small site, and a list of a dozen
- * things you have not written is the "create more content" advice this module exists to
- * replace. Only the questions a buyer asks before choosing are reported as absent, and
- * only a few of them; the rest stay visible in the coverage table, where they inform
- * without demanding anything.
- */
-export const MAX_ABSENT_FINDINGS = 4
-
-/** Absent questions worth a finding: the ones a buyer asks before choosing. */
-export function absentWorthReporting(rows: CoverageRow[]): CoverageRow[] {
-  return rows
-    .filter((r) => r.status === 'absent' && r.priority === 'high')
-    .slice(0, MAX_ABSENT_FINDINGS)
-}
-
 /** Passages to carry, and how much text. Small enough for a local Laya checkpoint. */
 const MAX_STATE_PASSAGES = 14
 const MAX_STATE_CHARS = 1800

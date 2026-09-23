@@ -3,11 +3,9 @@ import {
   QUESTION_BANK,
   COVERAGE_AREAS,
   MAX_QUESTIONS_PER_PAGE,
-  MAX_ABSENT_FINDINGS,
   selectCoverageQuestions,
   buildCoverageQuestions,
   rollUpCoverage,
-  absentWorthReporting,
   buildCoverageState,
   COVERAGE_TEMPLATES,
   COVERAGE_SITE_TEMPLATES,
@@ -115,13 +113,12 @@ describe('the site roll-up', () => {
     expect(rows.map((r) => r.id)).not.toContain(pricing)
   })
 
-  it('reports only a few absences, and only the ones buyers ask first', () => {
-    // A list of a dozen things you have not written is the "create more content"
-    // advice this module exists to replace.
+  it('makes absence a table row, not a finding', () => {
+    // A dozen "you never mention X" findings is the advice this module replaces. The
+    // rows still exist so the reader can see what was considered.
     const rows = rollUpCoverage([summary({ coverage: { raised: [], answered: [] } })])
-    const absent = absentWorthReporting(rows)
-    expect(absent.length).toBeLessThanOrEqual(MAX_ABSENT_FINDINGS)
-    for (const r of absent) expect(r.priority).toBe('high')
+    expect(rows.some((r) => r.status === 'absent')).toBe(true)
+    expect(Object.keys(COVERAGE_SITE_TEMPLATES)).toEqual(['question_unanswered_sitewide'])
   })
 })
 

@@ -104,6 +104,32 @@ describe('catalogue registry', () => {
     }
   })
 
+  it('lists the sections in the order the page puts them', () => {
+    // The contents list named Website understanding before Content understanding while
+    // the page had them the other way round. The anchors still worked, so nothing broke
+    // loudly — it just read as wrong.
+    const page = renderChecksPage()
+    const nav = (page.match(/class="contents"[\s\S]*?<\/nav>/)?.[0] ?? '')
+      .match(/href="#([a-z]+)"/g)
+      ?.map((h) => h.slice(7, -1))
+    const sections = [...page.matchAll(/<section id="([^"]+)"/g)].map((m) => m[1])
+    expect(nav).toEqual(sections)
+  })
+
+  it('gives every section a count in its heading', () => {
+    const page = renderChecksPage()
+    for (const [, id] of page.matchAll(/<section id="([^"]+)"/g)) {
+      if (id === 'limits') continue // prose, nothing to count
+      const section = page.slice(page.indexOf(`<section id="${id}"`))
+      const heading = section.slice(0, section.indexOf('</div>'))
+      expect(heading, `${id} has no count`).toContain('class="count"')
+    }
+  })
+
+  it('does not say "1 checks"', () => {
+    expect(renderChecksPage()).not.toMatch(/\b1 checks\b/)
+  })
+
   it('documents every profile dimension with the same anatomy as a check', () => {
     // The profile section shipped rendering unlike every other one: a bare label and an
     // absent reason, where the rest show what is asked, why it matters and what to do.

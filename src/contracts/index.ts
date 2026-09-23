@@ -220,6 +220,21 @@ export const AnalysisResult = z.object({
   findings: z.array(Finding),
   /** Module 4's descriptive output. Empty when the decision model did not run. */
   profile: z.array(ProfileEntry).default([]),
+  /**
+   * Module 5's rows for this page: the bank questions it raised, and whether it answers
+   * them. Same shape as the site roll-up, so one component renders both.
+   */
+  coverage: z
+    .array(
+      z.object({
+        id: z.string(),
+        area: z.string(),
+        text: z.string(),
+        status: z.enum(['answered', 'unanswered', 'absent']),
+        pages: z.array(z.string()),
+      }),
+    )
+    .default([]),
   /** This page reduced to typed values, for the site-level pass. */
   summary_for_site: PageSummary.nullable().default(null),
   provider: ProviderInfo,

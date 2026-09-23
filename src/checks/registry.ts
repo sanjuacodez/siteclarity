@@ -271,6 +271,23 @@ export function allCheckIds(): string[] {
   ]
 }
 
+/**
+ * How many checks a module can emit.
+ *
+ * The modules section on /checks was the only one whose cards carried no tag, because
+ * there was nothing module-shaped to put there. This is what belongs: the size of what
+ * the module actually contributes, derived rather than written down.
+ *
+ * A profile module returns zero, and says so as dimensions instead.
+ */
+export function checksForModule(module: ModuleId): number {
+  const fromGroups = TEMPLATE_GROUPS.filter((g) => g.module === module).reduce(
+    (n, g) => n + Object.keys(g.templates).length,
+    0,
+  )
+  return module === 'ai_readiness' ? fromGroups + CHECKS.length : fromGroups
+}
+
 /** Every question id the product can ask. */
 export function allQuestionIds(): string[] {
   return QUESTION_GROUPS.flatMap((g) => Object.keys(g.catalogue))

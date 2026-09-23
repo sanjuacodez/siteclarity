@@ -15,6 +15,7 @@ import { EVIDENCE_QUESTIONS, MESSAGING_QUESTIONS } from '../../src/semantic/ques
 import type { AnalysisResult, Finding } from '../../src/contracts'
 import { ProfileDimension } from '../../src/contracts'
 import { CHECKS } from '../../src/assemble/checks'
+import { COVERAGE_AREAS } from '../../src/semantic/coverage'
 import { STATIC_TEMPLATES } from '../../src/static/structure/templates'
 import { LANGUAGE_TEMPLATES } from '../../src/static/language/signals'
 import { PAGE_QUESTIONS, SECTION_QUESTIONS, PASSAGE_QUESTIONS } from '../../src/semantic/questions'
@@ -39,6 +40,7 @@ function report(overrides: Partial<AnalysisResult> = {}): AnalysisResult {
     input: { requestedUrl: 'https://example.test/page', finalUrl: 'https://example.test/page', fetchedAt: '2026-09-22T00:00:00Z', title: 'Presentation page' },
     limits: { scope: 'single_page', statements: ['Only this synthetic page was examined.'], decisionsRan: true, sectionsAnalyzed: 1, sectionsTotal: 1, stateSplit: false, language: 'en', languageSupported: true, jsDependent: false },
     profile: [],
+    coverage: [],
     summary_for_site: null,
     sections: [{ sectionId: 'synthetic-section', heading: 'Actual section heading', level: 2, passageCount: 1, decisions: {} }],
     findings: [finding()],
@@ -444,6 +446,53 @@ describe('implemented check documentation', () => {
     for (const question of Object.values(questions)) {
       expect(html).toContain(escape(question.instructions))
       for (const answer of Object.values(question.criteria)) expect(html).toContain(escape(answer))
+    }
+  })
+})
+
+describe('module 5 is visible on a single page, not only on a site scan', () => {
+  const rows = [
+    { id: 'q_what_it_costs', area: 'pricing', text: 'What does it cost?', status: 'unanswered', pages: ['https://example.test/page'] },
+    { id: 'q_what_is_it', area: 'understanding', text: 'What is this, in plain terms?', status: 'answered', pages: ['https://example.test/page'] },
+  ]
+
+  it('shows the questions a single page raises and how it did', () => {
+    // It used to emit a finding when a question was left hanging and nothing otherwise,
+    // so a reader had no way to see which questions were even considered.
+    const html = harness().api.render(report({ coverage: rows } as Partial<AnalysisResult>))
+    expect(html).toContain('Questions buyers ask')
+    expect(html).toContain('What does it cost?')
+    expect(html).toContain('1 of 2 answered here')
+  })
+
+  it('does not name the page on every row of a single-page report', () => {
+    const html = harness().api.render(report({ coverage: rows } as Partial<AnalysisResult>))
+    expect(html).not.toContain('Raised on 1 page')
+  })
+
+  it('stays out of the way when the module produced nothing', () => {
+    expect(harness().api.render(report())).not.toContain('Questions buyers ask')
+  })
+})
+
+describe('the report cards look like one another', () => {
+  it('sets one heading size for every card', () => {
+    // They were .86, .94, 1.0 and 1.02rem across four cards in the same report, which
+    // is the kind of thing nobody can name but everybody notices.
+    expect(DASHBOARD_HTML).toContain('.card h2 { font-size:.94rem')
+    for (const stale of ['.limits h2 { font-size', '.profile h2 { font-size', '.table-title h2 { font-size']) {
+      expect(DASHBOARD_HTML, `${stale} reintroduces a second heading size`).not.toContain(stale)
+    }
+  })
+
+  it('names coverage areas the way the catalogue does', () => {
+    // The client script cannot import from source, so the labels are copied. This is
+    // what stops the copy drifting from the bank it describes.
+    const script = DASHBOARD_HTML.match(/<script>([\s\S]*?)<\/script>/)?.[1] ?? ''
+    const block = script.slice(script.indexOf('var COVERAGE_AREA_LABELS'))
+    for (const key of Object.keys(COVERAGE_AREAS)) {
+      expect(block.slice(0, block.indexOf('};')), `${key} is missing from the dashboard labels`)
+        .toContain(`${key}:`)
     }
   })
 })

@@ -41,7 +41,6 @@ import {
   COVERAGE_TEMPLATES,
   COVERAGE_SITE_TEMPLATES,
   rollUpCoverage,
-  absentWorthReporting,
 } from './semantic/coverage'
 import {
   readSiteSignals,
@@ -284,16 +283,21 @@ app.post('/api/site', async (c) => {
    * and one it never touches at all.
    */
   const coverage = rollUpCoverage(summaries)
-  const reportable = [
-    ...coverage.filter((r) => r.status === 'unanswered'),
-    ...absentWorthReporting(coverage),
-  ]
+  /**
+   * Only the unanswered case becomes a finding.
+   *
+   * "Nothing on this site addresses X" used to be one too, and it made module 5 five of
+   * the seven findings in the site block — a list of things you have not written, which
+   * is the "create more content" advice this module exists to replace. Every one of
+   * those rows is already in the coverage table above the findings, marked *not
+   * addressed*, where it informs without demanding anything. A question the site keeps
+   * raising and never settles is different: that is a gap in work already started, and
+   * it stays a finding.
+   */
+  const reportable = coverage.filter((r) => r.status === 'unanswered')
   for (const row of reportable) {
-    const unanswered = row.status === 'unanswered'
-    const checkId = unanswered ? 'question_unanswered_sitewide' : 'question_absent_sitewide'
-    const tpl = unanswered
-      ? COVERAGE_SITE_TEMPLATES.question_unanswered_sitewide!
-      : COVERAGE_SITE_TEMPLATES.question_absent_sitewide!
+    const checkId = 'question_unanswered_sitewide'
+    const tpl = COVERAGE_SITE_TEMPLATES.question_unanswered_sitewide!
     findings.push({
       id: `${checkId}:${row.id}`,
       module: 'question_coverage',
@@ -305,11 +309,8 @@ app.post('/api/site', async (c) => {
       evidence: [],
       whyItMatters: tpl.whyItMatters,
       recommendedAction: tpl.recommendedAction,
-      // An absent question is about the site, so it affects every page; an unanswered
-      // one names the pages that raise it, because that is where it gets fixed.
-      affects: (unanswered ? row.pages : summaries.map((x) => x.url)).map((url) => ({
-        pageUrl: url,
-      })),
+      // Named against the pages that raise it, because that is where it gets fixed.
+      affects: row.pages.map((url) => ({ pageUrl: url })),
       priority: tpl.priority,
       confidence: 'high',
       highlights: [],
@@ -711,6 +712,20 @@ app.post('/api/analyze', async (c) => {
   const coverageFindings: typeof merged = []
   const coverageRaised: string[] = []
   const coverageAnswered: string[] = []
+  /**
+   * The same row shape the site roll-up produces, so one component renders both.
+   *
+   * Without this, module 5 was invisible on a single-page audit: it emitted a finding
+   * when a question was left hanging and nothing at all otherwise, so a reader had no
+   * way to see which questions were even considered.
+   */
+  const coverageRows: {
+    id: string
+    area: string
+    text: string
+    status: 'answered' | 'unanswered'
+    pages: string[]
+  }[] = []
   const coverageOutcome = coverageRun.outcomes[0]
   if (coverageOutcome) {
     for (const q of coverageSelected) {
@@ -723,6 +738,13 @@ app.post('/api/analyze', async (c) => {
       // bringing a subject up when it never does.
       if (choice !== 'answers_it' && choice !== 'mentions_only') continue
       coverageRaised.push(q.id)
+      coverageRows.push({
+        id: q.id,
+        area: q.area,
+        text: q.text,
+        status: choice === 'answers_it' ? 'answered' : 'unanswered',
+        pages: [fetched.value.finalUrl],
+      })
       if (choice === 'answers_it') {
         coverageAnswered.push(q.id)
         continue
@@ -855,6 +877,7 @@ app.post('/api/analyze', async (c) => {
     sections,
     findings,
     profile,
+    coverage: coverageRows,
     // This page reduced to typed values, so the browser can accumulate an inventory for
     // the site-level pass. Six of its seven fields are already computed above.
     summary_for_site: buildPageSummary({

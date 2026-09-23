@@ -10,6 +10,8 @@ import {
   builtModules,
   plannedModules,
   allCheckIds,
+  allQuestionIds,
+  checksForModule,
   type DocumentedTemplate,
 } from '../checks/registry'
 
@@ -19,6 +21,14 @@ const esc = (s: string) =>
 
 const priorityLabel = (priority: DocumentedTemplate['priority']) =>
   ({ high: 'Fix first', medium: 'Worth doing', low: 'Minor' })[priority]
+
+/** What a module contributes, for the tag slot every other card on the page uses. */
+const moduleSize = (m: Parameters<typeof checksForModule>[0]) => {
+  const n = checksForModule(m)
+  if (n > 0) return `${n} ${n === 1 ? 'check' : 'checks'}`
+  // A profile module emits no findings at all; saying "0 checks" would read as broken.
+  return `${ProfileDimension.options.length} dimensions`
+}
 
 const checkName = (id: string) => {
   const words = id.replace(/_/g, ' ').replace(/\b(h1|faq|js)\b/gi, (word) => word.toUpperCase())
@@ -94,25 +104,25 @@ export function renderChecksPage(): string {
       <article class="step"><span class="step-num" aria-hidden="true">03</span><h2>Make findings actionable</h2><p>Pair each observation with a next step and evidence verified against the extracted page.</p></article>
     </div>
     <div class="content-layout">
-      <nav class="contents" aria-label="On this page"><p>On this page</p><a href="#modules">Modules</a>${TEMPLATE_GROUPS.map((g) => `<a href="#${g.id}">${esc(g.title)}</a>`).join('')}<a href="#profile">Website understanding</a><a href="#decisions">Content understanding</a><a href="#questions">Model questions</a><a href="#limits">Scope &amp; limitations</a></nav>
+      <nav class="contents" aria-label="On this page"><p>On this page</p><a href="#modules">Modules</a>${TEMPLATE_GROUPS.map((g) => `<a href="#${g.id}">${esc(g.title)}</a>`).join('')}<a href="#decisions">Content understanding</a><a href="#profile">Website understanding</a><a href="#questions">Model questions</a><a href="#limits">Scope &amp; limitations</a></nav>
       <div>
         <section id="modules"><div class="section-heading"><h2>Modules</h2><span class="count">${builtModules().length} of ${Object.keys(MODULE_INFO).length} built</span></div>
 <p class="section-note">SiteClarity is planned as ${Object.keys(MODULE_INFO).length} modules over one shared analysis.
 ${builtModules().length} ${builtModules().length === 1 ? 'is' : 'are'} built, and every finding in a report is tagged with the module that produced it.</p>
           ${builtModules().map((m) => `<details class="check">
-<summary><span>${esc(MODULE_INFO[m].label)}</span></summary>
+<summary><span>${esc(MODULE_INFO[m].label)}</span><span class="tag low">${moduleSize(m)}</span></summary>
 <div class="detail-body"><p>${esc(MODULE_INFO[m].blurb)}</p></div>
 </details>`).join('')}
 <p class="scope-note">Planned: ${plannedModules().map((m) => esc(MODULE_INFO[m].label.toLowerCase())).join(', ')}.</p>
         </section>
 
 ${TEMPLATE_GROUPS.map((group) => `
-        <section id="${group.id}"><div class="section-heading"><h2>${esc(group.title)}</h2><span class="count">${Object.keys(group.templates).length} checks</span></div>
+        <section id="${group.id}"><div class="section-heading"><h2>${esc(group.title)}</h2><span class="count">${Object.keys(group.templates).length} ${Object.keys(group.templates).length === 1 ? 'check' : 'checks'}</span></div>
           <p class="section-note">${esc(group.description)}</p>
           ${Object.entries(group.templates).map(([id, template]) => renderTemplate(id, template)).join('')}
         </section>`).join('')}
 
-        <section id="decisions"><div class="section-heading"><h2>Content understanding</h2><span class="count">${CHECKS.length} checks</span></div>
+        <section id="decisions"><div class="section-heading"><h2>Content understanding</h2><span class="count">${CHECKS.length} ${CHECKS.length === 1 ? 'check' : 'checks'}</span></div>
           <p class="section-note">The decision model evaluates clarity and substance. Its typed answers select findings from these templates; it does not write the report copy.</p>
           ${CHECKS.map((check) => renderTemplate(check.id, check, `Question: <code>${esc(check.questionId)}</code>${check.requiresPromissoryHeading ? ' · only for headings that promise a question or topic' : ''}`)).join('')}
           <div class="note"><p><strong>A model judgment still needs review.</strong> Typed answers can be incorrect. Answers below the configured confidence threshold are not reported, and every evidence quote must match an extracted passage.</p><p>Suggestions use predefined actions and words found in the page. SiteClarity identifies what to work on; it leaves the writing to you.</p></div>
@@ -136,9 +146,9 @@ ${TEMPLATE_GROUPS.map((group) => `
 </details>`).join('')}
         </section>
 
-        <section id="questions"><div class="section-heading"><h2>Questions the model sees</h2></div>
+        <section id="questions"><div class="section-heading"><h2>Questions the model sees</h2><span class="count">${allQuestionIds().length} questions</span></div>
           <p class="section-note">Each question receives the relevant page, section or passage. Expand a question to inspect its available answers. Rubric answers are used internally, never as a page rating.</p>
-          ${questions.map((group) => `<h3>${group.title}</h3><p class="scope-note">${group.description}</p>${Object.entries(group.catalogue).map(([id, question]) => renderQuestion(id, question)).join('')}`).join('')}
+          ${questions.map((group) => `<h3>${esc(group.title)}</h3><p class="scope-note">${esc(group.description)}</p>${Object.entries(group.catalogue).map(([id, question]) => renderQuestion(id, question)).join('')}`).join('')}
         </section>
         <section id="limits"><div class="section-heading"><h2>Read the limits with the findings.</h2></div>
           <p class="section-note">An audit is a view of the content examined. Every report includes its scope and any analysis limitations.</p>

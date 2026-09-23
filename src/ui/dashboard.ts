@@ -99,6 +99,8 @@ main { padding-top:48px!important; padding-bottom:36px!important }
 .feature h3 { font-size:.88rem; margin-bottom:8px }
 .feature p { font-size:.8rem; color:var(--muted); margin:0; line-height:1.7 }
 .card { padding:22px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); margin-bottom:18px }
+/* Card headings were .86, .94, 1.0 and 1.02rem across four cards in the same report. */
+.card h2 { font-size:.94rem; letter-spacing:-.01em; margin:0 }
 .card p:last-child { margin-bottom:0 }
 .report-top { display:flex; gap:16px; justify-content:space-between; align-items:flex-start; margin-bottom:24px }
 .report-top h2 { font-size:1.45rem; margin:6px 0 9px; overflow-wrap:anywhere }
@@ -118,7 +120,6 @@ main { padding-top:48px!important; padding-bottom:36px!important }
 .notice p { margin:0 }
 .notice.warning { background:var(--warn-soft); border-color:transparent; color:var(--warn) }
 .limits { background:var(--soft); box-shadow:none; font-size:.79rem }
-.limits h2 { font-size:.86rem }
 .limits ul { padding-left:18px; margin:9px 0 0; color:var(--muted) }
 .limits li { margin:5px 0; overflow-wrap:anywhere }
 .filters { display:flex; flex-wrap:wrap; gap:7px; margin-bottom:18px }
@@ -163,7 +164,6 @@ blockquote { background:var(--bg); border-left:2px solid var(--border); margin:0
 .sitewide .grp { background:var(--bg) }
 .sitewide .scope-note { margin-top:14px }
 .profile { margin-bottom:20px }
-.profile h2 { font-size:1.02rem; margin:0 0 5px }
 .focusbox { margin-top:12px; border:1px solid var(--border); border-radius:10px }
 .focusbox > summary { cursor:pointer; padding:10px 14px; font-size:.82rem; font-weight:600; list-style:none }
 .focusbox > summary::-webkit-details-marker { display:none }
@@ -262,7 +262,6 @@ mark { background:var(--warn-soft); color:var(--warn); border-radius:3px; font-w
 .err p { font-size:.85rem; margin-bottom:7px }
 .tbl-card { padding:22px 0 0; overflow:hidden }
 .table-title { padding:0 22px 20px }
-.table-title h2 { font-size:1rem }
 .tscroll { overflow-x:auto }
 .tbl { width:100%; border-collapse:collapse; text-align:left; font-size:.83rem }
 .tbl th { background:var(--soft); font-size:.65rem; text-transform:uppercase; letter-spacing:.05em; font-weight:600; color:var(--muted); padding:11px 18px; white-space:nowrap }
@@ -516,7 +515,9 @@ function profileCard(d) {
     return '<div class="prow"><div class="plabel">' + esc(label) + '</div>' +
       '<div class="pval missing">' + esc(e.absentReason || 'Not stated on this page.') + '</div></div>';
   }).join('');
-  return '<section class="card profile"><h2>What this page says it is</h2>' +
+  const stated = entries.filter(e => e.value || e.quote).length;
+  return '<section class="card profile"><div class="section-label"><h2>What this page says it is</h2>' +
+    '<span>' + stated + ' of ' + entries.length + ' stated</span></div>' +
     '<p class="sub">Asked which of your own sentences states each of these, the model picked ' +
     'the quotes below. Nothing here is rewritten.</p>' + rows + '</section>';
 }
@@ -996,7 +997,7 @@ function render(d) {
   const c = countFindings(d.findings);
   return reportHeading(d.input.title || 'Page audit', 'Review the highest-priority findings, then open each one for the evidence and next step.', 'Single page') +
     '<p class="page-link">' + pageLink(d.input.finalUrl) + '</p>' + modelNotice(d) + summaryCards(c) +
-    moduleStrip(d.findings) + profileCard(d) +
+    moduleStrip(d.findings) + profileCard(d) + coverageCard(d.coverage, 'page') +
     limitsCard(d) + '<div class="section-label"><h2>What to improve</h2><span>Open a finding to see the evidence</span></div>' +
     '<div class="filters" role="group" aria-label="Filter findings by priority">' +
     chip('all','All findings',c.count,true) + chip('high','Fix first',c.high,false) + chip('medium','Worth doing',c.medium,false) + chip('low','Minor',c.low,false) +
@@ -1017,14 +1018,26 @@ function findingsBody(d, filter) {
  * readable — and because a bare list of what you have not written is the "create more
  * content" advice this module exists to replace.
  */
+var COVERAGE_AREA_LABELS = {
+  understanding: 'Product understanding',
+  pricing: 'Pricing',
+  suitability: 'Suitability',
+  use_cases: 'Use cases',
+  implementation: 'Implementation',
+  comparison: 'Comparison',
+  trust: 'Trust',
+  security: 'Security',
+  support: 'Support',
+  purchase: 'Purchase decisions',
+};
 var COVERAGE_STATUS = {
   answered: 'Answered',
   unanswered: 'Raised, not answered',
   absent: 'Not addressed',
 };
 
-function coverageCard(site) {
-  var rows = (site && site.coverage) || [];
+function coverageCard(rows, scope) {
+  rows = rows || [];
   if (!rows.length) return '';
   var order = { unanswered: 0, absent: 1, answered: 2 };
   var counts = { answered: 0, unanswered: 0, absent: 0 };
@@ -1032,19 +1045,26 @@ function coverageCard(site) {
   var body = rows.slice().sort(function (a, b) {
     return order[a.status] - order[b.status];
   }).map(function (r) {
-    var pages = r.status === 'unanswered' && r.pages.length
-      ? '<p class="qpages">Raised on ' + r.pages.length + (r.pages.length === 1 ? ' page' : ' pages') + '</p>'
-      : r.status === 'answered' && r.pages.length
-        ? '<p class="qpages">Answered on ' + pageLink(r.pages[0]) + '</p>'
-        : '';
+    // On one page every row is about that page, so naming it on each row is noise.
+    var pages = scope !== 'site' || !r.pages.length ? ''
+      : r.status === 'unanswered'
+        ? '<p class="qpages">Raised on ' + r.pages.length + (r.pages.length === 1 ? ' page' : ' pages') + '</p>'
+        : r.status === 'answered'
+          ? '<p class="qpages">Answered on ' + pageLink(r.pages[0]) + '</p>'
+          : '';
     return '<div class="prow"><div><p class="qtext">' + esc(r.text) + '</p>' +
-      '<p class="qarea">' + esc(r.area.replace(/_/g, ' ')) + '</p>' + pages + '</div>' +
+      '<p class="qarea">' + esc(COVERAGE_AREA_LABELS[r.area] || r.area) + '</p>' + pages + '</div>' +
       '<span class="cstat ' + r.status + '">' + esc(COVERAGE_STATUS[r.status] || r.status) + '</span></div>';
   }).join('');
+  var meta = scope === 'site'
+    ? counts.answered + ' answered · ' + counts.unanswered + ' left open · ' + counts.absent + ' untouched'
+    : counts.answered + ' of ' + rows.length + ' answered here';
+  var lead = scope === 'site'
+    ? 'A fixed list of questions people ask before choosing. Each was checked against the pages that raise it — nothing here was written by a model.'
+    : 'Questions this page brings up, and whether it answers them. Only questions your own words raise are checked, so a page is never marked down for being about something else.';
   return '<section class="card profile cvg"><div class="section-label"><h2>Questions buyers ask</h2>' +
-    '<span>' + counts.answered + ' answered · ' + counts.unanswered + ' left open · ' + counts.absent + ' untouched</span></div>' +
-    '<p class="sub">A fixed list of questions people ask before choosing. Each was checked against the pages that raise it — nothing here was written by a model.</p>' +
-    body + '</section>';
+    '<span>' + meta + '</span></div>' +
+    '<p class="sub">' + lead + '</p>' + body + '</section>';
 }
 
 function renderSite(results, sm, failures, partial, site) {
@@ -1084,7 +1104,7 @@ function renderSite(results, sm, failures, partial, site) {
   if (!results.length) return h + '<div class="empty-result"><h3>No page reports are available</h3><p>Review the errors above and try again. No conclusion can be drawn about these pages.</p></div>';
   // Site-wide findings come before the table: they are about the site, not about any
   // one row in it.
-  h += summaryCards(c) + siteBlock + coverageCard(site) + '<div class="card tbl-card"><div class="table-title"><h2>Choose a page to work on</h2><p class="sub">Ordered by “Fix first” findings, then total findings. Open a page for its report and scope.</p></div>' +
+  h += summaryCards(c) + siteBlock + coverageCard(site && site.coverage, 'site') + '<div class="card tbl-card"><div class="table-title"><h2>Choose a page to work on</h2><p class="sub">Ordered by “Fix first” findings, then total findings. Open a page for its report and scope.</p></div>' +
     '<div class="tscroll" role="region" aria-label="Page reports, scroll horizontally on small screens" tabindex="0"><table class="tbl"><thead><tr>' +
     '<th scope="col">Page</th><th scope="col" class="c-n">Fix first</th><th scope="col" class="c-n">Worth doing</th><th scope="col" class="c-n">Minor</th><th scope="col" class="c-n">Total</th>' +
     '</tr></thead><tbody>' + rows.map(pageRow).join('') + '</tbody></table></div></div>';
@@ -1393,7 +1413,7 @@ function chip(v,text,n,on) {
   return '<button type="button" class="chip' + (on ? ' on' : '') + '" data-f="' + v + '" aria-pressed="' + on + '">' + esc(text) + '<span>' + n + '</span></button>';
 }
 function limitsCard(d) {
-  return '<section class="card limits"><h2>What was and wasn’t examined</h2><ul>' +
+  return '<section class="card limits"><div class="section-label"><h2>What was and wasn’t examined</h2></div><ul>' +
     d.limits.statements.map(s => '<li>' + esc(s) + '</li>').join('') +
     '<li>Only served HTML is read. JavaScript-rendered content and ranking or citation outcomes are not assessed.</li></ul></section>';
 }
