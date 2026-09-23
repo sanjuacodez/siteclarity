@@ -3,7 +3,7 @@ import type { DecideRequest, DecideResponse, DecisionBackend } from './types'
 /**
  * Recorded responses, keyed by a hash of the request. The default in tests so a
  * contributor can clone, `npm test`, and get a green run with no key and no cost
- * (AGENTS.md §8).
+ * (see CONTRIBUTING.md).
  *
  * Fixtures must be RECORDED, never hand-written — a hand-written "realistic"
  * response encodes our expectations instead of the model's actual behaviour.

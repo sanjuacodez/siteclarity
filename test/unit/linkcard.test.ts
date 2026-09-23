@@ -4,7 +4,7 @@ import { excludedSections } from '../../src/semantic/state'
 import aiSearch from '../fixtures/html/sanjayshankar-ai-search.html?raw'
 
 /**
- * Frozen snapshot, never a live fetch (AGENTS.md §8). Live pages change, which turns a
+ * Frozen snapshot, never a live fetch (see CONTRIBUTING.md). Live pages change, which turns a
  * regression test into a flake and makes CI depend on a third party staying online.
  */
 const PAGE = 'https://sanjayshankar.me/how-ai-search-engines-work-technical-guide/'

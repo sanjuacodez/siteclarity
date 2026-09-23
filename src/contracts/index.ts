@@ -5,7 +5,7 @@ import { z } from 'zod'
  *
  * Every one of the ten planned modules emits findings in this shape. Changing it
  * later means revisiting all of them, so additive changes only (bump SCHEMA_VERSION);
- * renames and removals follow AGENTS.md §5.
+ * renames and removals follow CONTRIBUTING.md.
  */
 
 export const SCHEMA_VERSION = '0.1.0'
@@ -77,7 +77,7 @@ export type Decision = z.infer<typeof Decision>
 
 /**
  * A finding. Copy fields are TEMPLATE-RENDERED from deterministic data plus typed
- * decisions — there is no generative model in this system (AGENTS.md invariant 1).
+ * decisions — there is no generative model in this system (see CONTRIBUTING.md).
  */
 export const Finding = z.object({
   id: z.string().min(1),
@@ -143,7 +143,7 @@ export const ProviderInfo = z.object({
  *
  * Each entry is either a verbatim quote from the page with the passage it came from, or
  * `null` with a reason. There is no generated text here — the model selects which of the
- * page's own sentences states a thing; it never writes one. See docs/MODULE-4-DESIGN.md.
+ * page's own sentences states a thing; it never writes one.
  */
 export const ProfileDimension = z.enum([
   'business_type',
@@ -176,7 +176,7 @@ export type ProfileEntry = z.infer<typeof ProfileEntry>
  * generated, and no passages, because twenty-five of these must fit a decision model's
  * context — 512 tokens on a local Laya checkpoint.
  *
- * See docs/SITE-ANALYSIS-DESIGN.md.
+ *
  */
 export const PageSummary = z.object({
   url: z.string(),

@@ -1,7 +1,7 @@
 /**
  * SC-104 — HTML to an addressable document model.
  *
- * HTMLRewriter only (AGENTS.md §7): it streams inside the runtime and barely touches
+ * HTMLRewriter only (see CONTRIBUTING.md): it streams inside the runtime and barely touches
  * the 10 ms CPU budget, where a DOM library would blow it outright.
  *
  * Passage IDs are the backbone of the evidence system — every finding in every future

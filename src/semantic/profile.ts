@@ -8,7 +8,7 @@ import type { ScopedState } from './state'
  * Module 4 — Website Understanding.
  *
  * The model SELECTS one of the page's own passages per dimension; it never writes a
- * description. See `docs/MODULE-4-DESIGN.md` for why, and for what was rejected.
+ * description.
  *
  * Shortlisting is deterministic because handing over every passage would blow the state
  * budget, and a Choice is capped at 255 options regardless. A page states what it does

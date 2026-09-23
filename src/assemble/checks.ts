@@ -1,7 +1,7 @@
 /**
  * SC-111 — the check catalogue: how a typed decision becomes a human finding.
  *
- * Copy is TEMPLATED, never model-authored (AGENTS.md invariant 1). Findings come from
+ * Copy is TEMPLATED, never model-authored (see CONTRIBUTING.md). Findings come from
  * a fixed catalogue, so slots filled from deterministic data plus typed decisions are
  * entirely sufficient — and the result is deterministic, unit-testable and translatable.
  *

@@ -4,7 +4,7 @@
   // Deliberately OMITS the `ai` binding. Its presence makes Wrangler open a remote
   // proxy session to Cloudflare, which requires auth and an account_id — that would
   // break the rule that a contributor can clone, `npm test`, and get a green run
-  // offline with no key and no cost (AGENTS.md §8).
+  // offline with no key and no cost (see CONTRIBUTING.md).
   //
   // Tests use the `replay` backend, so no decision model is ever contacted.
   "name": "siteclarity-test",

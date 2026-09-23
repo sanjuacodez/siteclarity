@@ -138,7 +138,7 @@ app.get('/api/sitemap', async (c) => {
  *
  * The browser accumulates summaries as it scans and posts them here once. There is no
  * storage: the inventory lives in the tab exactly as the report does, which is what lets
- * the whole design stay database-free. See docs/SITE-ANALYSIS-DESIGN.md.
+ * the whole design stay database-free.
  */
 app.post('/api/site', async (c) => {
   const started = Date.now()
@@ -334,7 +334,7 @@ app.post('/api/analyze', async (c) => {
   const claimStates = buildClaimEvidenceStates(doc, claims)
 
   // Module 4: the model selects which of the page's own sentences states each
-  // dimension. It never writes one — see docs/MODULE-4-DESIGN.md.
+  // dimension. It never writes one.
   const profileCandidates = shortlistPassages(doc, allExcluded)
   const profileStates = profileCandidates.length
     ? [buildProfileState(doc, fetched.value.finalUrl, profileCandidates)]

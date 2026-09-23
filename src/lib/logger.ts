@@ -1,4 +1,4 @@
-/** Structured logging. Never use bare console.log in committed code (AGENTS.md §9). */
+/** Structured logging. Never use bare console.log in committed code (see CONTRIBUTING.md). */
 
 type Level = 'debug' | 'info' | 'warn' | 'error'
 

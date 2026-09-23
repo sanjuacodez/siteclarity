@@ -66,9 +66,10 @@ promotional is the language · how ready is the section to be quoted.
 **What the page says it is** — for what it does, who it is for, the problem it solves and
 what makes it different, the model is shown a shortlist of *your own sentences* and asked
 which one states that thing. You get your words back verbatim, or an honest "not stated".
-It never writes a summary, because a System One model cannot write at all — see
-[`docs/MODULE-4-DESIGN.md`](docs/MODULE-4-DESIGN.md) for why that constraint shaped the
-design rather than being worked around.
+It never writes a summary, because a System One model cannot write at all. That
+constraint shaped the design rather than being worked around: a generated paraphrase
+would mean nothing in a report could be trusted as verbatim, and the guarantee is not
+divisible.
 
 **Full list, always current:** the [`/checks`](https://siteclarity.sanjay-shankar.workers.dev/checks)
 page on the running app is generated from the code itself, so it can never claim a check
@@ -116,8 +117,8 @@ site-level pass **counts existing judgements** rather than re-reading anything: 
 returns a compact summary of typed values, the browser accumulates them, and one final
 call carries the inventory. Twenty-five pages come to roughly a thousand tokens.
 
-It stays database-free — the inventory lives in the tab exactly as the report does.
-Reasoning is in [`docs/SITE-ANALYSIS-DESIGN.md`](docs/SITE-ANALYSIS-DESIGN.md).
+It stays database-free — the inventory lives in the tab exactly as the report does,
+which is also why a scan cannot be resumed after a reload. Nothing was ever persisted.
 
 ## Your own API key, stored in your browser
 

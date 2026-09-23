@@ -20,10 +20,26 @@ jobs:
         run: npm run typecheck
 
       # No secrets are configured for this job, deliberately.
-      # The suite must pass offline with no API key and no cost (AGENTS.md §8);
+      # The suite must pass offline with no API key and no cost (see CONTRIBUTING.md);
       # if it ever needs one, that is a bug in the tests, not a missing secret.
       - name: Test
         run: npm test
+
+      # Internal planning lives outside the repo, so a published file that points at it
+      # sends a reader to nothing. This caught nineteen such references once already.
+      - name: No published file references an unpublished path
+        run: |
+          bad=0
+          for f in $(git ls-files | grep -v '^test/fixtures/'); do
+            for m in $(grep -ohE '(docs/[A-Za-z0-9._-]+\.md|AGENTS\.md|CLAUDE\.md|planning/[A-Za-z0-9._/-]+|tasks/[A-Za-z0-9._/-]+)' "$f" 2>/dev/null | sort -u); do
+              [ "$f" = ".gitignore" ] && continue
+              if ! git ls-files --error-unmatch "${m%.}" >/dev/null 2>&1; then
+                echo "$f references $m, which is not in the repository"; bad=1
+              fi
+            done
+          done
+          [ "$bad" = "0" ] && echo "No dangling references."
+          exit $bad
 
       - name: Verify no secret is required
         run: |
