@@ -851,3 +851,35 @@ describe('stated focus input', () => {
     expect(read()).toEqual([])
   })
 })
+
+describe('site-wide findings reach the report', () => {
+  const js = script
+
+  it('calls the site endpoint once the pages are done', () => {
+    // Three modules were unreachable because the scan never made this call.
+    expect(js).toContain("fetch('/api/site'")
+    expect(js).toContain('r.summary_for_site')
+    expect(js).toContain('summaries: inventory')
+  })
+
+  it('does not call it below the minimum page count', () => {
+    expect(js).toContain('inventory.length >= 3')
+  })
+
+  it('keeps the per-page report when the site call fails', () => {
+    // A site-level failure must not lose work that already succeeded.
+    expect(js).toMatch(/catch \(err\) \{[\s\S]{0,120}site = null/)
+  })
+
+  it('renders site findings with the same component as page findings', () => {
+    // A site finding should read exactly like a page finding.
+    expect(js).toContain('renderGroups(site.findings, [])')
+    expect(js).toContain('moduleStrip(site.findings)')
+  })
+
+  it('places them above the page table and carries their limits', () => {
+    expect(js).toContain('Across the whole site')
+    expect(js).toContain('summaryCards(c) + siteBlock')
+    expect(js).toContain('site.limits.map(esc)')
+  })
+})

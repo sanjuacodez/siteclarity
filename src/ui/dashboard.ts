@@ -159,6 +159,9 @@ blockquote { background:var(--bg); border-left:2px solid var(--border); margin:0
 .modpill { font-size:.76rem; color:var(--muted); background:var(--surface);
   border:1px solid var(--border); border-radius:999px; padding:5px 12px }
 .modpill b { color:var(--text); font-weight:650; margin-right:3px }
+.sitewide { margin-bottom:20px }
+.sitewide .grp { background:var(--bg) }
+.sitewide .scope-note { margin-top:14px }
 .profile { margin-bottom:20px }
 .profile h2 { font-size:1.02rem; margin:0 0 5px }
 .focusbox { margin-top:12px; border:1px solid var(--border); border-radius:10px }
@@ -783,8 +786,24 @@ async function analyseList(urls, metadata) {
       announce(message);
     }
   }));
-  showOutput(renderSite(results, meta, failures, false), true);
-  announce('Scan complete. ' + results.length + ' pages analysed; ' + failures.length + ' failed.');
+  // Checks that need several pages. Each page already returned a compact summary, so
+  // this is one short call over the inventory rather than any re-reading.
+  let site = null;
+  const inventory = results.map(r => r.summary_for_site).filter(Boolean);
+  if (inventory.length >= 3) {
+    $('progress-title').textContent = 'Looking across all ' + inventory.length + ' pages…';
+    $('progress-detail').textContent = 'Comparing what the pages do together.';
+    try {
+      const sr = await fetch('/api/site', { method:'POST', headers:analyzeHeaders(), body:JSON.stringify({ summaries: inventory }) });
+      if (sr.ok) site = await sr.json();
+    } catch (err) {
+      // A site-level failure must not lose the per-page report that already succeeded.
+      site = null;
+    }
+  }
+  showOutput(renderSite(results, meta, failures, false, site), true);
+  announce('Scan complete. ' + results.length + ' pages analysed; ' + failures.length + ' failed.'
+    + (site && site.findings.length ? ' ' + site.findings.length + ' findings across the site.' : ''));
 }
 async function scanSite(url, limit) {
   showOutput(loading('Finding pages in your sitemap…', 'We will analyse up to ' + limit + ' pages.'), false);
@@ -981,7 +1000,7 @@ function findingsBody(d, filter) {
     '</h3><p>' + (filter === 'all' ? 'This does not guarantee readiness. Review the scope and limitations above.' : 'Choose another priority to continue reviewing this page.') + '</p></div>';
   return renderGroups(list, d.sections);
 }
-function renderSite(results, sm, failures, partial) {
+function renderSite(results, sm, failures, partial, site) {
   activeReport = null;
   speedHtml = '';
   exportCtx = { kind: 'site', reports: results, meta: sm };
@@ -996,6 +1015,19 @@ function renderSite(results, sm, failures, partial) {
     ? 'Selected ' + sm.urls.length + ' of ' + sm.totalFound + ' sitemap URLs' + (sm.truncated ? ' (page limit reached).' : '.')
     : 'Selected ' + sm.urls.length + ' URLs from your list.';
   const siteStrip = moduleStrip(all);
+  /**
+   * Findings that only exist across pages, shown above the per-page table because they
+   * are about the site rather than about any one row in it. Same group component as
+   * everywhere else, so a site finding reads exactly like a page finding.
+   */
+  const siteBlock = site && site.findings && site.findings.length
+    ? '<section class="card sitewide"><div class="section-label"><h2>Across the whole site</h2>' +
+      '<span>' + site.findings.length + (site.findings.length === 1 ? ' finding' : ' findings') +
+      ' from ' + site.signals.pages + ' pages</span></div>' +
+      moduleStrip(site.findings) +
+      renderGroups(site.findings, []) +
+      '<p class="scope-note">' + site.limits.map(esc).join(' ') + '</p></section>'
+    : '';
   let h = reportHeading(results.length + ' pages analysed', failures.length + ' failed · ' + sm.urls.length + ' selected', partial ? 'In progress' : 'Selected pages') +
     '<div class="notice"><strong>Scope of this scan</strong><p>' + esc(scope) + ' These results apply only to successfully analysed pages, not the entire website.</p></div>';
   if (limited) h += '<div class="notice warning"><strong>' + limited + ' pages have limited semantic coverage</strong><p>Static findings are included. Open each page to see its analysis limits.</p></div>';
@@ -1003,7 +1035,9 @@ function renderSite(results, sm, failures, partial) {
     failures.map(f => '<li>' + pageLink(f.url) + '<p>' + esc(f.error && f.error.message || 'Request failed.') + '</p></li>').join('') +
     '</ul><p>Retry these pages with the URL list tab. Successful pages are included below.</p></div>';
   if (!results.length) return h + '<div class="empty-result"><h3>No page reports are available</h3><p>Review the errors above and try again. No conclusion can be drawn about these pages.</p></div>';
-  h += summaryCards(c) + '<div class="card tbl-card"><div class="table-title"><h2>Choose a page to work on</h2><p class="sub">Ordered by “Fix first” findings, then total findings. Open a page for its report and scope.</p></div>' +
+  // Site-wide findings come before the table: they are about the site, not about any
+  // one row in it.
+  h += summaryCards(c) + siteBlock + '<div class="card tbl-card"><div class="table-title"><h2>Choose a page to work on</h2><p class="sub">Ordered by “Fix first” findings, then total findings. Open a page for its report and scope.</p></div>' +
     '<div class="tscroll" role="region" aria-label="Page reports, scroll horizontally on small screens" tabindex="0"><table class="tbl"><thead><tr>' +
     '<th scope="col">Page</th><th scope="col" class="c-n">Fix first</th><th scope="col" class="c-n">Worth doing</th><th scope="col" class="c-n">Minor</th><th scope="col" class="c-n">Total</th>' +
     '</tr></thead><tbody>' + rows.map(pageRow).join('') + '</tbody></table></div></div>';
