@@ -475,6 +475,43 @@ describe('module 5 is visible on a single page, not only on a site scan', () => 
   })
 })
 
+describe('the page table is still a table', () => {
+  it('never makes a table row a grid', () => {
+    // `.prow` was the page table's <tr> from the first commit; module 4's profile card
+    // then took the same name for a grid row. `display:grid` on a <tr> stops it being a
+    // row — the cells no longer line up with their headers — and nothing failed, because
+    // no test looked at layout. Whatever classes land on a <tr>, none of them may carry
+    // a display that replaces table layout.
+    const css = DASHBOARD_HTML.match(/<style>([\s\S]*?)<\/style>/)?.[1] ?? ''
+    const rowClasses = new Set<string>()
+    for (const [, attr] of DASHBOARD_HTML.matchAll(/<tr class="([^"]+)"/g)) {
+      for (const c of attr.split(/\s+/)) rowClasses.add(c)
+    }
+    // The table is built in the client script, so look there too.
+    for (const [, attr] of DASHBOARD_HTML.matchAll(/<tr class=\\?["']([^"'\\]+)/g)) {
+      for (const c of attr.split(/\s+/)) rowClasses.add(c)
+    }
+    expect(rowClasses.size, 'no table rows found — this test would pass vacuously')
+      .toBeGreaterThan(0)
+
+    for (const cls of rowClasses) {
+      for (const [, body] of css.matchAll(new RegExp(`\\.${cls}\\s*\\{([^}]*)\\}`, 'g'))) {
+        expect(body, `.${cls} is on a <tr> and sets a display that breaks the table`)
+          .not.toMatch(/display\s*:\s*(grid|flex|block)/)
+      }
+    }
+  })
+
+  it('renders one cell per column in every row', () => {
+    const html = harness().api.renderSite([report(), report()], metadata(), [], false)
+    const headers = (html.match(/<th scope="col"/g) ?? []).length
+    expect(headers).toBe(5)
+    for (const [, row] of html.matchAll(/<tr class="prow">([\s\S]*?)<\/tr>/g)) {
+      expect((row.match(/<td/g) ?? []).length).toBe(headers)
+    }
+  })
+})
+
 describe('the report cards look like one another', () => {
   it('sets one heading size for every card', () => {
     // They were .86, .94, 1.0 and 1.02rem across four cards in the same report, which

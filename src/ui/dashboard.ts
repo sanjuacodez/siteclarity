@@ -174,7 +174,7 @@ blockquote { background:var(--bg); border-left:2px solid var(--border); margin:0
 .focusbody textarea { width:100%; padding:9px 12px; font:inherit; font-size:.86rem;
   background:var(--bg); color:var(--text); border:1px solid var(--border);
   border-radius:9px; resize:vertical }
-.cvg .prow { grid-template-columns:minmax(0,1fr) auto; align-items:start }
+.cvg .drow { grid-template-columns:minmax(0,1fr) auto; align-items:start }
 .cvg .qtext { font-size:.86rem }
 .cvg .qarea { font-size:.7rem; color:var(--muted); margin-top:3px }
 .cvg .qpages { font-size:.7rem; color:var(--muted); margin-top:3px }
@@ -182,13 +182,15 @@ blockquote { background:var(--bg); border-left:2px solid var(--border); margin:0
 .cstat.answered { color:var(--good); background:var(--good-soft) }
 .cstat.unanswered { color:var(--bad); background:var(--bad-soft) }
 .cstat.absent { color:var(--warn); background:var(--warn-soft) }
-.prow { display:grid; grid-template-columns:180px minmax(0,1fr); gap:16px; padding:13px 0;
+/* Detail row inside the profile and coverage cards. NOT .prow: that is the page
+   table's <tr>, and making a table row a grid stops it being a row at all. */
+.drow { display:grid; grid-template-columns:180px minmax(0,1fr); gap:16px; padding:13px 0;
   border-top:1px solid var(--border) }
 .plabel { font-size:.8rem; font-weight:620; color:var(--muted) }
 .pval { font-size:.9rem; overflow-wrap:anywhere }
 .pval blockquote { margin:0 }
 .pval.missing { color:var(--muted); font-style:italic }
-@media (max-width:620px) { .prow { grid-template-columns:1fr; gap:6px } }
+@media (max-width:620px) { .drow { grid-template-columns:1fr; gap:6px } }
 .progress-card { background:var(--surface); border:1px solid var(--border); border-radius:14px;
   padding:20px 22px }
 .progress-head { display:flex; justify-content:space-between; align-items:baseline; gap:12px }
@@ -504,15 +506,15 @@ function profileCard(d) {
   const rows = entries.map(e => {
     const label = PROFILE_LABELS[e.dimension] || e.dimension;
     if (e.value) {
-      return '<div class="prow"><div class="plabel">' + esc(label) + '</div>' +
+      return '<div class="drow"><div class="plabel">' + esc(label) + '</div>' +
         '<div class="pval">' + esc(BUSINESS_TYPE_TEXT[e.value] || e.value) + '</div></div>';
     }
     if (e.quote) {
-      return '<div class="prow"><div class="plabel">' + esc(label) + '</div>' +
+      return '<div class="drow"><div class="plabel">' + esc(label) + '</div>' +
         '<div class="pval"><blockquote>' + esc(e.quote) + '</blockquote>' +
         '<p class="evidence-ref">Your words \u00b7 passage ' + esc(e.passageId) + '</p></div></div>';
     }
-    return '<div class="prow"><div class="plabel">' + esc(label) + '</div>' +
+    return '<div class="drow"><div class="plabel">' + esc(label) + '</div>' +
       '<div class="pval missing">' + esc(e.absentReason || 'Not stated on this page.') + '</div></div>';
   }).join('');
   const stated = entries.filter(e => e.value || e.quote).length;
@@ -1052,7 +1054,7 @@ function coverageCard(rows, scope) {
         : r.status === 'answered'
           ? '<p class="qpages">Answered on ' + pageLink(r.pages[0]) + '</p>'
           : '';
-    return '<div class="prow"><div><p class="qtext">' + esc(r.text) + '</p>' +
+    return '<div class="drow"><div><p class="qtext">' + esc(r.text) + '</p>' +
       '<p class="qarea">' + esc(COVERAGE_AREA_LABELS[r.area] || r.area) + '</p>' + pages + '</div>' +
       '<span class="cstat ' + r.status + '">' + esc(COVERAGE_STATUS[r.status] || r.status) + '</span></div>';
   }).join('');
