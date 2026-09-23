@@ -674,3 +674,39 @@ describe('loading animation', () => {
     expect(DASHBOARD_HTML).toContain('@media (prefers-reduced-motion: reduce)')
   })
 })
+
+describe('module attribution', () => {
+  const js = script
+
+  it('names the module each finding came from', () => {
+    // Findings carried `module` from the start; the UI ignored it, so Module 2's
+    // output was live but indistinguishable from Module 1's.
+    expect(js).toContain('MODULE_LABELS')
+    expect(js).toContain('Evidence & trust')
+    expect(js).toContain('Answer readiness')
+    expect(js).toContain('class="modtag"')
+  })
+
+  it('shows a per-module breakdown before anything is expanded', () => {
+    expect(js).toContain('function moduleCounts')
+    expect(js).toContain('function moduleStrip')
+    expect(js).toContain('moduleStrip(d.findings)')
+  })
+
+  it('labels an unknown module rather than rendering undefined', () => {
+    const src = js.slice(js.indexOf('const MODULE_LABELS'))
+    const upToHelper = src.slice(0, src.indexOf('const moduleLabel') + src.slice(src.indexOf('const moduleLabel')).indexOf('\n'))
+    const fn = new Function(upToHelper + '; return moduleLabel;')() as (id?: string) => string
+    expect(fn('evidence_trust')).toBe('Evidence & trust')
+    expect(fn('something_new')).toBe('Other')
+    expect(fn(undefined)).toBe('Other')
+  })
+
+  it('documents both built modules on the checks page', () => {
+    const page = renderChecksPage()
+    expect(page).toContain('Evidence &amp; trust')
+    expect(page).toContain('40,000 installs')   // the worked example
+    // Whitespace-tolerant: HTML line wrapping is arbitrary and not worth asserting.
+    expect(page.replace(/\s+/g, ' ')).toMatch(/Two are built/)
+  })
+})

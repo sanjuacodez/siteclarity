@@ -153,6 +153,12 @@ blockquote { background:var(--bg); border-left:2px solid var(--border); margin:0
   padding:7px 14px; font-size:.78rem; font-weight:650; border-radius:9px; cursor:pointer }
 .copy-all:hover { border-color:var(--accent) }
 .prompt-hint { font-size:.7rem }
+.modtag { font-size:.64rem; letter-spacing:.04em; font-weight:650; padding:3px 8px;
+  border-radius:5px; background:var(--bg); color:var(--muted); border:1px solid var(--border) }
+.modstrip { display:flex; gap:8px; flex-wrap:wrap; margin:0 0 20px }
+.modpill { font-size:.76rem; color:var(--muted); background:var(--surface);
+  border:1px solid var(--border); border-radius:999px; padding:5px 12px }
+.modpill b { color:var(--text); font-weight:650; margin-right:3px }
 .progress-card { background:var(--surface); border:1px solid var(--border); border-radius:14px;
   padding:20px 22px }
 .progress-head { display:flex; justify-content:space-between; align-items:baseline; gap:12px }
@@ -408,6 +414,25 @@ let activeReport = null;
 let exportCtx = null;
 let activeFilter = 'all';
 let __gid = 0;
+
+/**
+ * Findings carry the module that produced them. The UI ignored it, so Module 2's output
+ * was live but invisible — indistinguishable from Module 1's. Naming the module is what
+ * makes it findable.
+ */
+const MODULE_LABELS = {
+  ai_readiness: 'Answer readiness',
+  evidence_trust: 'Evidence & trust',
+  messaging: 'Messaging',
+  website_understanding: 'Website understanding',
+  question_coverage: 'Question coverage',
+  buyer_journey: 'Buyer journey',
+  audience_coverage: 'Audience coverage',
+  product_portfolio: 'Product portfolio',
+  content_overlap: 'Content overlap',
+  content_opportunity: 'Opportunities',
+};
+const moduleLabel = (id) => MODULE_LABELS[id] || 'Other';
 const priorities = { high: 0, medium: 1, low: 2 };
 
 function safeUrl(value) {
@@ -687,6 +712,21 @@ async function scanSite(url, limit) {
   if (!data.urls.length) throw new Error('No pages were found in this sitemap. Try a URL list instead.');
   await analyseList(data.urls, data);
 }
+/** Findings per module, in the order they should be read. */
+function moduleCounts(list) {
+  const order = Object.keys(MODULE_LABELS);
+  const counts = new Map();
+  for (const f of list) counts.set(f.module, (counts.get(f.module) || 0) + 1);
+  return order.filter(m => counts.has(m)).map(m => ({ id: m, label: moduleLabel(m), n: counts.get(m) }));
+}
+
+function moduleStrip(list) {
+  const mods = moduleCounts(list);
+  if (!mods.length) return '';
+  return '<p class="modstrip">' + mods.map(m =>
+    '<span class="modpill"><b>' + m.n + '</b> ' + esc(m.label) + '</span>').join('') + '</p>';
+}
+
 function countFindings(findings) {
   const c = { count:findings.length, high:0, medium:0, low:0 };
   findings.forEach(f => c[f.priority]++);
@@ -847,6 +887,7 @@ function render(d) {
   const c = countFindings(d.findings);
   return reportHeading(d.input.title || 'Page audit', 'Review the highest-priority findings, then open each one for the evidence and next step.', 'Single page') +
     '<p class="page-link">' + pageLink(d.input.finalUrl) + '</p>' + modelNotice(d) + summaryCards(c) +
+    moduleStrip(d.findings) +
     limitsCard(d) + '<div class="section-label"><h2>What to improve</h2><span>Open a finding to see the evidence</span></div>' +
     '<div class="filters" role="group" aria-label="Filter findings by priority">' +
     chip('all','All findings',c.count,true) + chip('high','Fix first',c.high,false) + chip('medium','Worth doing',c.medium,false) + chip('low','Minor',c.low,false) +
@@ -872,6 +913,7 @@ function renderSite(results, sm, failures, partial) {
   const scope = sm.sitemapUrl
     ? 'Selected ' + sm.urls.length + ' of ' + sm.totalFound + ' sitemap URLs' + (sm.truncated ? ' (page limit reached).' : '.')
     : 'Selected ' + sm.urls.length + ' URLs from your list.';
+  const siteStrip = moduleStrip(all);
   let h = reportHeading(results.length + ' pages analysed', failures.length + ' failed · ' + sm.urls.length + ' selected', partial ? 'In progress' : 'Selected pages') +
     '<div class="notice"><strong>Scope of this scan</strong><p>' + esc(scope) + ' These results apply only to successfully analysed pages, not the entire website.</p></div>';
   if (limited) h += '<div class="notice warning"><strong>' + limited + ' pages have limited semantic coverage</strong><p>Static findings are included. Open each page to see its analysis limits.</p></div>';
@@ -1042,6 +1084,7 @@ function renderGroups(list, sections) {
     const f = items[0]; const id = 'finding-' + __gid++;
     return '<details class="grp"><summary class="group-summary" aria-controls="' + id + '">' +
       '<div class="group-meta"><span class="tag ' + esc(f.priority) + '">' + label(f.priority) + '</span>' +
+      '<span class="modtag">' + esc(moduleLabel(f.module)) + '</span>' +
       '<span class="muted">' + items.length + (items.length === 1 ? ' finding' : ' findings') + '</span></div>' +
       '<h3>' + esc(headline(f,items.length)) + '</h3><p>' + esc(f.whyItMatters) + '</p></summary>' +
       '<div id="' + id + '">' + items.map(it => '<div class="ins"><div class="insh">' + esc(sectionName(it,sections)) +

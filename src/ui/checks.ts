@@ -94,7 +94,37 @@ export function renderChecksPage(): string {
     <div class="content-layout">
       <nav class="contents" aria-label="On this page"><p>On this page</p><a href="#structure">Page structure</a><a href="#language">Language signals</a><a href="#decisions">Content understanding</a><a href="#questions">Model questions</a><a href="#limits">Scope &amp; limitations</a></nav>
       <div>
-        <section id="structure"><div class="section-heading"><h2>Page structure</h2><span class="count">${structureCount} checks</span></div>
+        <section id="structure"><div class="section-heading"><h2>Modules</h2>
+<p class="scope-note">SiteClarity is planned as ten modules over one shared analysis. Two
+are built, and every finding in a report is tagged with the module that produced it.</p>
+<ul>
+<li><strong>Answer readiness</strong> — can a search engine or AI assistant find,
+understand and quote the answers on this page? Structured data, heading hierarchy,
+extractability, self-containment, promotional density, buried answers.</li>
+<li><strong>Evidence &amp; trust</strong> — does each marketing claim have proof beside
+it? Claims and evidence are both located deterministically and the distance between them
+is measured. Whether nearby proof is actually <em>about</em> the claim is the one
+judgement left to the model.</li>
+</ul>
+<p class="scope-note">Planned: messaging, website understanding, question coverage, buyer
+journey, audience coverage, product portfolio, content overlap, and an opportunity
+roll-up across all of them.</p>
+
+<h2>Evidence &amp; trust checks</h2>
+<p class="scope-note">A passage counts as a claim only when it carries <em>both</em> a
+superlative and one of six claim families — performance, customer outcome, market
+position, ease, security, reliability. Either signal alone is too loose.</p>
+<ul>
+<li><strong>A claim with nothing behind it</strong> — no figure, source, documentation,
+certification or date anywhere near it.</li>
+<li><strong>Proof too far from the claim</strong> — the evidence exists but sits
+paragraphs away, so a quoted passage arrives without it.</li>
+<li><strong>Proof that is not about the claim</strong> — a real fact beside a claim it
+does not support. "40,000 installs" proves popularity, not speed. This is worse than
+having no number at all, because the page looks evidenced when it is not.</li>
+</ul>
+
+<h2>Page structure</h2><span class="count">${structureCount} checks</span></div>
           <p class="section-note">Implemented rules for headings, metadata, structured data and extractable content. These run even when the decision model is unavailable.</p>
           ${Object.entries(STATIC_TEMPLATES).map(([id, template]) => renderTemplate(id, template)).join('')}
           <p class="scope-note">Expand any check to read its finding template. Placeholders in braces are filled with page-specific values during an audit.</p>
