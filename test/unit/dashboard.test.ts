@@ -1,6 +1,9 @@
 import { describe, it, expect } from 'vitest'
 import { DASHBOARD_HTML } from '../../src/ui/dashboard'
 import { renderChecksPage } from '../../src/ui/checks'
+import { EVIDENCE_TEMPLATES } from '../../src/static/evidence/templates'
+import { MESSAGING_TEMPLATES, MESSAGING_JUDGED } from '../../src/static/messaging/templates'
+import { EVIDENCE_QUESTIONS, MESSAGING_QUESTIONS } from '../../src/semantic/questions'
 import type { AnalysisResult, Finding } from '../../src/contracts'
 import { CHECKS } from '../../src/assemble/checks'
 import { STATIC_TEMPLATES } from '../../src/static/structure/templates'
@@ -404,7 +407,18 @@ describe('implemented check documentation', () => {
   it('documents exactly the implemented static, language and semantic catalogues', () => {
     const html = renderChecksPage()
     const rendered = Array.from(html.matchAll(/Check: <code>([^<]+)<\/code>/g), (match) => match[1]).sort()
-    expect(rendered).toEqual([...Object.keys(STATIC_TEMPLATES), ...Object.keys(LANGUAGE_TEMPLATES), ...CHECKS.map((check) => check.id)].sort())
+    // EVERY catalogue belongs here. The page's claim is that it comes from the code, and
+    // omitting a catalogue breaks that as surely as inventing a check would — modules 2
+    // and 3 shipped eight undocumented checks before this list was completed.
+    const allChecks = [
+      ...Object.keys(STATIC_TEMPLATES),
+      ...Object.keys(LANGUAGE_TEMPLATES),
+      ...Object.keys(EVIDENCE_TEMPLATES),
+      ...Object.keys(MESSAGING_TEMPLATES),
+      ...Object.keys(MESSAGING_JUDGED),
+      ...CHECKS.map((check) => check.id),
+    ]
+    expect(rendered).toEqual(allChecks.sort())
     expect(html).not.toContain('planned, not yet built')
     expect(html).not.toContain('results come from the decision model alone')
     expect(html).toContain('These run even when the decision model is unavailable.')
@@ -413,7 +427,10 @@ describe('implemented check documentation', () => {
   it('includes every model question and its exact available answers', () => {
     const html = renderChecksPage()
     const rendered = Array.from(html.matchAll(/class="source">Question: <code>([^<]+)<\/code>/g), (match) => match[1]).sort()
-    const questions = { ...PAGE_QUESTIONS, ...SECTION_QUESTIONS, ...PASSAGE_QUESTIONS }
+    const questions = {
+      ...PAGE_QUESTIONS, ...SECTION_QUESTIONS, ...PASSAGE_QUESTIONS,
+      ...EVIDENCE_QUESTIONS, ...MESSAGING_QUESTIONS,
+    }
     expect(rendered).toEqual(Object.keys(questions).sort())
     const escape = (value: string) => value.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c] ?? c)
     for (const question of Object.values(questions)) {
@@ -726,11 +743,25 @@ describe('module attribution', () => {
     expect(fn(undefined)).toBe('Other')
   })
 
-  it('documents both built modules on the checks page', () => {
+  it('documents every module 2 and 3 check as a tagged card, not prose', () => {
+    // These eight were undocumented while the page described them in hand-written
+    // bullets, which both drifts from the code and drops the priority tag every other
+    // section carries.
     const page = renderChecksPage()
-    expect(page).toContain('Evidence &amp; trust')
-    expect(page).toContain('40,000 installs')   // the worked example
-    // Whitespace-tolerant: HTML line wrapping is arbitrary and not worth asserting.
-    expect(page.replace(/\s+/g, ' ')).toMatch(/Two are built/)
+    for (const id of [
+      ...Object.keys(EVIDENCE_TEMPLATES),
+      ...Object.keys(MESSAGING_TEMPLATES),
+      ...Object.keys(MESSAGING_JUDGED),
+    ]) {
+      expect(page, `${id} is not documented`).toContain(`Check: <code>${id}</code>`)
+    }
+  })
+
+  it('gives every documented check a priority tag', () => {
+    const page = renderChecksPage()
+    const cards = page.split('Check: <code>').length - 1
+    const tags = (page.match(/class="tag [a-z]+"/g) ?? []).length
+    // One tag per card; a section rendered as prose would show up as a shortfall.
+    expect(tags).toBeGreaterThanOrEqual(cards)
   })
 })
