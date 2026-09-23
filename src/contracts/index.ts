@@ -134,6 +134,40 @@ export const ProviderInfo = z.object({
   degradedReason: z.string().nullable(),
 })
 
+/**
+ * Module 4 — Website Understanding.
+ *
+ * A profile, not findings, so it does not use the `Finding` contract: forcing a
+ * description into observation/whyItMatters/recommendedAction would produce advice
+ * nobody asked for.
+ *
+ * Each entry is either a verbatim quote from the page with the passage it came from, or
+ * `null` with a reason. There is no generated text here — the model selects which of the
+ * page's own sentences states a thing; it never writes one. See docs/MODULE-4-DESIGN.md.
+ */
+export const ProfileDimension = z.enum([
+  'business_type',
+  'what_it_does',
+  'who_its_for',
+  'problem_solved',
+  'differentiator',
+])
+export type ProfileDimension = z.infer<typeof ProfileDimension>
+
+export const ProfileEntry = z.object({
+  dimension: ProfileDimension,
+  /** A closed-taxonomy answer, for dimensions that have one. */
+  value: z.string().nullable(),
+  /** The page's own words. Verbatim, looked up by id — never model-authored. */
+  quote: z.string().nullable(),
+  passageId: z.string().nullable(),
+  sectionId: z.string().nullable(),
+  /** Present when the page does not state this. Not a failure — it is the answer. */
+  absentReason: z.string().nullable(),
+  confidence: Confidence.nullable(),
+})
+export type ProfileEntry = z.infer<typeof ProfileEntry>
+
 export const AnalysisResult = z.object({
   schemaVersion: z.literal(SCHEMA_VERSION),
   input: z.object({
@@ -145,6 +179,8 @@ export const AnalysisResult = z.object({
   limits: Limits,
   sections: z.array(SectionReport),
   findings: z.array(Finding),
+  /** Module 4's descriptive output. Empty when the decision model did not run. */
+  profile: z.array(ProfileEntry).default([]),
   provider: ProviderInfo,
   timings: z.record(z.number()),
 })

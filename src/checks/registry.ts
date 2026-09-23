@@ -23,7 +23,7 @@ import {
 } from '../semantic/questions'
 import { CHECKS } from '../assemble/checks'
 import type { Question } from '../provider/types'
-import type { ModuleId } from '../contracts'
+import { ProfileDimension, type ModuleId } from '../contracts'
 
 /**
  * What the checks page needs from a template. Deliberately narrower than
@@ -147,7 +147,8 @@ export const MODULE_INFO: Record<ModuleId, { label: string; blurb: string }> = {
   },
   website_understanding: {
     label: 'Website understanding',
-    blurb: 'What the site sells, to whom, and the problems it claims to solve.',
+    blurb:
+      'What the page says it does, who for, the problem it solves and what makes it different — shown as the page’s own sentences. The model selects which sentence states each thing; it never writes one, so a dimension the page does not address is reported as not stated rather than paraphrased into existence.',
   },
   question_coverage: {
     label: 'Question coverage',
@@ -175,12 +176,23 @@ export const MODULE_INFO: Record<ModuleId, { label: string; blurb: string }> = {
   },
 }
 
-/** Modules with at least one catalogue behind them. Derived, never declared. */
+/**
+ * Modules with real output behind them. Derived from code, never declared.
+ *
+ * Most modules are built by having a template catalogue — they emit findings. Module 4
+ * emits no findings at all: it produces a descriptive profile, so it has no templates and
+ * would otherwise read as unbuilt. Its evidence of existence is the profile dimensions,
+ * which is still derived rather than asserted.
+ */
 export function builtModules(): ModuleId[] {
   const built = new Set<ModuleId>(TEMPLATE_GROUPS.map((g) => g.module))
-  for (const c of CHECKS) built.add('ai_readiness')
+  if (CHECKS.length > 0) built.add('ai_readiness')
+  if (ProfileDimension.options.length > 0) built.add('website_understanding')
   return (Object.keys(MODULE_INFO) as ModuleId[]).filter((m) => built.has(m))
 }
+
+/** Modules whose output is a description rather than findings. */
+export const PROFILE_MODULES: ModuleId[] = ['website_understanding']
 
 export function plannedModules(): ModuleId[] {
   const built = new Set(builtModules())

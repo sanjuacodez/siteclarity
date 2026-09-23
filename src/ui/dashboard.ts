@@ -159,6 +159,15 @@ blockquote { background:var(--bg); border-left:2px solid var(--border); margin:0
 .modpill { font-size:.76rem; color:var(--muted); background:var(--surface);
   border:1px solid var(--border); border-radius:999px; padding:5px 12px }
 .modpill b { color:var(--text); font-weight:650; margin-right:3px }
+.profile { margin-bottom:20px }
+.profile h2 { font-size:1.02rem; margin:0 0 5px }
+.prow { display:grid; grid-template-columns:180px minmax(0,1fr); gap:16px; padding:13px 0;
+  border-top:1px solid var(--border) }
+.plabel { font-size:.8rem; font-weight:620; color:var(--muted) }
+.pval { font-size:.9rem; overflow-wrap:anywhere }
+.pval blockquote { margin:0 }
+.pval.missing { color:var(--muted); font-style:italic }
+@media (max-width:620px) { .prow { grid-template-columns:1fr; gap:6px } }
 .progress-card { background:var(--surface); border:1px solid var(--border); border-radius:14px;
   padding:20px 22px }
 .progress-head { display:flex; justify-content:space-between; align-items:baseline; gap:12px }
@@ -433,6 +442,52 @@ const MODULE_LABELS = {
   content_opportunity: 'Opportunities',
 };
 const moduleLabel = (id) => MODULE_LABELS[id] || 'Other';
+
+const PROFILE_LABELS = {
+  business_type: 'What kind of business this is',
+  what_it_does: 'What it does',
+  who_its_for: 'Who it is for',
+  problem_solved: 'The problem it solves',
+  differentiator: 'What makes it different',
+};
+const BUSINESS_TYPE_TEXT = {
+  saas: 'Software sold as a subscription',
+  ecommerce: 'Sells goods directly',
+  agency: 'Sells services delivered by people',
+  marketplace: 'Connects buyers and sellers',
+  publisher: 'Publishes articles, courses or media',
+  tool_or_plugin: 'An add-on for another platform',
+  nonprofit: 'A charity or public-interest organisation',
+  personal: 'A personal site or portfolio',
+};
+
+/**
+ * Module 4's profile. Every quote is the page's own sentence, selected by the model and
+ * looked up by id — so it is rendered as a quotation, not as a summary. A dimension the
+ * page does not state is shown plainly rather than hidden, because "you never say who
+ * this is for" is the most useful thing here.
+ */
+function profileCard(d) {
+  const entries = d.profile || [];
+  if (!entries.length) return '';
+  const rows = entries.map(e => {
+    const label = PROFILE_LABELS[e.dimension] || e.dimension;
+    if (e.value) {
+      return '<div class="prow"><div class="plabel">' + esc(label) + '</div>' +
+        '<div class="pval">' + esc(BUSINESS_TYPE_TEXT[e.value] || e.value) + '</div></div>';
+    }
+    if (e.quote) {
+      return '<div class="prow"><div class="plabel">' + esc(label) + '</div>' +
+        '<div class="pval"><blockquote>' + esc(e.quote) + '</blockquote>' +
+        '<p class="evidence-ref">Your words \u00b7 passage ' + esc(e.passageId) + '</p></div></div>';
+    }
+    return '<div class="prow"><div class="plabel">' + esc(label) + '</div>' +
+      '<div class="pval missing">' + esc(e.absentReason || 'Not stated on this page.') + '</div></div>';
+  }).join('');
+  return '<section class="card profile"><h2>What this page says it is</h2>' +
+    '<p class="sub">Asked which of your own sentences states each of these, the model picked ' +
+    'the quotes below. Nothing here is rewritten.</p>' + rows + '</section>';
+}
 const priorities = { high: 0, medium: 1, low: 2 };
 
 function safeUrl(value) {
@@ -887,7 +942,7 @@ function render(d) {
   const c = countFindings(d.findings);
   return reportHeading(d.input.title || 'Page audit', 'Review the highest-priority findings, then open each one for the evidence and next step.', 'Single page') +
     '<p class="page-link">' + pageLink(d.input.finalUrl) + '</p>' + modelNotice(d) + summaryCards(c) +
-    moduleStrip(d.findings) +
+    moduleStrip(d.findings) + profileCard(d) +
     limitsCard(d) + '<div class="section-label"><h2>What to improve</h2><span>Open a finding to see the evidence</span></div>' +
     '<div class="filters" role="group" aria-label="Filter findings by priority">' +
     chip('all','All findings',c.count,true) + chip('high','Fix first',c.high,false) + chip('medium','Worth doing',c.medium,false) + chip('low','Minor',c.low,false) +

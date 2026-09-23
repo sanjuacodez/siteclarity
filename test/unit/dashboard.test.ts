@@ -6,6 +6,7 @@ import { EVIDENCE_TEMPLATES } from '../../src/static/evidence/templates'
 import { MESSAGING_TEMPLATES, MESSAGING_JUDGED } from '../../src/static/messaging/templates'
 import { EVIDENCE_QUESTIONS, MESSAGING_QUESTIONS } from '../../src/semantic/questions'
 import type { AnalysisResult, Finding } from '../../src/contracts'
+import { ProfileDimension } from '../../src/contracts'
 import { CHECKS } from '../../src/assemble/checks'
 import { STATIC_TEMPLATES } from '../../src/static/structure/templates'
 import { LANGUAGE_TEMPLATES } from '../../src/static/language/signals'
@@ -30,6 +31,7 @@ function report(overrides: Partial<AnalysisResult> = {}): AnalysisResult {
     schemaVersion: '0.1.0',
     input: { requestedUrl: 'https://example.test/page', finalUrl: 'https://example.test/page', fetchedAt: '2026-09-22T00:00:00Z', title: 'Presentation page' },
     limits: { scope: 'single_page', statements: ['Only this synthetic page was examined.'], decisionsRan: true, sectionsAnalyzed: 1, sectionsTotal: 1, stateSplit: false, language: 'en', languageSupported: true, jsDependent: false },
+    profile: [],
     sections: [{ sectionId: 'synthetic-section', heading: 'Actual section heading', level: 2, passageCount: 1, decisions: {} }],
     findings: [finding()],
     provider: { backend: 'none', model: null, calls: 0, inputTokens: 0, outputTokens: 0, degraded: false, degradedReason: null },
@@ -771,5 +773,37 @@ describe('module attribution', () => {
     const tags = (page.match(/class="tag [a-z]+"/g) ?? []).length
     // One tag per card; a section rendered as prose would show up as a shortfall.
     expect(tags).toBeGreaterThanOrEqual(cards)
+  })
+})
+
+describe('website understanding profile', () => {
+  const js = script
+
+  it('renders the page’s own sentence as a quotation, never a summary', () => {
+    expect(js).toContain('function profileCard')
+    expect(js).toContain('Your words')
+    expect(js).toContain('<blockquote>')
+    // The quote must come from the entry, not be rebuilt from anything.
+    expect(js).toContain('esc(e.quote)')
+  })
+
+  it('shows a dimension the page does not state rather than hiding it', () => {
+    // "You never say who this is for" is the most useful thing this module produces.
+    expect(js).toContain('e.absentReason')
+    expect(js).toContain('class="pval missing"')
+  })
+
+  it('renders nothing at all when the model did not run', () => {
+    expect(js).toContain("if (!entries.length) return ''")
+  })
+
+  it('labels every dimension the contract defines', () => {
+    const labels = new Function(
+      js.slice(js.indexOf('const PROFILE_LABELS')).split('\nconst BUSINESS_TYPE_TEXT')[0] +
+      '; return PROFILE_LABELS;',
+    )() as Record<string, string>
+    for (const d of ProfileDimension.options) {
+      expect(labels[d], `${d} has no label in the UI`).toBeTruthy()
+    }
   })
 })

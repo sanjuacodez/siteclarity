@@ -1,6 +1,8 @@
 import { CHECKS } from '../assemble/checks'
 import { QUESTION_CATALOGUE_VERSION } from '../semantic/questions'
 import type { Question } from '../provider/types'
+import { ProfileDimension } from '../contracts'
+import { DIMENSION_LABELS, ABSENT_REASONS } from '../semantic/profile'
 import {
   TEMPLATE_GROUPS,
   QUESTION_GROUPS,
@@ -92,7 +94,7 @@ export function renderChecksPage(): string {
       <article class="step"><span class="step-num" aria-hidden="true">03</span><h2>Make findings actionable</h2><p>Pair each observation with a next step and evidence verified against the extracted page.</p></article>
     </div>
     <div class="content-layout">
-      <nav class="contents" aria-label="On this page"><p>On this page</p><a href="#modules">Modules</a>${TEMPLATE_GROUPS.map((g) => `<a href="#${g.id}">${esc(g.title)}</a>`).join('')}<a href="#decisions">Content understanding</a><a href="#questions">Model questions</a><a href="#limits">Scope &amp; limitations</a></nav>
+      <nav class="contents" aria-label="On this page"><p>On this page</p><a href="#modules">Modules</a>${TEMPLATE_GROUPS.map((g) => `<a href="#${g.id}">${esc(g.title)}</a>`).join('')}<a href="#profile">Website understanding</a><a href="#decisions">Content understanding</a><a href="#questions">Model questions</a><a href="#limits">Scope &amp; limitations</a></nav>
       <div>
         <section id="modules"><div class="section-heading"><h2>Modules</h2><span class="count">${builtModules().length} of ${Object.keys(MODULE_INFO).length} built</span></div>
 <p class="section-note">SiteClarity is planned as ${Object.keys(MODULE_INFO).length} modules over one shared analysis.
@@ -115,6 +117,21 @@ ${TEMPLATE_GROUPS.map((group) => `
           ${CHECKS.map((check) => renderTemplate(check.id, check, `Question: <code>${esc(check.questionId)}</code>${check.requiresPromissoryHeading ? ' · only for headings that promise a question or topic' : ''}`)).join('')}
           <div class="note"><p><strong>A model judgment still needs review.</strong> Typed answers can be incorrect. Answers below the configured confidence threshold are not reported, and every evidence quote must match an extracted passage.</p><p>Suggestions use predefined actions and words found in the page. SiteClarity identifies what to work on; it leaves the writing to you.</p></div>
         </section>
+        <section id="profile"><div class="section-heading"><h2>Website understanding</h2><span class="count">${ProfileDimension.options.length} dimensions</span></div>
+          <p class="section-note">This module describes rather than faults, so it produces no findings.
+          For each dimension the model is shown a shortlist of the page&rsquo;s own sentences and asked which
+          one states that thing. The answer is a reference to a sentence, so the report shows your words
+          verbatim &mdash; nothing is written by a model.</p>
+          <p class="scope-note">Every dimension can come back &ldquo;not stated&rdquo;, and does when the page
+          does not say. That is the answer, not a failure to report. A closed list of business types is the one
+          exception, because that genuinely is a fixed set.</p>
+          ${ProfileDimension.options.map((d) => `<details class="check">
+<summary><span class="tag low">Describes</span><span>${esc(DIMENSION_LABELS[d])}</span></summary>
+<div class="detail-body"><p class="detail-label">When the page does not say</p><p>${esc(ABSENT_REASONS[d])}</p>
+<p class="source">Dimension: <code>${esc(d)}</code></p></div>
+</details>`).join('')}
+        </section>
+
         <section id="questions"><div class="section-heading"><h2>Questions the model sees</h2></div>
           <p class="section-note">Each question receives the relevant page, section or passage. Expand a question to inspect its available answers. Rubric answers are used internally, never as a page rating.</p>
           ${questions.map((group) => `<h3>${group.title}</h3><p class="scope-note">${group.description}</p>${Object.entries(group.catalogue).map(([id, question]) => renderQuestion(id, question)).join('')}`).join('')}

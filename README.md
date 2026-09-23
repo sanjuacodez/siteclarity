@@ -63,6 +63,13 @@ long to quote.
 isolation · is the subject clearly named · is a claim specific enough to check · how
 promotional is the language · how ready is the section to be quoted.
 
+**What the page says it is** — for what it does, who it is for, the problem it solves and
+what makes it different, the model is shown a shortlist of *your own sentences* and asked
+which one states that thing. You get your words back verbatim, or an honest "not stated".
+It never writes a summary, because a System One model cannot write at all — see
+[`docs/MODULE-4-DESIGN.md`](docs/MODULE-4-DESIGN.md) for why that constraint shaped the
+design rather than being worked around.
+
 **Full list, always current:** the [`/checks`](https://siteclarity.sanjay-shankar.workers.dev/checks)
 page on the running app is generated from the code itself, so it can never claim a check
 that doesn't exist.
@@ -152,8 +159,8 @@ with no API key, quotes must be verbatim, and the report never shows a score.
 
 ## Status
 
-**Pre-alpha.** Three of ten planned modules are built — answer readiness, evidence &
-trust, and messaging.
+**Pre-alpha.** Four of ten planned modules are built — answer readiness, evidence &
+trust, messaging, and website understanding.
 
 Every check the product can emit is documented at
 [`/checks`](https://siteclarity.sanjay-shankar.workers.dev/checks), generated from the

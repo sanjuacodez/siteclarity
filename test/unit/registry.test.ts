@@ -8,8 +8,10 @@ import {
   plannedModules,
   allCheckIds,
   allQuestionIds,
+  PROFILE_MODULES,
 } from '../../src/checks/registry'
 import { renderChecksPage } from '../../src/ui/checks'
+import { ProfileDimension } from '../../src/contracts'
 
 /**
  * The guard that makes the registry worth having.
@@ -119,11 +121,26 @@ describe('the modules section cannot go stale', () => {
     expect(plannedModules()).not.toContain('messaging')
   })
 
-  it('derives built state from catalogues rather than a written list', () => {
-    const declared = new Set(TEMPLATE_GROUPS.map((g) => g.module))
+  it('derives built state from real output, not a written list', () => {
+    // Most modules are built by having a template catalogue. Module 4 emits no findings
+    // at all — it produces a descriptive profile — so its evidence of existence is the
+    // profile dimensions instead. Either counts; an empty claim does not.
+    const withTemplates = new Set(TEMPLATE_GROUPS.map((g) => g.module))
     for (const m of builtModules()) {
-      expect(declared.has(m), `${m} is listed as built with no catalogue behind it`).toBe(true)
+      const hasTemplates = withTemplates.has(m)
+      const isProfile = PROFILE_MODULES.includes(m)
+      expect(
+        hasTemplates || isProfile,
+        `${m} is listed as built with neither a catalogue nor a profile behind it`,
+      ).toBe(true)
     }
+  })
+
+  it('backs every profile module with actual dimensions', () => {
+    for (const m of PROFILE_MODULES) {
+      expect(builtModules(), `${m} claims a profile but is not built`).toContain(m)
+    }
+    expect(ProfileDimension.options.length).toBeGreaterThan(0)
   })
 
   it('accounts for every module exactly once', () => {

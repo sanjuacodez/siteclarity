@@ -16,6 +16,14 @@ import { extract } from './extract/extract'
 import { createBackend } from './provider'
 import { findClaims } from './static/evidence/markers'
 import { EVIDENCE_TEMPLATES } from './static/evidence/templates'
+import {
+  shortlistPassages,
+  buildProfileQuestions,
+  buildProfileState,
+  ABSENT_REASONS,
+  NOT_STATED,
+} from './semantic/profile'
+import { ProfileDimension, type ProfileEntry } from './contracts'
 import { MESSAGING_JUDGED } from './static/messaging/templates'
 import { makeEvidence, verifyAll } from './assemble/verify'
 import {
@@ -167,22 +175,31 @@ app.post('/api/analyze', async (c) => {
   const claims = findClaims(doc, allExcluded)
   const claimStates = buildClaimEvidenceStates(doc, claims)
 
+  // Module 4: the model selects which of the page's own sentences states each
+  // dimension. It never writes one — see docs/MODULE-4-DESIGN.md.
+  const profileCandidates = shortlistPassages(doc, allExcluded)
+  const profileStates = profileCandidates.length
+    ? [buildProfileState(doc, fetched.value.finalUrl, profileCandidates)]
+    : []
+  const profileQuestions = buildProfileQuestions(profileCandidates)
+
   const backend = createBackend(c.env, config)
   const tDecide = Date.now()
 
-  const [pageRun, sectionRun, passageRun, claimRun] = await Promise.all([
+  const [pageRun, sectionRun, passageRun, claimRun, profileRun] = await Promise.all([
     // Module 3's dimensions are properties of the whole page's argument, so they ride
     // with the page state rather than needing a call of their own.
     runDecisions(backend, [pageState], { ...PAGE_QUESTIONS, ...MESSAGING_QUESTIONS }, 1),
     runDecisions(backend, sectionStates, SECTION_QUESTIONS, config.maxConcurrentDecisions),
     runDecisions(backend, passageStates, PASSAGE_QUESTIONS, config.maxConcurrentDecisions),
     runDecisions(backend, claimStates, EVIDENCE_QUESTIONS, config.maxConcurrentDecisions),
+    runDecisions(backend, profileStates, profileQuestions, 1),
   ])
   const decideMs = Date.now() - tDecide
 
   const degraded =
     pageRun.stats.degraded || sectionRun.stats.degraded || passageRun.stats.degraded ||
-    claimRun.stats.degraded
+    claimRun.stats.degraded || profileRun.stats.degraded
   const degradedReason =
     pageRun.stats.degradedReason ?? sectionRun.stats.degradedReason ?? passageRun.stats.degradedReason
 
@@ -343,6 +360,61 @@ app.post('/api/analyze', async (c) => {
     compareByImpact(a, b, countOccurrences(withEvidence)),
   )
 
+  /**
+   * Module 4's profile. Every quote is looked up from the passage store by the id the
+   * model chose, so the reader sees the page's own words and nothing is authored here.
+   */
+  const profile: ProfileEntry[] = []
+  const profileOutcome = profileRun.outcomes[0]
+  if (profileOutcome) {
+    for (const dimension of ProfileDimension.options) {
+      const answer = profileOutcome.answers[dimension]
+      const absent: ProfileEntry = {
+        dimension,
+        value: null,
+        quote: null,
+        passageId: null,
+        sectionId: null,
+        absentReason: ABSENT_REASONS[dimension],
+        confidence: null,
+      }
+      if (!answer || !isConfident(answer, config.confidenceThreshold)) {
+        profile.push(absent)
+        continue
+      }
+      const choice = String(answer.choice ?? '')
+      if (!choice || choice === NOT_STATED) {
+        profile.push(absent)
+        continue
+      }
+      const band = answer.confidence >= 0.85 ? 'high' : answer.confidence >= 0.65 ? 'medium' : 'low'
+
+      // business_type is a taxonomy answer, not a passage reference.
+      if (dimension === 'business_type') {
+        profile.push({ ...absent, value: choice, absentReason: null, confidence: band })
+        continue
+      }
+
+      const index = Number(/^p(\d+)$/.exec(choice)?.[1] ?? '0') - 1
+      const passage = profileCandidates[index]
+      if (!passage) {
+        // The model named an option that does not exist. Report absence rather than
+        // guessing which passage it meant.
+        profile.push(absent)
+        continue
+      }
+      profile.push({
+        dimension,
+        value: null,
+        quote: passage.text,
+        passageId: passage.id,
+        sectionId: passage.sectionId,
+        absentReason: null,
+        confidence: band,
+      })
+    }
+  }
+
   const stateSplit = sectionStates.some((s) => s.refId.includes('#'))
   const langSupported = !doc.lang || doc.lang.toLowerCase().startsWith('en')
 
@@ -382,6 +454,7 @@ app.post('/api/analyze', async (c) => {
     },
     sections,
     findings,
+    profile,
     provider: {
       backend: degraded ? ('none' as const) : backend.name,
       model: pageRun.stats.model ?? sectionRun.stats.model,
