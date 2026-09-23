@@ -63,6 +63,16 @@ long to quote.
 isolation · is the subject clearly named · is a claim specific enough to check · how
 promotional is the language · how ready is the section to be quoted.
 
+**Evidence and trust** — which sentences are claims a sceptical buyer would want proof
+of, whether any proof sits near them, and how far away it is. All of that is measured
+rather than judged. The one thing the model decides is *relevance*: "40,000 stores have
+installed it" is a real figure that does nothing to support a claim about speed, and a
+page that looks evidenced but is not is worse than one that makes no claims at all.
+
+**Messaging** — whether the page says what problem it solves, who it is for, what makes
+it different from the alternatives, and whether its call to action says what actually
+happens when you click it.
+
 **What the page says it is** — for what it does, who it is for, the problem it solves and
 what makes it different, the model is shown a shortlist of *your own sentences* and asked
 which one states that thing. You get your words back verbatim, or an honest "not stated".
@@ -77,6 +87,13 @@ page raises it, so a post about API design is never faulted for skipping refunds
 you get back is the case worth acting on: *this page raises "what does it cost?" and
 never answers it.* Across a site the same arithmetic says which questions are answered
 somewhere, which keep coming up unanswered, and which the site never touches.
+
+**Across a whole site** — the per-page answers are rolled up in ordinary code, so these
+cost one short call over a list of page summaries rather than re-reading anything:
+
+- **Audience coverage** — how many pages say who they are for, whether the site addresses one audience or drifts between several without acknowledging it, and whether it only sells without ever explaining.
+- **Buyer journey** — each page is placed at the stage it serves, from *does not know solutions exist* through to *ready to buy*. The gaps are then arithmetic: a site with nothing for people still describing their problem is invisible to exactly the searches assistants answer most.
+- **Content overlap** — pages competing for the same ground. Reported only when heading vocabulary overlaps heavily **and** both pages sit at the same buying stage **and** serve the same purpose. Any one of those alone is noise.
 
 **Full list, always current:** the [`/checks`](https://siteclarity.sanjay-shankar.workers.dev/checks)
 page on the running app is generated from the code itself, so it can never claim a check

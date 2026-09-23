@@ -6,8 +6,8 @@ import home from '../fixtures/html/sanjayshankar-home.html?raw'
 import { extract } from '../../src/extract/extract'
 import { assembleStaticFindings, assembleFindings, type DecisionSource } from '../../src/assemble/findings'
 import { verifyEvidence } from '../../src/assemble/verify'
-import { assertNoOverallScore } from '../../src/contracts'
-import { TEMPLATE_GROUPS } from '../../src/checks/registry'
+import { assertNoOverallScore, type ModuleId } from '../../src/contracts'
+import { TEMPLATE_GROUPS, builtModules, MODULE_INFO } from '../../src/checks/registry'
 import { CHECKS } from '../../src/assemble/checks'
 
 /**
@@ -168,5 +168,45 @@ describe('the README does not state numbers the code contradicts', () => {
     const stated = /\*\*(\d+) KB page cap\*\*/.exec(readme)?.[1]
     expect(stated, 'README no longer states a page cap').toBeTruthy()
     expect(Number(stated) * 1000).toBe(configured)
+  })
+
+  it('counts the built modules the way the registry does', async () => {
+    // It said "Seven of ten" while eight were built, and before that "Two are built"
+    // while three were. The count is derivable, so derive it.
+    const readme = (await import('../../README.md?raw')).default as string
+    const words = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten']
+    const match = /\*\*Pre-alpha\.\*\* (\w+) of (\w+) planned modules are built/i.exec(readme)
+    expect(match, 'README no longer states how many modules are built').toBeTruthy()
+    expect(words.indexOf(match![1]!.toLowerCase())).toBe(builtModules().length)
+    expect(words.indexOf(match![2]!.toLowerCase())).toBe(Object.keys(MODULE_INFO).length)
+  })
+
+  it('describes every built module somewhere in the feature copy', async () => {
+    // Three site-level modules shipped and the README never mentioned them, so the
+    // project read as smaller than it was to anyone landing on the front page.
+    //
+    // The README describes modules in a reader's words, not the registry's, so the two
+    // vocabularies are mapped here. A newly built module with no entry fails this test,
+    // which is the point: it forces both the mapping and the copy.
+    const README_PHRASE: Partial<Record<ModuleId, string>> = {
+      ai_readiness: 'answer its own heading',
+      evidence_trust: 'evidence and trust',
+      messaging: '**messaging**',
+      website_understanding: 'what the page says it is',
+      question_coverage: 'customer questions',
+      audience_coverage: 'audience coverage',
+      buyer_journey: 'buyer journey',
+      content_overlap: 'content overlap',
+    }
+    // Collapsed to one line first: the copy is hard-wrapped, so a phrase can straddle
+    // a line break and a naive contains() would report it missing.
+    const readme = ((await import('../../README.md?raw')).default as string)
+      .toLowerCase()
+      .replace(/\s+/g, ' ')
+    for (const m of builtModules()) {
+      const phrase = README_PHRASE[m]
+      expect(phrase, `${m} is built but the README has nothing describing it`).toBeTruthy()
+      expect(readme, `${m} is built but "${phrase}" is not in the README`).toContain(phrase)
+    }
   })
 })
