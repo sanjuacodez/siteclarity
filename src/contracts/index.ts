@@ -168,6 +168,35 @@ export const ProfileEntry = z.object({
 })
 export type ProfileEntry = z.infer<typeof ProfileEntry>
 
+/**
+ * A page reduced to typed values, for site-level analysis.
+ *
+ * Six of these seven fields are already computed by modules 1 to 4 and thrown away; the
+ * inventory is mostly a matter of returning them. No prose, because nothing may be
+ * generated, and no passages, because twenty-five of these must fit a decision model's
+ * context — 512 tokens on a local Laya checkpoint.
+ *
+ * See docs/SITE-ANALYSIS-DESIGN.md.
+ */
+export const PageSummary = z.object({
+  url: z.string(),
+  title: z.string().nullable(),
+  /** From purpose_clarity: explain | sell | compare | support | navigate | unclear. */
+  purpose: z.string().nullable(),
+  businessType: z.string().nullable(),
+  /** Heading terms, for overlap detection without embeddings. */
+  topicTerms: z.array(z.string()),
+  /** Whether the page names who it is for. */
+  audienceNamed: z.boolean().nullable(),
+  /** Whether the page offers a next step. */
+  hasAction: z.boolean(),
+  findingCounts: z.object({
+    count: z.number().int().nonnegative(),
+    high: z.number().int().nonnegative(),
+  }),
+})
+export type PageSummary = z.infer<typeof PageSummary>
+
 export const AnalysisResult = z.object({
   schemaVersion: z.literal(SCHEMA_VERSION),
   input: z.object({
@@ -181,6 +210,8 @@ export const AnalysisResult = z.object({
   findings: z.array(Finding),
   /** Module 4's descriptive output. Empty when the decision model did not run. */
   profile: z.array(ProfileEntry).default([]),
+  /** This page reduced to typed values, for the site-level pass. */
+  summary_for_site: PageSummary.nullable().default(null),
   provider: ProviderInfo,
   timings: z.record(z.number()),
 })

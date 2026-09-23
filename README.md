@@ -106,6 +106,19 @@ meant. It never judges whether the statement is *true* — only whether the page
 Site and list runs produce a table, one row per page, worst first. Open a row to see that
 page's findings.
 
+### Checks that need several pages
+
+A scan also reports what only becomes visible across pages — *"only 0 of 5 pages say who
+they are for"*, *"4 of 5 offer no next step"*.
+
+Those cost almost nothing. Every page has already been judged individually, so the
+site-level pass **counts existing judgements** rather than re-reading anything: each page
+returns a compact summary of typed values, the browser accumulates them, and one final
+call carries the inventory. Twenty-five pages come to roughly a thousand tokens.
+
+It stays database-free — the inventory lives in the tab exactly as the report does.
+Reasoning is in [`docs/SITE-ANALYSIS-DESIGN.md`](docs/SITE-ANALYSIS-DESIGN.md).
+
 ## Your own API key, stored in your browser
 
 The hosted instance holds **no credentials at all**, so it cannot spend anyone's quota
@@ -172,8 +185,8 @@ with no API key, quotes must be verbatim, and the report never shows a score.
 
 ## Status
 
-**Pre-alpha.** Four of ten planned modules are built — answer readiness, evidence &
-trust, messaging, and website understanding.
+**Pre-alpha.** Five of ten planned modules are built — answer readiness, evidence &
+trust, messaging, website understanding, and audience coverage across a site.
 
 Every check the product can emit is documented at
 [`/checks`](https://siteclarity.sanjay-shankar.workers.dev/checks), generated from the

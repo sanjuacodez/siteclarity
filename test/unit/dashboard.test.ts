@@ -1,7 +1,14 @@
 import { describe, it, expect } from 'vitest'
 import { DASHBOARD_HTML } from '../../src/ui/dashboard'
 import { renderChecksPage } from '../../src/ui/checks'
-import { TEMPLATE_GROUPS, builtModules, plannedModules, MODULE_INFO } from '../../src/checks/registry'
+import {
+  TEMPLATE_GROUPS,
+  QUESTION_GROUPS,
+  builtModules,
+  plannedModules,
+  MODULE_INFO,
+  allCheckIds,
+} from '../../src/checks/registry'
 import { EVIDENCE_TEMPLATES } from '../../src/static/evidence/templates'
 import { MESSAGING_TEMPLATES, MESSAGING_JUDGED } from '../../src/static/messaging/templates'
 import { EVIDENCE_QUESTIONS, MESSAGING_QUESTIONS } from '../../src/semantic/questions'
@@ -32,6 +39,7 @@ function report(overrides: Partial<AnalysisResult> = {}): AnalysisResult {
     input: { requestedUrl: 'https://example.test/page', finalUrl: 'https://example.test/page', fetchedAt: '2026-09-22T00:00:00Z', title: 'Presentation page' },
     limits: { scope: 'single_page', statements: ['Only this synthetic page was examined.'], decisionsRan: true, sectionsAnalyzed: 1, sectionsTotal: 1, stateSplit: false, language: 'en', languageSupported: true, jsDependent: false },
     profile: [],
+    summary_for_site: null,
     sections: [{ sectionId: 'synthetic-section', heading: 'Actual section heading', level: 2, passageCount: 1, decisions: {} }],
     findings: [finding()],
     provider: { backend: 'none', model: null, calls: 0, inputTokens: 0, outputTokens: 0, degraded: false, degradedReason: null },
@@ -417,18 +425,9 @@ describe('implemented check documentation', () => {
   it('documents exactly the implemented static, language and semantic catalogues', () => {
     const html = renderChecksPage()
     const rendered = Array.from(html.matchAll(/Check: <code>([^<]+)<\/code>/g), (match) => match[1]).sort()
-    // EVERY catalogue belongs here. The page's claim is that it comes from the code, and
-    // omitting a catalogue breaks that as surely as inventing a check would — modules 2
-    // and 3 shipped eight undocumented checks before this list was completed.
-    const allChecks = [
-      ...Object.keys(STATIC_TEMPLATES),
-      ...Object.keys(LANGUAGE_TEMPLATES),
-      ...Object.keys(EVIDENCE_TEMPLATES),
-      ...Object.keys(MESSAGING_TEMPLATES),
-      ...Object.keys(MESSAGING_JUDGED),
-      ...CHECKS.map((check) => check.id),
-    ]
-    expect(rendered).toEqual(allChecks.sort())
+    // Derived from src/checks/registry.ts, which is the single place a catalogue is
+    // declared. Listing them here as well is what let eight checks ship undocumented.
+    expect(rendered).toEqual(allCheckIds().sort())
     expect(html).not.toContain('planned, not yet built')
     expect(html).not.toContain('results come from the decision model alone')
     expect(html).toContain('These run even when the decision model is unavailable.')
@@ -437,10 +436,9 @@ describe('implemented check documentation', () => {
   it('includes every model question and its exact available answers', () => {
     const html = renderChecksPage()
     const rendered = Array.from(html.matchAll(/class="source">Question: <code>([^<]+)<\/code>/g), (match) => match[1]).sort()
-    const questions = {
-      ...PAGE_QUESTIONS, ...SECTION_QUESTIONS, ...PASSAGE_QUESTIONS,
-      ...EVIDENCE_QUESTIONS, ...MESSAGING_QUESTIONS,
-    }
+    const questions = Object.fromEntries(
+      QUESTION_GROUPS.flatMap((g) => Object.entries(g.catalogue)),
+    )
     expect(rendered).toEqual(Object.keys(questions).sort())
     const escape = (value: string) => value.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c] ?? c)
     for (const question of Object.values(questions)) {

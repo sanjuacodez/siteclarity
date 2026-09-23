@@ -14,6 +14,7 @@ import { STATIC_TEMPLATES } from '../static/structure/templates'
 import { LANGUAGE_TEMPLATES } from '../static/language/signals'
 import { EVIDENCE_TEMPLATES } from '../static/evidence/templates'
 import { MESSAGING_TEMPLATES, MESSAGING_JUDGED } from '../static/messaging/templates'
+import { SITE_TEMPLATES, SITE_AUDIENCE_TEMPLATES, SITE_QUESTIONS } from '../semantic/site'
 import {
   PAGE_QUESTIONS,
   SECTION_QUESTIONS,
@@ -81,6 +82,14 @@ export const TEMPLATE_GROUPS: CatalogueGroup[] = [
     templates: EVIDENCE_TEMPLATES,
   },
   {
+    id: 'site',
+    title: 'Across the site',
+    module: 'audience_coverage',
+    description:
+      'Checks that need several pages together. Every page is judged on its own first; these count those judgements rather than re-reading anything, so they cost one short call over an inventory of page summaries.',
+    templates: { ...SITE_TEMPLATES, ...SITE_AUDIENCE_TEMPLATES },
+  },
+  {
     id: 'messaging',
     title: 'Messaging',
     module: 'messaging',
@@ -113,6 +122,12 @@ export const QUESTION_GROUPS: QuestionGroup[] = [
     description:
       'Asked once per claim that has evidence nearby. Proximity is measured; whether the proof is about the claim is not.',
     catalogue: EVIDENCE_QUESTIONS,
+  },
+  {
+    title: 'Across the site',
+    description:
+      'Asked once over an inventory of page summaries — one short line per page, so twenty-five pages cost about a thousand tokens.',
+    catalogue: SITE_QUESTIONS,
   },
   {
     title: 'Messaging',
@@ -228,4 +243,7 @@ export const REGISTERED_EXPORTS = [
   'PASSAGE_QUESTIONS',
   'EVIDENCE_QUESTIONS',
   'MESSAGING_QUESTIONS',
+  'SITE_TEMPLATES',
+  'SITE_AUDIENCE_TEMPLATES',
+  'SITE_QUESTIONS',
 ] as const

@@ -22,6 +22,9 @@ const BLOCKS_WHOLE_PAGE: Record<string, true> = {
   js_dependent: true,       // crawlers may see an almost empty page
   canonical_offsite: true,  // credit is handed to another domain
   entity_unclear: true,
+  audience_drifts: true,
+  audience_none_evident: true,
+  audience_rarely_named: true,
   no_problem_stated: true,
   focus_not_communicated: true,     // nothing on the page can be attributed to a known subject
 }
@@ -54,6 +57,8 @@ const WEAKENS_CONTENT: Record<string, true> = {
   evidence_irrelevant: true,
   evidence_too_far: true,
   vague_cta: true,
+  site_has_no_next_step: true,
+  site_sells_without_explaining: true,
   audience_not_named: true,
   no_differentiation: true,
   no_clear_action: true,

@@ -15,6 +15,7 @@ import { discoverUrls } from './intake/sitemap'
 import { extract } from './extract/extract'
 import { createBackend } from './provider'
 import { findClaims } from './static/evidence/markers'
+import { analyseCtas } from './static/messaging/cta'
 import { EVIDENCE_TEMPLATES } from './static/evidence/templates'
 import {
   readFocusItems,
@@ -32,6 +33,24 @@ import {
   NOT_STATED,
 } from './semantic/profile'
 import { ProfileDimension, type ProfileEntry } from './contracts'
+import { buildPageSummary } from './semantic/inventory'
+import {
+  readSiteSignals,
+  buildSiteState,
+  SITE_QUESTIONS,
+  SITE_TEMPLATES,
+  SITE_AUDIENCE_TEMPLATES,
+  MIN_PAGES,
+  SELL_HEAVY,
+} from './semantic/site'
+import { PageSummary, type Finding } from './contracts'
+import type { StaticTemplate } from './static/structure/templates'
+import { z } from 'zod'
+
+/** Fill a template's {slots}. Shared by the site route. */
+function fillSlots(text: string, slots: Record<string, string | number>): string {
+  return text.replace(/\{(\w+)\}/g, (m, k: string) => (k in slots ? String(slots[k]) : m))
+}
 import { MESSAGING_JUDGED } from './static/messaging/templates'
 import { makeEvidence, verifyAll } from './assemble/verify'
 import {
@@ -112,6 +131,133 @@ app.get('/api/sitemap', async (c) => {
     returning: found.value.urls.length,
   })
   return c.json(found.value)
+})
+
+/**
+ * Site-level analysis over an inventory of page summaries.
+ *
+ * The browser accumulates summaries as it scans and posts them here once. There is no
+ * storage: the inventory lives in the tab exactly as the report does, which is what lets
+ * the whole design stay database-free. See docs/SITE-ANALYSIS-DESIGN.md.
+ */
+app.post('/api/site', async (c) => {
+  const started = Date.now()
+  const callerKey = readCallerKey(c.req.header('x-jev-key') ?? null)
+  const config = withCallerSettings(loadConfig(c.env), {
+    key: callerKey,
+    backend: readCallerBackend(c.req.header('x-sc-backend') ?? null),
+    baseUrl: null,
+    model: readCallerModel(c.req.header('x-sc-model') ?? null),
+  })
+
+  const body = await c.req
+    .json<{ summaries?: unknown }>()
+    .catch(() => ({}) as { summaries?: unknown })
+  const parsed = z.array(PageSummary).max(25).safeParse(body.summaries)
+  if (!parsed.success) {
+    return c.json(
+      new AppError('internal', 'Expected an array of page summaries').toJSON(),
+      400,
+    )
+  }
+  const summaries = parsed.data
+  if (summaries.length < MIN_PAGES) {
+    return c.json({
+      findings: [],
+      signals: readSiteSignals(summaries),
+      limits: [
+        `Site-level checks need at least ${MIN_PAGES} pages; ${summaries.length} were scanned.`,
+      ],
+      timings: { totalMs: Date.now() - started },
+    })
+  }
+
+  const signals = readSiteSignals(summaries)
+  const findings: Finding[] = []
+  const pageUrl = summaries[0]!.url
+
+  const add = (checkId: string, tpl: StaticTemplate, slots: Record<string, string | number>) => {
+    findings.push({
+      id: `${checkId}:site`,
+      module: 'audience_coverage',
+      checkId,
+      observation: fillSlots(tpl.observation, slots),
+      evidence: [],
+      whyItMatters: tpl.whyItMatters,
+      recommendedAction: tpl.recommendedAction,
+      affects: summaries.map((s) => ({ pageUrl: s.url })),
+      priority: tpl.priority,
+      confidence: 'high',
+      highlights: [],
+      copySource: 'template',
+    })
+  }
+
+  // Deterministic: counting what every page was already judged on individually.
+  if (signals.audienceNamed < signals.pages / 2) {
+    add('audience_rarely_named', SITE_TEMPLATES.audience_rarely_named!, {
+      named: signals.audienceNamed,
+      pages: signals.pages,
+    })
+  }
+  if (signals.withoutAction > signals.pages / 2) {
+    add('site_has_no_next_step', SITE_TEMPLATES.site_has_no_next_step!, {
+      count: signals.withoutAction,
+      pages: signals.pages,
+    })
+  }
+  const sell = signals.purposes.sell ?? 0
+  const explain = signals.purposes.explain ?? 0
+  if (sell / signals.pages > SELL_HEAVY && explain === 0) {
+    add('site_sells_without_explaining', SITE_TEMPLATES.site_sells_without_explaining!, {
+      sell,
+      explain,
+      pages: signals.pages,
+    })
+  }
+
+  // The one judgement worth a model: whether the pages cohere around an audience.
+  const backend = createBackend(c.env, config)
+  const siteRun = await runDecisions(
+    backend,
+    [
+      {
+        scope: 'page' as const,
+        refId: 'site',
+        state: buildSiteState(summaries),
+        estimatedTokens: 0,
+        meta: {},
+      },
+    ],
+    SITE_QUESTIONS,
+    1,
+  )
+
+  const answer = siteRun.outcomes[0]?.answers.site_audience_consistency
+  if (answer && isConfident(answer, config.confidenceThreshold)) {
+    const choice = String(answer.choice ?? '')
+    const tpl =
+      choice === 'drifting'
+        ? SITE_AUDIENCE_TEMPLATES.audience_drifts
+        : choice === 'none_evident'
+          ? SITE_AUDIENCE_TEMPLATES.audience_none_evident
+          : null
+    if (tpl) add(choice === 'drifting' ? 'audience_drifts' : 'audience_none_evident', tpl, {})
+  }
+
+  logger.info('site analysis complete', { pages: signals.pages, findings: findings.length })
+  return c.json({
+    findings,
+    signals,
+    limits: [
+      `Site-level checks read ${signals.pages} page summaries, not the pages themselves.`,
+      ...(siteRun.stats.degraded
+        ? ['The decision model was unavailable, so only the counted checks ran.']
+        : []),
+    ],
+    provider: { calls: siteRun.stats.calls, degraded: siteRun.stats.degraded },
+    timings: { totalMs: Date.now() - started },
+  })
 })
 
 app.post('/api/analyze', async (c) => {
@@ -415,6 +561,13 @@ app.post('/api/analyze', async (c) => {
    * Module 4's profile. Every quote is looked up from the passage store by the id the
    * model chose, so the reader sees the page's own words and nothing is authored here.
    */
+  /** Read a confident Choice, or null. Used to fill the page summary. */
+  const readChoice = (a: (typeof pageRun.outcomes)[number]['answers'][string] | undefined) =>
+    a && isConfident(a, config.confidenceThreshold) ? (a.choice ?? null) : null
+  const readNoul = (a: (typeof pageRun.outcomes)[number]['answers'][string] | undefined) =>
+    a && isConfident(a, config.confidenceThreshold) ? (a.noul ?? 0) >= 0.5 : null
+  const ctasForSummary = analyseCtas(doc)
+
   const profile: ProfileEntry[] = []
   const profileOutcome = profileRun.outcomes[0]
   if (profileOutcome) {
@@ -506,6 +659,18 @@ app.post('/api/analyze', async (c) => {
     sections,
     findings,
     profile,
+    // This page reduced to typed values, so the browser can accumulate an inventory for
+    // the site-level pass. Six of its seven fields are already computed above.
+    summary_for_site: buildPageSummary({
+      doc,
+      url: fetched.value.finalUrl,
+      purpose: readChoice(pageOutcome?.answers.purpose_clarity),
+      businessType: profile.find((e) => e.dimension === 'business_type')?.value ?? null,
+      audienceNamed: readNoul(pageOutcome?.answers.names_the_audience),
+      hasAction: ctasForSummary.actions.length > 0,
+      count: findings.length,
+      high: findings.filter((f) => f.priority === 'high').length,
+    }),
     provider: {
       backend: degraded ? ('none' as const) : backend.name,
       model: pageRun.stats.model ?? sectionRun.stats.model,
