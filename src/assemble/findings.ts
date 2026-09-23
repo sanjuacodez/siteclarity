@@ -133,6 +133,11 @@ export function assembleStaticFindings(doc: ExtractedDoc, pageUrl: string): Find
     )
     if (evidence.length === 0) continue
 
+    // Same rule as above: only name words the reader can see. The quote is truncated at
+    // 240 characters, so a term past the cut would be named but invisible.
+    const visible = evidence.map((e) => e.quote).join(' ').toLowerCase()
+    const shownTerms = claim.terms.filter((t) => visible.includes(t.toLowerCase()))
+
     const slots = {
       what: claim.what,
       distance: claim.distance,
@@ -149,7 +154,7 @@ export function assembleStaticFindings(doc: ExtractedDoc, pageUrl: string): Find
       affects: [{ pageUrl, sectionId: claim.passage.sectionId }],
       priority: tpl.priority,
       confidence: 'high',
-      highlights: claim.terms,
+      highlights: shownTerms,
       copySource: 'template',
     })
   }
@@ -284,13 +289,19 @@ function buildFinding(
   // A finding with no verifiable evidence is not reported. This is the whole promise.
   if (evidence.length === 0) return null
 
-  // A tailored suggestion where we can build one; otherwise the generic template.
+  /**
+   * Suggestions and highlights are built from the QUOTED evidence, not the whole
+   * section.
+   *
+   * They used to read the section's full text while the reader was only shown its first
+   * passage or two — so the advice could say «Uses "seamless"» about a quote where
+   * "seamless" never appears. Nothing was invented exactly, but the reader is told to
+   * look for a word that is not in front of them, which fails the same test.
+   */
+  const quotedText = evidence.map((e) => e.quote).join(' ')
   const suggester = SUGGESTERS[check.id]
-  const sourceText = source.passageIds
-    .map((id) => doc.passagesById.get(id)?.text ?? '')
-    .join(' ')
   const tailored = suggester
-    ? suggester(sourceText, source.decisions.improvement_type)
+    ? suggester(quotedText, source.decisions.improvement_type)
     : null
 
   const label = source.label
@@ -305,7 +316,7 @@ function buildFinding(
     evidence,
     whyItMatters: check.whyItMatters,
     recommendedAction: tailored ?? check.recommendedAction,
-    highlights: suggester ? findHypeTerms(sourceText, 8).map((h) => h.term) : [],
+    highlights: suggester ? findHypeTerms(quotedText, 8).map((h) => h.term) : [],
     affects: [
       { pageUrl, ...(source.scope === 'section' ? { sectionId: source.refId } : {}) },
     ],

@@ -1,23 +1,18 @@
 import { CHECKS } from '../assemble/checks'
-import { STATIC_TEMPLATES, type StaticTemplate } from '../static/structure/templates'
-import { LANGUAGE_TEMPLATES } from '../static/language/signals'
-import { EVIDENCE_TEMPLATES } from '../static/evidence/templates'
-import { MESSAGING_TEMPLATES, MESSAGING_JUDGED } from '../static/messaging/templates'
-import {
-  PAGE_QUESTIONS,
-  SECTION_QUESTIONS,
-  PASSAGE_QUESTIONS,
-  EVIDENCE_QUESTIONS,
-  MESSAGING_QUESTIONS,
-  QUESTION_CATALOGUE_VERSION,
-} from '../semantic/questions'
+import { QUESTION_CATALOGUE_VERSION } from '../semantic/questions'
 import type { Question } from '../provider/types'
+import {
+  TEMPLATE_GROUPS,
+  QUESTION_GROUPS,
+  allCheckIds,
+  type DocumentedTemplate,
+} from '../checks/registry'
 
 // The catalogues remain the source of truth for every documented check and question.
 const esc = (s: string) =>
   s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!)
 
-const priorityLabel = (priority: StaticTemplate['priority']) =>
+const priorityLabel = (priority: DocumentedTemplate['priority']) =>
   ({ high: 'Fix first', medium: 'Worth doing', low: 'Minor' })[priority]
 
 const checkName = (id: string) => {
@@ -40,7 +35,7 @@ function renderQuestion(id: string, q: Question): string {
   </details>`
 }
 
-function renderTemplate(id: string, template: Pick<StaticTemplate, 'priority' | 'observation' | 'whyItMatters' | 'recommendedAction'>, source?: string): string {
+function renderTemplate(id: string, template: DocumentedTemplate, source?: string): string {
   return `<details class="check">
     <summary><span>${esc(checkName(id))}</span><span class="tag ${template.priority}">${priorityLabel(template.priority)}</span></summary>
     <div class="detail-body">
@@ -53,33 +48,11 @@ function renderTemplate(id: string, template: Pick<StaticTemplate, 'priority' | 
 }
 
 export function renderChecksPage(): string {
-  const structureCount = Object.keys(STATIC_TEMPLATES).length
-  const languageCount = Object.keys(LANGUAGE_TEMPLATES).length
-  // Every template catalogue must be rendered here. The page's claim is that it comes
-  // from the code, and omitting a catalogue breaks that as surely as inventing a check
-  // would — eight checks across modules 2 and 3 were undocumented before this.
-  const trustTemplates = { ...EVIDENCE_TEMPLATES }
-  const messagingTemplates = { ...MESSAGING_TEMPLATES, ...MESSAGING_JUDGED }
-  const trustCount = Object.keys(trustTemplates).length
-  const messagingCount = Object.keys(messagingTemplates).length
-  const totalChecks = structureCount + languageCount + CHECKS.length
-  const questions = [
-    { title: 'The page', description: 'Identity and purpose, using a compact view of the page.', catalogue: PAGE_QUESTIONS },
-    { title: 'Each section', description: 'Answers, context and promotional language, using the section’s own content.', catalogue: SECTION_QUESTIONS },
-    { title: 'Candidate claims', description: 'Whether a passage makes a factual claim and how specific that claim is.', catalogue: PASSAGE_QUESTIONS },
-    {
-    title: 'Claim and evidence',
-    description:
-      'Asked once per claim that has evidence nearby. Proximity is measured; whether the proof is about the claim is not.',
-    catalogue: EVIDENCE_QUESTIONS,
-  },
-  {
-    title: 'Messaging',
-    description:
-      'Asked once per page, against the page-scope state. These are properties of the whole argument rather than of one section.',
-    catalogue: MESSAGING_QUESTIONS,
-  },
-]
+  // Every section, count and nav link comes from src/checks/registry.ts. Adding a module
+  // means adding it there and nowhere else; the registry guard fails the suite if a
+  // catalogue exists on disk without being registered.
+  const totalChecks = allCheckIds().length
+  const questions = QUESTION_GROUPS
 
   return `<!doctype html>
 <html lang="en"><head>
@@ -116,7 +89,7 @@ export function renderChecksPage(): string {
       <article class="step"><span class="step-num" aria-hidden="true">03</span><h2>Make findings actionable</h2><p>Pair each observation with a next step and evidence verified against the extracted page.</p></article>
     </div>
     <div class="content-layout">
-      <nav class="contents" aria-label="On this page"><p>On this page</p><a href="#modules">Modules</a><a href="#trust">Evidence &amp; trust</a><a href="#messaging">Messaging</a><a href="#structure">Page structure</a><a href="#language">Language signals</a><a href="#decisions">Content understanding</a><a href="#questions">Model questions</a><a href="#limits">Scope &amp; limitations</a></nav>
+      <nav class="contents" aria-label="On this page"><p>On this page</p><a href="#modules">Modules</a>${TEMPLATE_GROUPS.map((g) => `<a href="#${g.id}">${esc(g.title)}</a>`).join('')}<a href="#decisions">Content understanding</a><a href="#questions">Model questions</a><a href="#limits">Scope &amp; limitations</a></nav>
       <div>
         <section id="modules"><div class="section-heading"><h2>Modules</h2><span class="count">2 modules</span></div>
 <p class="section-note">SiteClarity is planned as ten modules over one shared analysis. Two
@@ -139,30 +112,12 @@ journey, audience coverage, product portfolio, content overlap, and an opportuni
 roll-up across all of them.</p>
 </section>
 
-<section id="trust"><div class="section-heading"><h2>Evidence &amp; trust checks</h2><span class="count">${trustCount} checks</span></div>
-<p class="section-note">A passage counts as a claim only when it carries <em>both</em> a
-superlative and one of six claim families — performance, customer outcome, market position,
-ease, security, reliability. Either signal alone is too loose. Whether nearby proof is
-actually <em>about</em> the claim is the one judgement left to the model.</p>
-          ${Object.entries(trustTemplates).map(([id, template]) => renderTemplate(id, template)).join('')}
-        </section>
+${TEMPLATE_GROUPS.map((group) => `
+        <section id="${group.id}"><div class="section-heading"><h2>${esc(group.title)}</h2><span class="count">${Object.keys(group.templates).length} checks</span></div>
+          <p class="section-note">${esc(group.description)}</p>
+          ${Object.entries(group.templates).map(([id, template]) => renderTemplate(id, template)).join('')}
+        </section>`).join('')}
 
-        <section id="messaging"><div class="section-heading"><h2>Messaging</h2><span class="count">${messagingCount} checks</span></div>
-<p class="section-note">Whether the page makes its case: does it name the problem it solves,
-say who it is for, say what makes it different, and offer a next step that states what it
-does. Link text is read directly; the rest is judged.</p>
-          ${Object.entries(messagingTemplates).map(([id, template]) => renderTemplate(id, template)).join('')}
-        </section>
-
-<section id="structure"><div class="section-heading"><h2>Page structure</h2><span class="count">${structureCount} checks</span></div>
-          <p class="section-note">Implemented rules for headings, metadata, structured data and extractable content. These run even when the decision model is unavailable.</p>
-          ${Object.entries(STATIC_TEMPLATES).map(([id, template]) => renderTemplate(id, template)).join('')}
-          <p class="scope-note">Expand any check to read its finding template. Placeholders in braces are filled with page-specific values during an audit.</p>
-        </section>
-        <section id="language"><div class="section-heading"><h2>Language signals</h2><span class="count">${languageCount} checks</span></div>
-          <p class="section-note">Implemented rules that identify references without context, vague quantities and long sentences. These checks apply to English content.</p>
-          ${Object.entries(LANGUAGE_TEMPLATES).map(([id, template]) => renderTemplate(id, template)).join('')}
-        </section>
         <section id="decisions"><div class="section-heading"><h2>Content understanding</h2><span class="count">${CHECKS.length} checks</span></div>
           <p class="section-note">The decision model evaluates clarity and substance. Its typed answers select findings from these templates; it does not write the report copy.</p>
           ${CHECKS.map((check) => renderTemplate(check.id, check, `Question: <code>${esc(check.questionId)}</code>${check.requiresPromissoryHeading ? ' · only for headings that promise a question or topic' : ''}`)).join('')}

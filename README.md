@@ -131,7 +131,7 @@ hosted instance cannot be used to reach private addresses. Running both locally?
 
 ```bash
 npm install
-npm test        # 177 tests, fully offline, no API key, no cost
+npm test        # fully offline, no API key, no cost
 npm run dev     # http://localhost:8787
 ```
 
@@ -152,15 +152,23 @@ with no API key, quotes must be verbatim, and the report never shows a score.
 
 ## Status
 
-**Pre-alpha.** Module 1 of a planned ten (AI Readiness) is built and working.
+**Pre-alpha.** Three of ten planned modules are built — answer readiness, evidence &
+trust, and messaging.
 
-```
-32 source files · ~4,900 lines · 177 tests passing offline
-```
+Every check the product can emit is documented at
+[`/checks`](https://siteclarity.sanjay-shankar.workers.dev/checks), generated from the
+same catalogues the analysis uses, so that page cannot claim a check that does not exist
+or omit one that does.
+
+Accuracy is measured rather than asserted: a hand-written corpus of 58 cases is run
+against the live model with `npm run calibrate:live`, and the current baseline is
+recorded in the repository. False positives are tracked separately from overall
+agreement, because reporting a problem that is not there costs more trust than missing
+one costs value.
 
 ## Known limits
 
-- **300 KB page cap** — extraction costs ~0.02 ms/KB against Cloudflare's 10 ms free-tier CPU limit
+- **250 KB page cap** — extraction costs ~0.02 ms/KB against Cloudflare's 10 ms free-tier CPU limit. Larger pages are analysed up to the cap, and the report says so.
 - English-only language checks
 - JavaScript-rendered pages are flagged, not rendered
 - One page per request; multi-page scans run from the browser by design

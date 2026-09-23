@@ -299,7 +299,10 @@ app.post('/api/analyze', async (c) => {
       affects: [{ pageUrl: fetched.value.finalUrl, sectionId: claim.passage.sectionId }],
       priority: tpl.priority,
       confidence: answer.confidence >= 0.85 ? 'high' : 'medium',
-      highlights: claim.terms,
+      // Only highlight words visible in the quote shown (see assemble/findings.ts).
+      highlights: claim.terms.filter((t) =>
+        ev.map((e) => e.quote).join(' ').toLowerCase().includes(t.toLowerCase()),
+      ),
       copySource: 'template',
     })
   }
