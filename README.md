@@ -198,6 +198,24 @@ A free Cloudflare account is enough. No credit card. Set `account_id` in
 `wrangler.jsonc` to your own, then either let visitors bring their own keys (the default)
 or uncomment the `ai` binding to use your free Workers AI allowance.
 
+`account_id` is not optional if your Cloudflare login has more than one account —
+`wrangler` cannot choose between them without a prompt, and a deploy from CI will simply
+fail. Set it in `wrangler.jsonc`, or export `CLOUDFLARE_ACCOUNT_ID`.
+
+**What the free tier actually gives you**
+
+| | Free allowance | What happens at the ceiling |
+| --- | --- | --- |
+| Worker requests | 100,000 / day | Further requests are rejected by Cloudflare until the day rolls over |
+| Workers AI (if you enable the `ai` binding) | 10,000 neurons / day | Decision calls start failing, and SiteClarity degrades to the static checks with the report saying so |
+| CPU | 10 ms per request | A breach returns error 1101, so the page cap is enforced rather than hoped for |
+
+There is no rate limiting in the app. A public instance is one anyone can spend your
+daily allowance on — put Cloudflare rate limiting in front of it if you run one.
+
+**Security:** the SSRF posture, how untrusted page content is handled, and where to
+report a vulnerability are in [`SECURITY.md`](SECURITY.md).
+
 ## Contributing
 
 See [`CONTRIBUTING.md`](CONTRIBUTING.md). The short version: `npm test` must pass offline

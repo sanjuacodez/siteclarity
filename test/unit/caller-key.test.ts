@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { readCallerKey, withCallerKey, loadConfig } from '../../src/lib/config'
 import { AppError, redactSecrets } from '../../src/lib/errors'
+import { logger } from '../../src/lib/logger'
 
 const base = () => loadConfig({ DECISION_BACKEND: 'workersai' })
 
@@ -41,5 +42,27 @@ describe('bring-your-own key', () => {
   it('leaves ordinary error text alone', () => {
     const msg = 'Expected HTML, got "application/pdf"'
     expect(redactSecrets(msg)).toBe(msg)
+  })
+})
+
+describe('the log is not a side channel for a visitor key', () => {
+  it('redacts a key that reaches a log line through any field', () => {
+    // Nothing logs a key today, and SECURITY.md says keys are never logged. That was
+    // true only because no call site happened to log one: an upstream failure whose
+    // message echoed a request header would have leaked it with nobody noticing.
+    const key = 'jev_' + 'a'.repeat(32)
+    const lines: string[] = []
+    const real = console.error
+    console.error = (line: unknown) => { lines.push(String(line)) }
+    try {
+      logger.error('backend rejected the request', { upstream: `Bearer ${key}`, url: `https://x.test/v1?api_key=${key}` })
+    } finally {
+      console.error = real
+    }
+    expect(lines).toHaveLength(1)
+    expect(lines[0]).not.toContain(key)
+    expect(lines[0]).toContain('[redacted]')
+    // Still a usable log line, not a blanked one.
+    expect(lines[0]).toContain('backend rejected the request')
   })
 })

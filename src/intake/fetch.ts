@@ -3,7 +3,7 @@ import { err, ok, type Result } from '../lib/errors'
 import type { Config } from '../lib/config'
 
 export const USER_AGENT =
-  'SiteClarityBot/0.1 (+https://github.com/siteclarity/siteclarity; open source answer-readiness audit)'
+  'SiteClarityBot/0.1 (+https://github.com/sanjuacodez/siteclarity; open source answer-readiness audit)'
 
 export interface FetchedPage {
   requestedUrl: string

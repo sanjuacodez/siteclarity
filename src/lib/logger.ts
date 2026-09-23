@@ -1,4 +1,5 @@
 /** Structured logging. Never use bare console.log in committed code (see CONTRIBUTING.md). */
+import { redactSecrets } from './errors'
 
 type Level = 'debug' | 'info' | 'warn' | 'error'
 
@@ -9,8 +10,16 @@ export interface Logger {
   error(msg: string, fields?: Record<string, unknown>): void
 }
 
+/**
+ * Every line goes through the same redaction the error responses use.
+ *
+ * Nothing logs a key today, and SECURITY.md says so. That was true only because no
+ * call site happened to log one — an upstream failure whose message echoed a request
+ * header would have put a visitor's key in the log with nobody noticing. Making the
+ * claim structural costs one function call per line.
+ */
 function emit(level: Level, msg: string, fields?: Record<string, unknown>) {
-  const line = JSON.stringify({ level, msg, ts: Date.now(), ...fields })
+  const line = redactSecrets(JSON.stringify({ level, msg, ts: Date.now(), ...fields }))
   if (level === 'error' || level === 'warn') console.error(line)
   else console.log(line)
 }

@@ -39,3 +39,9 @@ inert page. `npm test` compiles the emitted script and fails on it; never skip i
 
 One change per branch. Include the real output of the tests, and never open a PR with
 failing or skipped tests.
+
+## Found a vulnerability?
+
+Do not open an issue or a pull request for it. Report it privately — see
+[`SECURITY.md`](SECURITY.md), which also describes the SSRF guard and the
+untrusted-content rules any change to `src/intake/` has to keep.
