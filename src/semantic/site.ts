@@ -236,3 +236,72 @@ export const JOURNEY_TEMPLATES: Record<string, StaticTemplate> = {
       'Spread coverage outward from where it is thickest — one page earlier in the journey and one later will reach people the rest of the site currently misses.',
   },
 }
+
+/**
+ * Module 9 — Content overlap.
+ *
+ * Embeddings were the obvious approach and the 10 ms CPU limit forbids them. Topic-term
+ * overlap between page summaries is set intersection over eight-element arrays: 25 pages
+ * is 300 comparisons and costs microseconds.
+ *
+ * It is less subtle than similarity and will miss paraphrase entirely. That is an honest
+ * trade rather than a hidden one — "these pages use the same terms and serve the same
+ * moment" is a claim the evidence supports, where "these pages are semantically similar"
+ * would not be.
+ *
+ * Shared vocabulary alone is far too loose: every page on a WooCommerce site says
+ * "checkout". A pair is only reported when the terms overlap heavily AND both pages sit
+ * at the same buying stage AND serve the same purpose — three independent signals
+ * agreeing, because any one of them alone produces noise.
+ */
+const OVERLAP_RATIO = 0.6
+const MIN_SHARED_TERMS = 3
+const MAX_PAIRS = 5
+
+export interface OverlapPair {
+  a: PageSummary
+  b: PageSummary
+  shared: string[]
+  ratio: number
+}
+
+export function findOverlaps(summaries: PageSummary[]): OverlapPair[] {
+  const pairs: OverlapPair[] = []
+
+  for (let i = 0; i < summaries.length; i++) {
+    for (let j = i + 1; j < summaries.length; j++) {
+      const a = summaries[i]!
+      const b = summaries[j]!
+
+      // Two pages can only compete if they are written for the same moment and doing
+      // the same job. Without this, a guide and a pricing page sharing vocabulary
+      // would be reported as rivals.
+      if (!a.journeyStage || a.journeyStage !== b.journeyStage) continue
+      if (!a.purpose || a.purpose !== b.purpose) continue
+
+      const setA = new Set(a.topicTerms)
+      const shared = b.topicTerms.filter((t) => setA.has(t))
+      if (shared.length < MIN_SHARED_TERMS) continue
+
+      const smaller = Math.min(a.topicTerms.length, b.topicTerms.length)
+      const ratio = smaller === 0 ? 0 : shared.length / smaller
+      if (ratio < OVERLAP_RATIO) continue
+
+      pairs.push({ a, b, shared, ratio })
+    }
+  }
+
+  return pairs.sort((x, y) => y.ratio - x.ratio || y.shared.length - x.shared.length).slice(0, MAX_PAIRS)
+}
+
+export const OVERLAP_TEMPLATES: Record<string, StaticTemplate> = {
+  pages_compete: {
+    priority: 'medium',
+    pageLevel: true,
+    observation: 'Two pages cover the same ground: {a} and {b}.',
+    whyItMatters:
+      'Both are written for the same moment, about {shared}. Search engines have to pick one and may pick neither, and a reader who lands on the weaker one never learns the other exists.',
+    recommendedAction:
+      'Decide which page owns this topic. Make the other point at it, narrow it to a genuinely different angle, or merge the two.',
+  },
+}

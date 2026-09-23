@@ -19,6 +19,7 @@ import {
   SITE_AUDIENCE_TEMPLATES,
   SITE_QUESTIONS,
   JOURNEY_TEMPLATES,
+  OVERLAP_TEMPLATES,
 } from '../semantic/site'
 import {
   JOURNEY_QUESTIONS,
@@ -102,6 +103,14 @@ export const TEMPLATE_GROUPS: CatalogueGroup[] = [
     description:
       'Which moments in a buying decision the site writes for, and which it leaves empty. Each page is placed at a stage individually; the gaps are then arithmetic.',
     templates: JOURNEY_TEMPLATES,
+  },
+  {
+    id: 'overlap',
+    title: 'Content overlap',
+    module: 'content_overlap',
+    description:
+      'Pages competing for the same ground. Reported only when heading vocabulary overlaps heavily AND both pages sit at the same buying stage AND serve the same purpose — any one signal alone is noise.',
+    templates: OVERLAP_TEMPLATES,
   },
   {
     id: 'messaging',
@@ -267,4 +276,5 @@ export const REGISTERED_EXPORTS = [
   'SITE_QUESTIONS',
   'JOURNEY_TEMPLATES',
   'JOURNEY_QUESTIONS',
+  'OVERLAP_TEMPLATES',
 ] as const

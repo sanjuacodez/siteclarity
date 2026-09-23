@@ -119,6 +119,11 @@ Each page is placed at a buying stage — awareness, education, consideration, c
 decision, purchase — and the gaps are then arithmetic. Reported as gaps rather than a
 coverage score, because knowing *which* stage is missing tells you what to write.
 
+It also flags pages competing for the same ground, but only when three signals agree:
+heading vocabulary overlaps heavily, both pages sit at the same buying stage, **and** they
+serve the same purpose. Any one of those alone is noise — every page on a shop says
+"checkout".
+
 Those cost almost nothing. Every page has already been judged individually, so the
 site-level pass **counts existing judgements** rather than re-reading anything: each page
 returns a compact summary of typed values, the browser accumulates them, and one final
@@ -193,8 +198,9 @@ with no API key, quotes must be verbatim, and the report never shows a score.
 
 ## Status
 
-**Pre-alpha.** Six of ten planned modules are built — answer readiness, evidence &
-trust, messaging, website understanding, audience coverage, and buyer journey.
+**Pre-alpha.** Seven of ten planned modules are built — answer readiness, evidence &
+trust, messaging, website understanding, audience coverage, buyer journey, and content
+overlap.
 
 Every check the product can emit is documented at
 [`/checks`](https://siteclarity.sanjay-shankar.workers.dev/checks), generated from the

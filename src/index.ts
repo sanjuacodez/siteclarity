@@ -45,6 +45,8 @@ import {
   STAGE_COST_PUBLIC,
   findStageGaps,
   stageCounts,
+  findOverlaps,
+  OVERLAP_TEMPLATES,
   MIN_PAGES,
   SELL_HEAVY,
 } from './semantic/site'
@@ -262,6 +264,30 @@ app.post('/api/site', async (c) => {
       { stage: STAGE_LABELS[heaviest[0]] ?? heaviest[0] },
       'buyer_journey',
     )
+  }
+
+  // Module 9: pages competing for the same ground. Three signals must agree.
+  for (const pair of findOverlaps(summaries)) {
+    const label = (x: typeof pair.a) => x.title?.slice(0, 60) ?? x.url
+    findings.push({
+      id: `pages_compete:${pair.a.url}|${pair.b.url}`,
+      module: 'content_overlap',
+      checkId: 'pages_compete',
+      observation: fillSlots(OVERLAP_TEMPLATES.pages_compete!.observation, {
+        a: label(pair.a),
+        b: label(pair.b),
+      }),
+      evidence: [],
+      whyItMatters: fillSlots(OVERLAP_TEMPLATES.pages_compete!.whyItMatters, {
+        shared: pair.shared.slice(0, 4).join(', '),
+      }),
+      recommendedAction: OVERLAP_TEMPLATES.pages_compete!.recommendedAction,
+      affects: [{ pageUrl: pair.a.url }, { pageUrl: pair.b.url }],
+      priority: 'medium',
+      confidence: 'high',
+      highlights: pair.shared.slice(0, 4),
+      copySource: 'template',
+    })
   }
 
   // The one judgement worth a model: whether the pages cohere around an audience.
