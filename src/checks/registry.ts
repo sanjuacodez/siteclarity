@@ -122,6 +122,71 @@ export const QUESTION_GROUPS: QuestionGroup[] = [
   },
 ]
 
+/**
+ * The ten planned modules, in build order, with what each covers.
+ *
+ * Built state is DERIVED from whether a catalogue references the module, never written
+ * down — the checks page previously said "two are built" while three were, because the
+ * count was prose someone had to remember to update.
+ */
+export const MODULE_INFO: Record<ModuleId, { label: string; blurb: string }> = {
+  ai_readiness: {
+    label: 'Answer readiness',
+    blurb:
+      'Can a search engine or AI assistant find, understand and quote the answers on this page? Structured data, heading hierarchy, extractability, self-containment, promotional density, buried answers.',
+  },
+  evidence_trust: {
+    label: 'Evidence & trust',
+    blurb:
+      'Does each marketing claim have proof beside it? Claims and evidence are both located deterministically and the distance between them is measured. Whether nearby proof is actually about the claim is the one judgement left to the model.',
+  },
+  messaging: {
+    label: 'Messaging',
+    blurb:
+      'Does the page make its case? Whether it names the problem it solves, says who it is for, says what makes it different, and offers a next step that states what it does.',
+  },
+  website_understanding: {
+    label: 'Website understanding',
+    blurb: 'What the site sells, to whom, and the problems it claims to solve.',
+  },
+  question_coverage: {
+    label: 'Question coverage',
+    blurb: 'Which buyer questions the site answers, partly answers, or leaves unanswered.',
+  },
+  buyer_journey: {
+    label: 'Buyer journey',
+    blurb: 'Whether content exists for each stage from awareness through to decision.',
+  },
+  audience_coverage: {
+    label: 'Audience coverage',
+    blurb: 'Which audiences the content actually addresses, against those it intends to.',
+  },
+  product_portfolio: {
+    label: 'Product portfolio',
+    blurb: 'How marketing coverage compares across several products or services.',
+  },
+  content_overlap: {
+    label: 'Content overlap',
+    blurb: 'Pages competing for the same topic or intent.',
+  },
+  content_opportunity: {
+    label: 'Opportunities',
+    blurb: 'A prioritised roll-up of everything the other modules found.',
+  },
+}
+
+/** Modules with at least one catalogue behind them. Derived, never declared. */
+export function builtModules(): ModuleId[] {
+  const built = new Set<ModuleId>(TEMPLATE_GROUPS.map((g) => g.module))
+  for (const c of CHECKS) built.add('ai_readiness')
+  return (Object.keys(MODULE_INFO) as ModuleId[]).filter((m) => built.has(m))
+}
+
+export function plannedModules(): ModuleId[] {
+  const built = new Set(builtModules())
+  return (Object.keys(MODULE_INFO) as ModuleId[]).filter((m) => !built.has(m))
+}
+
 /** Every check id the product can emit, from every source. */
 export function allCheckIds(): string[] {
   return [

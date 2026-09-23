@@ -3,6 +3,9 @@ import {
   TEMPLATE_GROUPS,
   QUESTION_GROUPS,
   REGISTERED_EXPORTS,
+  MODULE_INFO,
+  builtModules,
+  plannedModules,
   allCheckIds,
   allQuestionIds,
 } from '../../src/checks/registry'
@@ -104,6 +107,38 @@ describe('catalogue registry', () => {
       expect(page, `${id} is registered but not documented`).toContain(
         `Question: <code>${id}</code>`,
       )
+    }
+  })
+})
+
+describe('the modules section cannot go stale', () => {
+  it('lists messaging as built, not planned', () => {
+    // It shipped saying "Planned: messaging" after messaging was built, because the
+    // section was hand-written prose.
+    expect(builtModules()).toContain('messaging')
+    expect(plannedModules()).not.toContain('messaging')
+  })
+
+  it('derives built state from catalogues rather than a written list', () => {
+    const declared = new Set(TEMPLATE_GROUPS.map((g) => g.module))
+    for (const m of builtModules()) {
+      expect(declared.has(m), `${m} is listed as built with no catalogue behind it`).toBe(true)
+    }
+  })
+
+  it('accounts for every module exactly once', () => {
+    const all = [...builtModules(), ...plannedModules()]
+    expect(new Set(all).size).toBe(all.length)
+    expect(all.length).toBe(Object.keys(MODULE_INFO).length)
+  })
+
+  it('shows the real counts and no planned module among the built ones', () => {
+    const page = renderChecksPage()
+    expect(page).toContain(`${builtModules().length} of ${Object.keys(MODULE_INFO).length} built`)
+    const planned = page.slice(page.indexOf('Planned:'), page.indexOf('Planned:') + 400)
+    for (const m of builtModules()) {
+      expect(planned, `${m} is built but listed as planned`)
+        .not.toContain(MODULE_INFO[m].label.toLowerCase())
     }
   })
 })

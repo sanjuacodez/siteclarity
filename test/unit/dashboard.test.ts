@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { DASHBOARD_HTML } from '../../src/ui/dashboard'
 import { renderChecksPage } from '../../src/ui/checks'
-import { TEMPLATE_GROUPS } from '../../src/checks/registry'
+import { TEMPLATE_GROUPS, builtModules, plannedModules, MODULE_INFO } from '../../src/checks/registry'
 import { EVIDENCE_TEMPLATES } from '../../src/static/evidence/templates'
 import { MESSAGING_TEMPLATES, MESSAGING_JUDGED } from '../../src/static/messaging/templates'
 import { EVIDENCE_QUESTIONS, MESSAGING_QUESTIONS } from '../../src/semantic/questions'
@@ -394,7 +394,12 @@ describe('implemented check documentation', () => {
     await rewriter.transform(new Response(html)).text()
     expect(headingChildren.length).toBeGreaterThan(0)
     expect(headingChildren.every(tag => tag === 'h2' || tag === 'span')).toBe(true)
-    expect(accordions).toEqual({ modules: 2, trust: 3 })
+    // Counts come from the registry: the page said "two are built" while three were,
+    // because this number was prose someone had to remember to update.
+    expect(accordions).toEqual({
+      modules: builtModules().length,
+      trust: Object.keys(TEMPLATE_GROUPS.find((g) => g.id === 'trust')!.templates).length,
+    })
     // Headings and anchors come from src/checks/registry.ts, so derive the expectation
     // from there rather than hardcoding strings that drift when a module is added.
     const text = headings.join(' ')

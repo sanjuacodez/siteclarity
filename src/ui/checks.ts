@@ -4,6 +4,9 @@ import type { Question } from '../provider/types'
 import {
   TEMPLATE_GROUPS,
   QUESTION_GROUPS,
+  MODULE_INFO,
+  builtModules,
+  plannedModules,
   allCheckIds,
   type DocumentedTemplate,
 } from '../checks/registry'
@@ -91,26 +94,15 @@ export function renderChecksPage(): string {
     <div class="content-layout">
       <nav class="contents" aria-label="On this page"><p>On this page</p><a href="#modules">Modules</a>${TEMPLATE_GROUPS.map((g) => `<a href="#${g.id}">${esc(g.title)}</a>`).join('')}<a href="#decisions">Content understanding</a><a href="#questions">Model questions</a><a href="#limits">Scope &amp; limitations</a></nav>
       <div>
-        <section id="modules"><div class="section-heading"><h2>Modules</h2><span class="count">2 modules</span></div>
-<p class="section-note">SiteClarity is planned as ten modules over one shared analysis. Two
-are built, and every finding in a report is tagged with the module that produced it.</p>
-<details class="check">
-<summary><span>Answer readiness</span></summary>
-<div class="detail-body"><p>Can a search engine or AI assistant find,
-understand and quote the answers on this page? Structured data, heading hierarchy,
-extractability, self-containment, promotional density, buried answers.</p></div>
-</details>
-<details class="check">
-<summary><span>Evidence &amp; trust</span></summary>
-<div class="detail-body"><p>Does each marketing claim have proof beside
-it? Claims and evidence are both located deterministically and the distance between them
-is measured. Whether nearby proof is actually <em>about</em> the claim is the one
-judgement left to the model.</p></div>
-</details>
-<p class="scope-note">Planned: messaging, website understanding, question coverage, buyer
-journey, audience coverage, product portfolio, content overlap, and an opportunity
-roll-up across all of them.</p>
-</section>
+        <section id="modules"><div class="section-heading"><h2>Modules</h2><span class="count">${builtModules().length} of ${Object.keys(MODULE_INFO).length} built</span></div>
+<p class="section-note">SiteClarity is planned as ${Object.keys(MODULE_INFO).length} modules over one shared analysis.
+${builtModules().length} ${builtModules().length === 1 ? 'is' : 'are'} built, and every finding in a report is tagged with the module that produced it.</p>
+          ${builtModules().map((m) => `<details class="check">
+<summary><span>${esc(MODULE_INFO[m].label)}</span></summary>
+<div class="detail-body"><p>${esc(MODULE_INFO[m].blurb)}</p></div>
+</details>`).join('')}
+<p class="scope-note">Planned: ${plannedModules().map((m) => esc(MODULE_INFO[m].label.toLowerCase())).join(', ')}.</p>
+        </section>
 
 ${TEMPLATE_GROUPS.map((group) => `
         <section id="${group.id}"><div class="section-heading"><h2>${esc(group.title)}</h2><span class="count">${Object.keys(group.templates).length} checks</span></div>
