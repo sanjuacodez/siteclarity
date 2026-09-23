@@ -41,15 +41,19 @@ function loadEnv() {
  * from the questions that actually run.
  */
 async function loadTs(path, exportName) {
-  const { transformSync } = await import('esbuild')
-  const js = transformSync(readFileSync(path, 'utf8'), {
-    loader: 'ts',
+  const esbuild = await import('esbuild')
+  // BUNDLE, not transform: these modules import each other, and a transformed file
+  // loaded from a data: URL cannot resolve a relative specifier.
+  const built = await esbuild.build({
+    entryPoints: [path],
+    bundle: true,
+    write: false,
     format: 'esm',
-    target: 'node20',
-  }).code
-  const mod = await import(
-    'data:text/javascript;base64,' + Buffer.from(js).toString('base64')
-  )
+    platform: 'node',
+    logLevel: 'silent',
+  })
+  const code = built.outputFiles[0].text
+  const mod = await import('data:text/javascript;base64,' + Buffer.from(code).toString('base64'))
   return mod[exportName]
 }
 
@@ -60,6 +64,13 @@ async function loadCatalogue() {
 }
 
 const loadCases = () => loadTs('test/calibration/decisions.ts', 'DECISION_CASES')
+
+let buildProfileQuestions = null
+let buildFocusQuestions = null
+async function loadBuilders() {
+  buildProfileQuestions = await loadTs('src/semantic/profile.ts', 'buildProfileQuestions')
+  buildFocusQuestions = await loadTs('src/semantic/focus.ts', 'buildFocusQuestions')
+}
 
 /**
  * The reporting bar must be the SAME one the app uses, or this measures a pipeline
@@ -131,6 +142,7 @@ async function main() {
   }
 
   await loadThresholds()
+  await loadBuilders()
   const catalogue = await loadCatalogue()
   const cases = await loadCases()
 
@@ -139,7 +151,18 @@ async function main() {
   const rows = []
   let tokens = 0
   for (const c of cases) {
-    const q = catalogue[c.question]
+    // Selection questions are BUILT from source with the case's candidates, so the run
+    // measures the real prompt. Restating it in the case would calibrate a copy.
+    let q = catalogue[c.question]
+    if (c.candidates) {
+      const passages = c.candidates.map((text, i) => ({ id: `c${i}`, sectionId: 's0', kind: 'paragraph', text }))
+      if (c.focusText) {
+        const built = buildFocusQuestions([{ id: c.question, text: c.focusText }], passages)
+        q = built[c.question]
+      } else {
+        q = buildProfileQuestions(passages)[c.question]
+      }
+    }
     if (!q) { console.log(`  SKIP ${c.id} — no such question in the catalogue`); continue }
     try {
       const a = await ask(env, c.state, c.question, q)

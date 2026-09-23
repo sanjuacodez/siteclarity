@@ -8,7 +8,7 @@ import type { Question } from '../provider/types'
  * here needs free text.
  */
 
-export const QUESTION_CATALOGUE_VERSION = '0.3.0'
+export const QUESTION_CATALOGUE_VERSION = '0.4.0'
 
 /** Asked once per page, against page-scope state. */
 export const PAGE_QUESTIONS: Record<string, Question> = {
@@ -191,12 +191,23 @@ export const EVIDENCE_QUESTIONS: Record<string, Question> = {
 
 /** Asked per candidate claim passage, against passage-scope state. */
 export const PASSAGE_QUESTIONS: Record<string, Question> = {
+  /**
+   * Sharpened after calibration: "the settings screen lists every field you created" was
+   * judged a claim at 0.83, and by the old wording — "capability, performance or
+   * outcome" — it is one. But this question gates specificity scoring, so treating plain
+   * description as a claim produces vague-claim findings on neutral text.
+   *
+   * What matters is whether a sceptical buyer would want proof. Nobody demands evidence
+   * that a settings screen lists fields; they do demand it for "40% faster".
+   */
   is_claim: {
     type: 'noul',
-    instructions: 'This text makes a factual claim about capability, performance or outcome.',
+    instructions:
+      'A sceptical buyer would want proof of this before believing it.',
     criteria: {
-      true: 'It asserts something that could in principle be verified or falsified.',
-      false: 'It is description, navigation, or opinion with nothing checkable asserted.',
+      true: 'It asserts a benefit, a result, a comparison or a level of quality — the kind of statement a competitor might dispute.',
+      false:
+        'It describes how something works or what it contains, neutrally. Factual, but nothing a buyer would demand evidence for.',
     },
   },
   claim_specificity: {

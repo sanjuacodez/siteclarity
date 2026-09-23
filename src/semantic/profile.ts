@@ -83,8 +83,22 @@ export function buildProfileQuestions(candidates: Passage[]): Record<string, Que
     },
     what_it_does: select('Which of these sentences best says what this product or service does?'),
     who_its_for: select('Which of these sentences best says who this is for?'),
-    problem_solved: select('Which of these sentences best says what problem it solves?'),
-    differentiator: select('Which of these sentences best says what makes it different from alternatives?'),
+    /**
+     * Calibration produced the corpus's only false positive here, at 1.00 confidence: a
+     * feature sentence ("converts long forms into step-by-step flows") was picked as the
+     * problem. It is easy to see why — a capability implies a difficulty. But a reader
+     * looking for "is this for me?" needs the difficulty stated, not inferred, so the
+     * question now says what a problem is NOT.
+     */
+    problem_solved: select(
+      'Which sentence describes a difficulty the reader has — something that goes wrong, ' +
+        'costs them time, or frustrates them — rather than a thing this product does? ' +
+        'A capability is not a problem, even when it implies one.',
+    ),
+    differentiator: select(
+      'Which sentence names something this does that alternatives do not, or a trade-off ' +
+        'it deliberately makes? Praise every competitor could copy is not a difference.',
+    ),
   }
 }
 
