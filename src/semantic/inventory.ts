@@ -49,6 +49,7 @@ export function buildPageSummary(input: {
   businessType: string | null
   audienceNamed: boolean | null
   hasAction: boolean
+  journeyStage: string | null
   count: number
   high: number
 }): PageSummary {
@@ -60,6 +61,7 @@ export function buildPageSummary(input: {
     topicTerms: topicTerms(input.doc),
     audienceNamed: input.audienceNamed,
     hasAction: input.hasAction,
+    journeyStage: input.journeyStage,
     findingCounts: { count: input.count, high: input.high },
   }
 }

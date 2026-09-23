@@ -80,6 +80,41 @@ export const MESSAGING_QUESTIONS: Record<string, Question> = {
   },
 }
 
+/**
+ * Module 6 — Buyer journey.
+ *
+ * One Choice per page, riding in the existing page-scope call, so it costs nothing extra.
+ * The stage itself is a judgement; which stages a site has left empty is arithmetic, and
+ * that is where the finding comes from.
+ *
+ * The options are the six stages from the product brief. `none` matters as much as the
+ * rest: a page that serves no stage is usually navigation, and counting it as content
+ * would overstate coverage.
+ */
+export const JOURNEY_QUESTIONS: Record<string, Question> = {
+  journey_stage: {
+    type: 'choice',
+    instructions:
+      'Where in a buying decision would someone read this page? Pick the earliest stage it genuinely serves.',
+    criteria: {
+      awareness:
+        'For someone who has the problem but does not know solutions exist. Describes the situation, not a product.',
+      education:
+        'For someone who knows the problem and is learning how it is solved. Explains an approach or a concept.',
+      consideration:
+        'For someone assessing whether this kind of product fits them. Covers capabilities, requirements, use cases.',
+      comparison:
+        'For someone weighing options against each other. Names alternatives, trade-offs or differences.',
+      decision:
+        'For someone close to committing. Pricing, plans, guarantees, what happens after buying.',
+      purchase:
+        'The transaction itself — checkout, signup, booking, contact form.',
+      none:
+        'Serves no stage: navigation, a legal page, or a listing that only links elsewhere.',
+    },
+  },
+}
+
 /** Asked once per section, against section-scope state. */
 export const SECTION_QUESTIONS: Record<string, Question> = {
   /**

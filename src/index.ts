@@ -40,6 +40,11 @@ import {
   SITE_QUESTIONS,
   SITE_TEMPLATES,
   SITE_AUDIENCE_TEMPLATES,
+  JOURNEY_TEMPLATES,
+  STAGE_LABELS,
+  STAGE_COST_PUBLIC,
+  findStageGaps,
+  stageCounts,
   MIN_PAGES,
   SELL_HEAVY,
 } from './semantic/site'
@@ -69,6 +74,7 @@ import {
   PASSAGE_QUESTIONS,
   EVIDENCE_QUESTIONS,
   MESSAGING_QUESTIONS,
+  JOURNEY_QUESTIONS,
 } from './semantic/questions'
 import { runDecisions, isConfident } from './semantic/run'
 import { SCHEMA_VERSION, assertNoOverallScore, type Decision } from './contracts'
@@ -176,10 +182,17 @@ app.post('/api/site', async (c) => {
   const findings: Finding[] = []
   const pageUrl = summaries[0]!.url
 
-  const add = (checkId: string, tpl: StaticTemplate, slots: Record<string, string | number>) => {
+  const add = (
+    checkId: string,
+    tpl: StaticTemplate,
+    slots: Record<string, string | number>,
+    // Defaults to audience coverage, but journey findings must carry their own module
+    // or the report attributes them to the wrong one.
+    module: 'audience_coverage' | 'buyer_journey' = 'audience_coverage',
+  ) => {
     findings.push({
       id: `${checkId}:site`,
-      module: 'audience_coverage',
+      module,
       checkId,
       observation: fillSlots(tpl.observation, slots),
       evidence: [],
@@ -216,6 +229,41 @@ app.post('/api/site', async (c) => {
     })
   }
 
+  // Module 6: which buying stages the site leaves empty. Pure counting — every page
+  // was already placed at a stage individually.
+  const gaps = findStageGaps(summaries)
+  const counts = stageCounts(summaries)
+  for (const gap of gaps) {
+    findings.push({
+      id: `journey_stage_missing:${gap.stage}`,
+      module: 'buyer_journey',
+      checkId: 'journey_stage_missing',
+      observation: fillSlots(JOURNEY_TEMPLATES.journey_stage_missing!.observation, {
+        audience: STAGE_LABELS[gap.stage] ?? gap.stage,
+      }),
+      evidence: [],
+      whyItMatters: fillSlots(JOURNEY_TEMPLATES.journey_stage_missing!.whyItMatters, {
+        cost: STAGE_COST_PUBLIC[gap.stage] ?? '',
+      }),
+      recommendedAction: JOURNEY_TEMPLATES.journey_stage_missing!.recommendedAction,
+      affects: summaries.map((x) => ({ pageUrl: x.url })),
+      priority: 'medium',
+      confidence: 'high',
+      highlights: [],
+      copySource: 'template',
+    })
+  }
+  const heaviest = Object.entries(counts).sort((a, b) => b[1] - a[1])[0]
+  const staged = Object.values(counts).reduce((a, b) => a + b, 0)
+  if (heaviest && staged >= 4 && heaviest[1] > staged * 0.6) {
+    add(
+      'journey_concentrated',
+      JOURNEY_TEMPLATES.journey_concentrated!,
+      { stage: STAGE_LABELS[heaviest[0]] ?? heaviest[0] },
+      'buyer_journey',
+    )
+  }
+
   // The one judgement worth a model: whether the pages cohere around an audience.
   const backend = createBackend(c.env, config)
   const siteRun = await runDecisions(
@@ -248,7 +296,7 @@ app.post('/api/site', async (c) => {
   logger.info('site analysis complete', { pages: signals.pages, findings: findings.length })
   return c.json({
     findings,
-    signals,
+    signals: { ...signals, stages: counts },
     limits: [
       `Site-level checks read ${signals.pages} page summaries, not the pages themselves.`,
       ...(siteRun.stats.degraded
@@ -355,7 +403,12 @@ app.post('/api/analyze', async (c) => {
   const [pageRun, sectionRun, passageRun, claimRun, profileRun, focusRun] = await Promise.all([
     // Module 3's dimensions are properties of the whole page's argument, so they ride
     // with the page state rather than needing a call of their own.
-    runDecisions(backend, [pageState], { ...PAGE_QUESTIONS, ...MESSAGING_QUESTIONS }, 1),
+    runDecisions(
+      backend,
+      [pageState],
+      { ...PAGE_QUESTIONS, ...MESSAGING_QUESTIONS, ...JOURNEY_QUESTIONS },
+      1,
+    ),
     runDecisions(backend, sectionStates, SECTION_QUESTIONS, config.maxConcurrentDecisions),
     runDecisions(backend, passageStates, PASSAGE_QUESTIONS, config.maxConcurrentDecisions),
     runDecisions(backend, claimStates, EVIDENCE_QUESTIONS, config.maxConcurrentDecisions),
@@ -668,6 +721,7 @@ app.post('/api/analyze', async (c) => {
       businessType: profile.find((e) => e.dimension === 'business_type')?.value ?? null,
       audienceNamed: readNoul(pageOutcome?.answers.names_the_audience),
       hasAction: ctasForSummary.actions.length > 0,
+      journeyStage: readChoice(pageOutcome?.answers.journey_stage),
       count: findings.length,
       high: findings.filter((f) => f.priority === 'high').length,
     }),

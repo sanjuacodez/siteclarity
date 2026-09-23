@@ -14,8 +14,14 @@ import { STATIC_TEMPLATES } from '../static/structure/templates'
 import { LANGUAGE_TEMPLATES } from '../static/language/signals'
 import { EVIDENCE_TEMPLATES } from '../static/evidence/templates'
 import { MESSAGING_TEMPLATES, MESSAGING_JUDGED } from '../static/messaging/templates'
-import { SITE_TEMPLATES, SITE_AUDIENCE_TEMPLATES, SITE_QUESTIONS } from '../semantic/site'
 import {
+  SITE_TEMPLATES,
+  SITE_AUDIENCE_TEMPLATES,
+  SITE_QUESTIONS,
+  JOURNEY_TEMPLATES,
+} from '../semantic/site'
+import {
+  JOURNEY_QUESTIONS,
   PAGE_QUESTIONS,
   SECTION_QUESTIONS,
   PASSAGE_QUESTIONS,
@@ -90,6 +96,14 @@ export const TEMPLATE_GROUPS: CatalogueGroup[] = [
     templates: { ...SITE_TEMPLATES, ...SITE_AUDIENCE_TEMPLATES },
   },
   {
+    id: 'journey',
+    title: 'Buyer journey',
+    module: 'buyer_journey',
+    description:
+      'Which moments in a buying decision the site writes for, and which it leaves empty. Each page is placed at a stage individually; the gaps are then arithmetic.',
+    templates: JOURNEY_TEMPLATES,
+  },
+  {
     id: 'messaging',
     title: 'Messaging',
     module: 'messaging',
@@ -122,6 +136,11 @@ export const QUESTION_GROUPS: QuestionGroup[] = [
     description:
       'Asked once per claim that has evidence nearby. Proximity is measured; whether the proof is about the claim is not.',
     catalogue: EVIDENCE_QUESTIONS,
+  },
+  {
+    title: 'Buyer journey',
+    description: 'Asked once per page, riding in the existing page-scope call.',
+    catalogue: JOURNEY_QUESTIONS,
   },
   {
     title: 'Across the site',
@@ -246,4 +265,6 @@ export const REGISTERED_EXPORTS = [
   'SITE_TEMPLATES',
   'SITE_AUDIENCE_TEMPLATES',
   'SITE_QUESTIONS',
+  'JOURNEY_TEMPLATES',
+  'JOURNEY_QUESTIONS',
 ] as const

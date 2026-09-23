@@ -109,8 +109,15 @@ page's findings.
 
 ### Checks that need several pages
 
-A scan also reports what only becomes visible across pages — *"only 0 of 5 pages say who
-they are for"*, *"4 of 5 offer no next step"*.
+A scan also reports what only becomes visible across pages:
+
+> *Only 1 of 6 pages say who they are for.*
+> *No page here is written for people weighing you against alternatives.*
+> *Most of this site sits at one stage: people learning how the problem is solved.*
+
+Each page is placed at a buying stage — awareness, education, consideration, comparison,
+decision, purchase — and the gaps are then arithmetic. Reported as gaps rather than a
+coverage score, because knowing *which* stage is missing tells you what to write.
 
 Those cost almost nothing. Every page has already been judged individually, so the
 site-level pass **counts existing judgements** rather than re-reading anything: each page
@@ -186,8 +193,8 @@ with no API key, quotes must be verbatim, and the report never shows a score.
 
 ## Status
 
-**Pre-alpha.** Five of ten planned modules are built — answer readiness, evidence &
-trust, messaging, website understanding, and audience coverage across a site.
+**Pre-alpha.** Six of ten planned modules are built — answer readiness, evidence &
+trust, messaging, website understanding, audience coverage, and buyer journey.
 
 Every check the product can emit is documented at
 [`/checks`](https://siteclarity.sanjay-shankar.workers.dev/checks), generated from the

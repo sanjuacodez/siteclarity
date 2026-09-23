@@ -59,6 +59,8 @@ const WEAKENS_CONTENT: Record<string, true> = {
   vague_cta: true,
   site_has_no_next_step: true,
   site_sells_without_explaining: true,
+  journey_stage_missing: true,
+  journey_concentrated: true,
   audience_not_named: true,
   no_differentiation: true,
   no_clear_action: true,

@@ -190,6 +190,8 @@ export const PageSummary = z.object({
   audienceNamed: z.boolean().nullable(),
   /** Whether the page offers a next step. */
   hasAction: z.boolean(),
+  /** Module 6: which buying stage this page serves, if any. */
+  journeyStage: z.string().nullable(),
   findingCounts: z.object({
     count: z.number().int().nonnegative(),
     high: z.number().int().nonnegative(),

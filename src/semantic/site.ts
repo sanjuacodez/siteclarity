@@ -136,3 +136,103 @@ export const SITE_AUDIENCE_TEMPLATES: Record<string, StaticTemplate> = {
 }
 
 export { MIN_PAGES, SELL_HEAVY }
+
+
+/**
+ * Module 6 — Buyer journey.
+ *
+ * Every page has already been given a stage individually; this counts them. The brief's
+ * example finding is exactly this shape: "extensive educational content, but very little
+ * comparison or decision-stage content."
+ *
+ * Reported as gaps rather than as a coverage score. Which stage is missing is actionable;
+ * "journey coverage 4/6" is not.
+ */
+export const JOURNEY_STAGES = [
+  'awareness',
+  'education',
+  'consideration',
+  'comparison',
+  'decision',
+  'purchase',
+] as const
+
+export const STAGE_LABELS: Record<string, string> = {
+  awareness: 'people who do not yet know solutions exist',
+  education: 'people learning how the problem is solved',
+  consideration: 'people working out whether this fits them',
+  comparison: 'people weighing you against alternatives',
+  decision: 'people close to committing',
+  purchase: 'people ready to act',
+}
+
+/** What each missing stage costs, in the reader's terms. */
+export const STAGE_COST_PUBLIC: Record<string, string> = {
+  awareness:
+    'Nobody arrives here while still describing the problem in their own words — and those are the searches AI assistants answer most often.',
+  education:
+    'People who know they have the problem but not how it is solved have nothing to read, so they learn it somewhere else and buy there too.',
+  consideration:
+    'Someone interested cannot tell whether this suits their situation, so they have to ask — and most will not.',
+  comparison:
+    'Anyone weighing you against an alternative has to build that comparison themselves, usually from a competitor’s version of it.',
+  decision:
+    'Someone ready to commit cannot find what it costs or what happens next, which is the easiest possible place to lose them.',
+  purchase:
+    'There is no obvious way to act, so intent built everywhere else on the site has nowhere to go.',
+}
+
+export function stageCounts(summaries: PageSummary[]): Record<string, number> {
+  const counts: Record<string, number> = {}
+  for (const stage of JOURNEY_STAGES) counts[stage] = 0
+  for (const s of summaries) {
+    if (s.journeyStage && s.journeyStage in counts) counts[s.journeyStage]! += 1
+  }
+  return counts
+}
+
+export interface StageGap {
+  stage: string
+  concentratedIn: string | null
+}
+
+/**
+ * Missing stages, but only once there is enough content for absence to mean something.
+ *
+ * A five-page site legitimately has gaps. A gap is worth reporting when the site has
+ * plenty of pages and none of them serve a stage — and it reads better alongside where
+ * the content actually piled up.
+ */
+export function findStageGaps(summaries: PageSummary[]): StageGap[] {
+  const counts = stageCounts(summaries)
+  const staged = Object.values(counts).reduce((a, b) => a + b, 0)
+  if (staged < 4) return []
+
+  const heaviest = Object.entries(counts).sort((a, b) => b[1] - a[1])[0]
+  const concentratedIn = heaviest && heaviest[1] >= staged / 2 ? heaviest[0] : null
+
+  return JOURNEY_STAGES.filter((stage) => counts[stage] === 0).map((stage) => ({
+    stage,
+    concentratedIn,
+  }))
+}
+
+export const JOURNEY_TEMPLATES: Record<string, StaticTemplate> = {
+  journey_stage_missing: {
+    priority: 'medium',
+    pageLevel: true,
+    observation: 'No page here is written for {audience}.',
+    whyItMatters: '{cost}',
+    recommendedAction:
+      'Write one page for that moment. It does not need to be long — it needs to exist, and to use the words someone at that stage would actually type.',
+  },
+  journey_concentrated: {
+    priority: 'medium',
+    pageLevel: true,
+    observation: 'Most of this site sits at one stage: {stage}.',
+    whyItMatters:
+      'A visitor arrives at whatever stage they are already at. When the content clusters in one place, everyone arriving earlier or later finds nothing written for them and leaves.',
+    recommendedAction:
+      'Spread coverage outward from where it is thickest — one page earlier in the journey and one later will reach people the rest of the site currently misses.',
+  },
+}

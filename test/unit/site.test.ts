@@ -6,7 +6,7 @@ import type { PageSummary } from '../../src/contracts'
 
 const summary = (o: Partial<PageSummary> = {}): PageSummary => ({
   url: 'https://e.com/a', title: 'A page', purpose: 'sell', businessType: 'saas',
-  topicTerms: ['checkout', 'fields'], audienceNamed: false, hasAction: true,
+  topicTerms: ['checkout', 'fields'], audienceNamed: false, hasAction: true, journeyStage: 'consideration',
   findingCounts: { count: 2, high: 0 }, ...o,
 })
 
