@@ -82,6 +82,19 @@ Content you cannot act on is excluded *before* analysis, and the report says so:
 - **Related-post cards, navigation, headers, footers**
 - **Non-English pages** — the language checks are English-only and say so rather than guessing
 
+## Tell it what the page should say
+
+Optional, on a single-page audit: write up to three things you believe the page
+communicates — who it is for, the problem it solves, what makes you different.
+
+SiteClarity then checks whether the page actually says them, and reports the gaps:
+
+> **You said this page is about "we are built for agencies managing many client stores"
+> — but no sentence here says so.**
+
+That gap is invisible to whoever wrote the page, because they already know what they
+meant. It never judges whether the statement is *true* — only whether the page says it.
+
 ## Three ways to run it
 
 | Mode | Input |

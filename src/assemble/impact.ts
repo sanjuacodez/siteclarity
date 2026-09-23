@@ -22,7 +22,8 @@ const BLOCKS_WHOLE_PAGE: Record<string, true> = {
   js_dependent: true,       // crawlers may see an almost empty page
   canonical_offsite: true,  // credit is handed to another domain
   entity_unclear: true,
-  no_problem_stated: true,     // nothing on the page can be attributed to a known subject
+  no_problem_stated: true,
+  focus_not_communicated: true,     // nothing on the page can be attributed to a known subject
 }
 
 /** Costs an entire section: the answer cannot be found or does not exist. */

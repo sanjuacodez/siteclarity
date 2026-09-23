@@ -807,3 +807,49 @@ describe('website understanding profile', () => {
     }
   })
 })
+
+describe('stated focus input', () => {
+  const js = script
+
+  it('offers an optional focus field on the single-page pane', () => {
+    expect(DASHBOARD_HTML).toContain('id="focus"')
+    expect(DASHBOARD_HTML).toMatch(/What should this page say\?/)
+    expect(DASHBOARD_HTML).toMatch(/optional/)
+  })
+
+  it('reads at most three usable lines', () => {
+    const read = new Function(
+      'const $ = (id) => globalThis.__el;' +
+      js.slice(js.indexOf('function readFocus')).split('\nfunction analyzeHeaders')[0] +
+      `; globalThis.__el = { value: [
+        'We are built for agencies managing many client stores',
+        'short',
+        '   ',
+        'We help stores reduce cart abandonment at checkout',
+        'We offer WooCommerce plugins and themes for stores',
+        'A fourth statement that should be dropped entirely',
+      ].join(String.fromCharCode(10)) };
+      return readFocus;`,
+    )() as () => string[]
+    const items = read()
+    expect(items).toHaveLength(3)
+    expect(items.some((t) => t === 'short')).toBe(false)
+  })
+
+  it('sends focus only for a single page, never for a site scan', () => {
+    // Repeating the same statements against every page of a scan would report the
+    // identical gap on all of them.
+    expect(js).toContain('requestPage($(\'u\').value.trim(), readFocus())')
+    expect(js).toContain('await requestPage(url)')
+    expect(js).toContain('focus && focus.length ? { url, focus } : { url }')
+  })
+
+  it('omits the field entirely when nothing was typed', () => {
+    const read = new Function(
+      'const $ = (id) => globalThis.__el;' +
+      js.slice(js.indexOf('function readFocus')).split('\nfunction analyzeHeaders')[0] +
+      '; globalThis.__el = { value: "" }; return readFocus;',
+    )() as () => string[]
+    expect(read()).toEqual([])
+  })
+})

@@ -161,6 +161,16 @@ blockquote { background:var(--bg); border-left:2px solid var(--border); margin:0
 .modpill b { color:var(--text); font-weight:650; margin-right:3px }
 .profile { margin-bottom:20px }
 .profile h2 { font-size:1.02rem; margin:0 0 5px }
+.focusbox { margin-top:12px; border:1px solid var(--border); border-radius:10px }
+.focusbox > summary { cursor:pointer; padding:10px 14px; font-size:.82rem; font-weight:600; list-style:none }
+.focusbox > summary::-webkit-details-marker { display:none }
+.focusbox > summary::after { content:"+"; float:right; color:var(--muted) }
+.focusbox[open] > summary::after { content:"\u2212" }
+.focusbody { padding:0 14px 14px; border-top:1px solid var(--border) }
+.focusbody p { font-size:.78rem; margin:11px 0 9px }
+.focusbody textarea { width:100%; padding:9px 12px; font:inherit; font-size:.86rem;
+  background:var(--bg); color:var(--text); border:1px solid var(--border);
+  border-radius:9px; resize:vertical }
 .prow { display:grid; grid-template-columns:180px minmax(0,1fr); gap:16px; padding:13px 0;
   border-top:1px solid var(--border) }
 .plabel { font-size:.8rem; font-weight:620; color:var(--muted) }
@@ -372,6 +382,17 @@ footer a { color:var(--muted) }
           <label for="u">Page URL</label>
           <div class="row"><input type="url" id="u" placeholder="https://example.com/page" required autocomplete="url" aria-describedby="page-hint"><button id="b" type="submit">Audit page <span aria-hidden="true">↗</span></button></div>
           <p class="field-hint" id="page-hint">A focused review of one public page.</p>
+          <details class="focusbox">
+            <summary>What should this page say? <span class="muted">optional</span></summary>
+            <div class="focusbody">
+              <p class="muted">Tell us what you believe this page communicates &mdash; who it is
+              for, the problem it solves, what makes you different. We check whether the page
+              actually says it. One per line, up to three.</p>
+              <textarea id="focus" rows="3" aria-describedby="focus-count" placeholder="We are built for agencies managing many client stores
+We help stores reduce cart abandonment"></textarea>
+              <p class="field-hint" id="focus-count">0 of 3</p>
+            </div>
+          </details>
         </div>
         <div id="pane-site" class="pane" role="tabpanel" aria-labelledby="tab-site" hidden>
           <label for="us">Website URL</label>
@@ -644,6 +665,11 @@ document.addEventListener('change', e => {
 });
 
 document.addEventListener('input', e => {
+  if (e.target && e.target.id === 'focus') {
+    const n = readFocus().length;
+    const el = $('focus-count');
+    if (el) el.textContent = n + ' of 3' + (n >= 3 ? ' \u00b7 limit reached' : '');
+  }
   if (e.target.id === 'ul') validateList();
 });
 document.addEventListener('click', e => {
@@ -717,7 +743,7 @@ $('f').addEventListener('submit', async e => {
     if (currentMode() === 'page') {
       showOutput(loading('Auditing your page', 'Structure and language checks run locally; each section is judged separately.'), false);
       startStages();
-      const data = await requestPage($('u').value.trim());
+      const data = await requestPage($('u').value.trim(), readFocus());
       activeReport = data;
       exportCtx = { kind: 'page', reports: [data] };
       try { finishStages(); speedHtml = speedLine(data); } catch (err) { speedHtml = ''; }
@@ -732,8 +758,9 @@ $('f').addEventListener('submit', async e => {
     announce('Audit could not be completed.');
   } finally { setBusy(false); }
 });
-async function requestPage(url) {
-  const r = await fetch('/api/analyze', { method:'POST', headers:analyzeHeaders(), body:JSON.stringify({ url }) });
+async function requestPage(url, focus) {
+  const body = focus && focus.length ? { url, focus } : { url };
+  const r = await fetch('/api/analyze', { method:'POST', headers:analyzeHeaders(), body:JSON.stringify(body) });
   const d = await r.json();
   if (!r.ok) throw new Error(d.error && d.error.message || 'Unable to analyse this page.');
   return d;
@@ -1061,6 +1088,19 @@ function saveSettings(v) {
   try { localStorage.setItem(SETTINGS_STORE, JSON.stringify(v)); return true; } catch (err) { return false; }
 }
 function isSelfHosted(provider) { return provider === 'systemone-self' || provider === 'laya'; }
+
+/**
+ * What the owner says the page is about.
+ *
+ * The gap between this and what the page says is the most useful thing the product can
+ * report, and it is invisible to whoever wrote the page because they already know what
+ * they meant.
+ */
+function readFocus() {
+  const el = $('focus');
+  if (!el || !el.value) return [];
+  return el.value.split(String.fromCharCode(10)).map(t => t.trim()).filter(t => t.length >= 8).slice(0, 3);
+}
 
 function analyzeHeaders() {
   const h = { 'content-type': 'application/json' };

@@ -17,6 +17,14 @@ import { createBackend } from './provider'
 import { findClaims } from './static/evidence/markers'
 import { EVIDENCE_TEMPLATES } from './static/evidence/templates'
 import {
+  readFocusItems,
+  shortlistForFocus,
+  buildFocusQuestions,
+  buildFocusState,
+  FOCUS_NOT_FOUND,
+  FOCUS_TEMPLATE,
+} from './semantic/focus'
+import {
   shortlistPassages,
   buildProfileQuestions,
   buildProfileState,
@@ -129,7 +137,11 @@ app.post('/api/analyze', async (c) => {
     model: readCallerModel(c.req.header('x-sc-model') ?? null),
   })
 
-  const body = await c.req.json<{ url?: string }>().catch(() => ({}) as { url?: string })
+  const body = await c.req
+    .json<{ url?: string; focus?: unknown }>()
+    .catch(() => ({}) as { url?: string; focus?: unknown })
+  // Optional: what the owner says the page is about. URL-only onboarding stays true.
+  const focusItems = readFocusItems(body.focus)
   if (!body.url) {
     return c.json({ error: { code: 'invalid_url', message: 'Body must include "url"' } }, 400)
   }
@@ -183,10 +195,18 @@ app.post('/api/analyze', async (c) => {
     : []
   const profileQuestions = buildProfileQuestions(profileCandidates)
 
+  // Stated intent, checked against what the page says. Shares the profile shortlist
+  // shape so the state budget is unchanged.
+  const focusCandidates = focusItems.length ? shortlistForFocus(doc, allExcluded) : []
+  const focusStates = focusCandidates.length
+    ? [buildFocusState(doc, fetched.value.finalUrl, focusCandidates)]
+    : []
+  const focusQuestions = buildFocusQuestions(focusItems, focusCandidates)
+
   const backend = createBackend(c.env, config)
   const tDecide = Date.now()
 
-  const [pageRun, sectionRun, passageRun, claimRun, profileRun] = await Promise.all([
+  const [pageRun, sectionRun, passageRun, claimRun, profileRun, focusRun] = await Promise.all([
     // Module 3's dimensions are properties of the whole page's argument, so they ride
     // with the page state rather than needing a call of their own.
     runDecisions(backend, [pageState], { ...PAGE_QUESTIONS, ...MESSAGING_QUESTIONS }, 1),
@@ -194,12 +214,13 @@ app.post('/api/analyze', async (c) => {
     runDecisions(backend, passageStates, PASSAGE_QUESTIONS, config.maxConcurrentDecisions),
     runDecisions(backend, claimStates, EVIDENCE_QUESTIONS, config.maxConcurrentDecisions),
     runDecisions(backend, profileStates, profileQuestions, 1),
+    runDecisions(backend, focusStates, focusQuestions, 1),
   ])
   const decideMs = Date.now() - tDecide
 
   const degraded =
     pageRun.stats.degraded || sectionRun.stats.degraded || passageRun.stats.degraded ||
-    claimRun.stats.degraded || profileRun.stats.degraded
+    claimRun.stats.degraded || profileRun.stats.degraded || focusRun.stats.degraded
   const degradedReason =
     pageRun.stats.degradedReason ?? sectionRun.stats.degradedReason ?? passageRun.stats.degradedReason
 
@@ -355,7 +376,37 @@ app.post('/api/analyze', async (c) => {
     }
   }
 
-  const withEvidence = [...merged, ...irrelevant, ...messaging]
+  /**
+   * A stated focus the page does not communicate. The gap between what someone believes
+   * their page says and what it says is the most useful thing here — and it is invisible
+   * to them precisely because they already know it.
+   */
+  const focusFindings: typeof merged = []
+  const focusOutcome = focusRun.outcomes[0]
+  if (focusOutcome) {
+    for (const item of focusItems) {
+      const answer = focusOutcome.answers[item.id]
+      if (!answer || !isConfident(answer, config.confidenceThreshold)) continue
+      if (String(answer.choice ?? '') !== FOCUS_NOT_FOUND) continue
+
+      focusFindings.push({
+        id: `focus_not_communicated:${item.id}`,
+        module: 'website_understanding',
+        checkId: 'focus_not_communicated',
+        observation: FOCUS_TEMPLATE.observation.replace('{focus}', item.text),
+        evidence: [],
+        whyItMatters: FOCUS_TEMPLATE.whyItMatters,
+        recommendedAction: FOCUS_TEMPLATE.recommendedAction,
+        affects: [{ pageUrl: fetched.value.finalUrl }],
+        priority: FOCUS_TEMPLATE.priority,
+        confidence: answer.confidence >= 0.85 ? 'high' : 'medium',
+        highlights: [],
+        copySource: 'template',
+      })
+    }
+  }
+
+  const withEvidence = [...merged, ...irrelevant, ...messaging, ...focusFindings]
   const findings = withEvidence.sort((a, b) =>
     compareByImpact(a, b, countOccurrences(withEvidence)),
   )
