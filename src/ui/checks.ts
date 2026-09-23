@@ -3,6 +3,7 @@ import { QUESTION_CATALOGUE_VERSION } from '../semantic/questions'
 import type { Question } from '../provider/types'
 import { ProfileDimension } from '../contracts'
 import { DIMENSION_LABELS, ABSENT_REASONS, DIMENSION_DOCS } from '../semantic/profile'
+import { OPPORTUNITY_RULES, MAX_OPPORTUNITIES } from '../assemble/opportunities'
 import {
   TEMPLATE_GROUPS,
   QUESTION_GROUPS,
@@ -104,7 +105,7 @@ export function renderChecksPage(): string {
       <article class="step"><span class="step-num" aria-hidden="true">03</span><h2>Make findings actionable</h2><p>Pair each observation with a next step and evidence verified against the extracted page.</p></article>
     </div>
     <div class="content-layout">
-      <nav class="contents" aria-label="On this page"><p>On this page</p><a href="#modules">Modules</a>${TEMPLATE_GROUPS.map((g) => `<a href="#${g.id}">${esc(g.title)}</a>`).join('')}<a href="#decisions">Content understanding</a><a href="#profile">Website understanding</a><a href="#questions">Model questions</a><a href="#limits">Scope &amp; limitations</a></nav>
+      <nav class="contents" aria-label="On this page"><p>On this page</p><a href="#modules">Modules</a>${TEMPLATE_GROUPS.map((g) => `<a href="#${g.id}">${esc(g.title)}</a>`).join('')}<a href="#decisions">Content understanding</a><a href="#profile">Website understanding</a><a href="#plan">Where to start</a><a href="#questions">Model questions</a><a href="#limits">Scope &amp; limitations</a></nav>
       <div>
         <section id="modules"><div class="section-heading"><h2>Modules</h2><span class="count">${builtModules().length} of ${Object.keys(MODULE_INFO).length} built</span></div>
 <p class="section-note">SiteClarity is planned as ${Object.keys(MODULE_INFO).length} modules over one shared analysis.
@@ -142,6 +143,22 @@ ${TEMPLATE_GROUPS.map((group) => `
   <p class="detail-label">Why it matters</p><p>${esc(DIMENSION_DOCS[d].whyItMatters)}</p>
   <div class="action"><p class="detail-label">If the page does not say it</p><p>${esc(DIMENSION_DOCS[d].ifMissing)}</p></div>
   <p class="source">Dimension: <code>${esc(d)}</code> &middot; reported as &ldquo;${esc(ABSENT_REASONS[d])}&rdquo;</p>
+</div>
+</details>`).join('')}
+        </section>
+
+        <section id="plan"><div class="section-heading"><h2>Where to start</h2><span class="count">${OPPORTUNITY_RULES.length} grouping rules</span></div>
+          <p class="section-note">A list sorted by severity is not a plan: the same problem appears on nine pages
+          with nothing to say it is one job. This groups the findings into pieces of work &mdash; at most
+          ${MAX_OPPORTUNITIES}, because a backlog of thirty is not a backlog and every finding is still listed underneath.</p>
+          <p class="scope-note">No model runs here. Every input has already been judged, quoted and verified, so
+          grouping is arithmetic &mdash; which means the plan still appears with the decision model switched off.
+          Items are ordered, never scored: a rank says only do this before that, and that is all the evidence supports.</p>
+          ${OPPORTUNITY_RULES.map((rule) => `<details class="check">
+<summary><span>${esc(rule.title)}</span><span class="tag low">${rule.covers()} kinds</span></summary>
+<div class="detail-body">
+  <p class="detail-label">How it groups</p><p>${esc(rule.detail)}</p>
+  <p class="source">Rule: <code>${esc(rule.id)}</code></p>
 </div>
 </details>`).join('')}
         </section>

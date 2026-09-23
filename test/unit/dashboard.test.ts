@@ -41,6 +41,7 @@ function report(overrides: Partial<AnalysisResult> = {}): AnalysisResult {
     limits: { scope: 'single_page', statements: ['Only this synthetic page was examined.'], decisionsRan: true, sectionsAnalyzed: 1, sectionsTotal: 1, stateSplit: false, language: 'en', languageSupported: true, jsDependent: false },
     profile: [],
     coverage: [],
+    opportunities: [],
     summary_for_site: null,
     sections: [{ sectionId: 'synthetic-section', heading: 'Actual section heading', level: 2, passageCount: 1, decisions: {} }],
     findings: [finding()],
@@ -485,11 +486,11 @@ describe('the page table is still a table', () => {
     const css = DASHBOARD_HTML.match(/<style>([\s\S]*?)<\/style>/)?.[1] ?? ''
     const rowClasses = new Set<string>()
     for (const [, attr] of DASHBOARD_HTML.matchAll(/<tr class="([^"]+)"/g)) {
-      for (const c of attr.split(/\s+/)) rowClasses.add(c)
+      for (const c of (attr ?? '').split(/\s+/)) rowClasses.add(c)
     }
     // The table is built in the client script, so look there too.
     for (const [, attr] of DASHBOARD_HTML.matchAll(/<tr class=\\?["']([^"'\\]+)/g)) {
-      for (const c of attr.split(/\s+/)) rowClasses.add(c)
+      for (const c of (attr ?? '').split(/\s+/)) rowClasses.add(c)
     }
     expect(rowClasses.size, 'no table rows found — this test would pass vacuously')
       .toBeGreaterThan(0)
@@ -507,7 +508,7 @@ describe('the page table is still a table', () => {
     const headers = (html.match(/<th scope="col"/g) ?? []).length
     expect(headers).toBe(5)
     for (const [, row] of html.matchAll(/<tr class="prow">([\s\S]*?)<\/tr>/g)) {
-      expect((row.match(/<td/g) ?? []).length).toBe(headers)
+      expect(((row ?? '').match(/<td/g) ?? []).length).toBe(headers)
     }
   })
 })
@@ -964,8 +965,22 @@ describe('site-wide findings reach the report', () => {
   })
 
   it('places them above the page table and carries their limits', () => {
-    expect(js).toContain('Across the whole site')
-    expect(js).toContain('summaryCards(c) + siteBlock')
-    expect(js).toContain('site.limits.map(esc)')
+    // Asserted on the rendered order rather than on a source substring: the old version
+    // matched the literal text `summaryCards(c) + siteBlock`, so inserting anything
+    // between them failed the test without anything being wrong.
+    const site = {
+      findings: [finding({ id: 'site-f', checkId: 'audience_rarely_named', module: 'audience_coverage' })],
+      signals: { pages: 3 },
+      limits: ['Site-level checks read 3 page summaries, not the pages themselves.'],
+      coverage: [],
+      opportunities: [],
+    }
+    const html = (harness().api as unknown as {
+      renderSite(r: AnalysisResult[], m: SitemapPresentation, f: FailurePresentation[], p: boolean, s: unknown): string
+    }).renderSite([report()], metadata(), [], false, site)
+
+    expect(html).toContain('Across the whole site')
+    expect(html).toContain('Site-level checks read 3 page summaries, not the pages themselves.')
+    expect(html.indexOf('Across the whole site')).toBeLessThan(html.indexOf('Choose a page to work on'))
   })
 })

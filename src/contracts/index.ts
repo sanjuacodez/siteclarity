@@ -235,6 +235,22 @@ export const AnalysisResult = z.object({
       }),
     )
     .default([]),
+  /**
+   * Module 10: this page's findings grouped into pieces of work. Ordinal only — there
+   * is no score here and there will not be one (invariant 2).
+   */
+  opportunities: z
+    .array(
+      z.object({
+        id: z.string(),
+        title: z.string(),
+        rationale: z.string(),
+        fromFindings: z.array(z.string()),
+        pages: z.array(z.string()),
+        tier: z.number().int(),
+      }),
+    )
+    .default([]),
   /** This page reduced to typed values, for the site-level pass. */
   summary_for_site: PageSummary.nullable().default(null),
   provider: ProviderInfo,

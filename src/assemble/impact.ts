@@ -65,6 +65,38 @@ const WEAKENS_CONTENT: Record<string, true> = {
   audience_not_named: true,
   no_differentiation: true,
   no_clear_action: true,
+  question_raised_unanswered: true,
+  question_unanswered_sitewide: true,
+}
+
+/**
+ * Real, but nothing is blocked: metadata and markup that help without carrying meaning.
+ *
+ * Listed rather than left to fall through, so a new check gets a decision instead of a
+ * default. Module 5's checks silently landed here — sorted below everything and cut from
+ * the plan — because an unlisted id and a housekeeping id were indistinguishable.
+ */
+const HOUSEKEEPING: Record<string, true> = {
+  no_structured_data: true,
+  missing_faq_markup: true,
+  no_h1: true,
+  multiple_h1: true,
+  skipped_heading_levels: true,
+  no_canonical: true,
+  canonical_invalid: true,
+  weak_title: true,
+  no_meta_description: true,
+}
+
+/** Every check that has been given a tier on purpose. */
+export function isTiered(checkId: string): boolean {
+  return Boolean(
+    BLOCKS_WHOLE_PAGE[checkId] ||
+      BLOCKS_SECTION[checkId] ||
+      DEGRADES_EXTRACTION[checkId] ||
+      WEAKENS_CONTENT[checkId] ||
+      HOUSEKEEPING[checkId],
+  )
 }
 
 export function impactTier(checkId: string): ImpactTier {

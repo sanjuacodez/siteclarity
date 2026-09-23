@@ -95,6 +95,13 @@ cost one short call over a list of page summaries rather than re-reading anythin
 - **Buyer journey** — each page is placed at the stage it serves, from *does not know solutions exist* through to *ready to buy*. The gaps are then arithmetic: a site with nothing for people still describing their problem is invisible to exactly the searches assistants answer most.
 - **Content overlap** — pages competing for the same ground. Reported only when heading vocabulary overlaps heavily **and** both pages sit at the same buying stage **and** serve the same purpose. Any one of those alone is noise.
 
+**Where to start** — the findings, grouped into pieces of work. Twelve unbacked claims
+across nine pages are not twelve jobs; they are one, and a list sorted by severity never
+says so. No model runs for this: every input has already been judged and verified, so the
+grouping is arithmetic — which means the plan still appears with the decision model
+switched off. Items are ordered and never scored, because a rank says *do this before
+that* and that is all the evidence supports.
+
 **Full list, always current:** the [`/checks`](https://siteclarity.sanjay-shankar.workers.dev/checks)
 page on the running app is generated from the code itself, so it can never claim a check
 that doesn't exist.
@@ -240,9 +247,9 @@ with no API key, quotes must be verbatim, and the report never shows a score.
 
 ## Status
 
-**Pre-alpha.** Eight of ten planned modules are built — answer readiness, evidence &
+**Pre-alpha.** Nine of ten planned modules are built — answer readiness, evidence &
 trust, messaging, website understanding, customer question coverage, audience coverage,
-buyer journey, and content overlap.
+buyer journey, content overlap, and content opportunities.
 
 Every check the product can emit is documented at
 [`/checks`](https://siteclarity.sanjay-shankar.workers.dev/checks), generated from the

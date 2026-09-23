@@ -36,6 +36,7 @@ import {
   QUESTION_BANK,
   MAX_QUESTIONS_PER_PAGE,
 } from '../semantic/coverage'
+import { OPPORTUNITY_RULES, MAX_OPPORTUNITIES } from '../assemble/opportunities'
 import { CHECKS } from '../assemble/checks'
 import type { Question } from '../provider/types'
 import { ProfileDimension, type ModuleId } from '../contracts'
@@ -252,11 +253,18 @@ export function builtModules(): ModuleId[] {
   const built = new Set<ModuleId>(TEMPLATE_GROUPS.map((g) => g.module))
   if (CHECKS.length > 0) built.add('ai_readiness')
   if (ProfileDimension.options.length > 0) built.add('website_understanding')
+  if (OPPORTUNITY_RULES.length > 0) built.add('content_opportunity')
   return (Object.keys(MODULE_INFO) as ModuleId[]).filter((m) => built.has(m))
 }
 
-/** Modules whose output is a description rather than findings. */
-export const PROFILE_MODULES: ModuleId[] = ['website_understanding']
+/**
+ * Modules whose output is not findings.
+ *
+ * Module 4 produces a description, module 10 produces a plan. Neither has a template
+ * catalogue, so without this both would read as unbuilt on a page that derives built
+ * state from catalogues.
+ */
+export const PROFILE_MODULES: ModuleId[] = ['website_understanding', 'content_opportunity']
 
 export function plannedModules(): ModuleId[] {
   const built = new Set(builtModules())

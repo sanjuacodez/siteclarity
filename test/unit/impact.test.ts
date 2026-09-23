@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { impactTier, compareByImpact, countOccurrences, TIER_LABEL } from '../../src/assemble/impact'
+import { impactTier, compareByImpact, countOccurrences, TIER_LABEL, isTiered } from '../../src/assemble/impact'
+import { allCheckIds } from '../../src/checks/registry'
 import { CHECKS } from '../../src/assemble/checks'
 import { STATIC_TEMPLATES } from '../../src/static/structure/templates'
 import { LANGUAGE_TEMPLATES } from '../../src/static/language/signals'
@@ -75,5 +76,18 @@ describe('SC-111 extraction impact ordering', () => {
     // yet must not be adjacent in impact terms.
     expect(impactTier('meta_noindex')).toBeLessThan(impactTier('heavily_promotional'))
     expect(impactTier('answer_absent')).toBeLessThan(impactTier('no_meta_description'))
+  })
+})
+
+describe('every check gets a tier on purpose', () => {
+  it('leaves nothing to fall through to housekeeping by accident', () => {
+    // Module 5's two checks landed on the default tier — "metadata and housekeeping" —
+    // which sorted them below everything and cut them out of the plan entirely. An
+    // unlisted id and a deliberately low-tier id looked identical until then.
+    const missing = allCheckIds().filter((id) => !isTiered(id))
+    expect(
+      missing,
+      `These checks have no impact tier. Add each to a table in src/assemble/impact.ts:\n  ${missing.join('\n  ')}`,
+    ).toEqual([])
   })
 })

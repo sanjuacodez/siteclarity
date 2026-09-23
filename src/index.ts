@@ -87,7 +87,8 @@ import {
   JOURNEY_QUESTIONS,
 } from './semantic/questions'
 import { runDecisions, isConfident } from './semantic/run'
-import { SCHEMA_VERSION, assertNoOverallScore, type Decision } from './contracts'
+import { SCHEMA_VERSION, assertNoOverallScore, ModuleId, type Decision } from './contracts'
+import { buildOpportunities } from './assemble/opportunities'
 import {
   assembleFindings,
   assembleStaticFindings,
@@ -167,8 +168,8 @@ app.post('/api/site', async (c) => {
   })
 
   const body = await c.req
-    .json<{ summaries?: unknown }>()
-    .catch(() => ({}) as { summaries?: unknown })
+    .json<{ summaries?: unknown; findings?: unknown }>()
+    .catch(() => ({}) as { summaries?: unknown; findings?: unknown })
   const parsed = z.array(PageSummary).max(25).safeParse(body.summaries)
   if (!parsed.success) {
     return c.json(
@@ -187,6 +188,32 @@ app.post('/api/site', async (c) => {
       timings: { totalMs: Date.now() - started },
     })
   }
+
+  /**
+   * Module 10 groups findings across pages, and the browser is the only thing holding
+   * all of them. It sends back the part that carries grouping information — id, check,
+   * module, page — rather than whole findings with their quotes and copy, which the
+   * server would only be re-reading.
+   *
+   * Untrusted like any request body: parsed, capped, and used for nothing but grouping.
+   */
+  const pageFindings = z
+    .array(
+      z.object({
+        id: z.string().min(1).max(200),
+        checkId: z.string().min(1).max(100),
+        module: ModuleId,
+        pageUrl: z.string().url(),
+      }),
+    )
+    .max(500)
+    .safeParse(body.findings)
+  const groupable = (pageFindings.success ? pageFindings.data : []).map((f) => ({
+    id: f.id,
+    checkId: f.checkId,
+    module: f.module,
+    affects: [{ pageUrl: f.pageUrl }],
+  }))
 
   const signals = readSiteSignals(summaries)
   const findings: Finding[] = []
@@ -371,9 +398,13 @@ app.post('/api/site', async (c) => {
     if (tpl) add(choice === 'drifting' ? 'audience_drifts' : 'audience_none_evident', tpl, {})
   }
 
+  // Module 10: one plan over everything found, page findings and site findings alike.
+  const opportunities = buildOpportunities([...groupable, ...findings], summaries.length)
+
   logger.info('site analysis complete', { pages: signals.pages, findings: findings.length })
   return c.json({
     findings,
+    opportunities,
     signals: { ...signals, stages: counts },
     coverage,
     limits: [
@@ -878,6 +909,9 @@ app.post('/api/analyze', async (c) => {
     findings,
     profile,
     coverage: coverageRows,
+    // Module 10 over one page: rule 1 needs several pages, so this is grouping by
+    // subject. Eight findings read better as three subjects even on a single page.
+    opportunities: buildOpportunities(findings, 1),
     // This page reduced to typed values, so the browser can accumulate an inventory for
     // the site-level pass. Six of its seven fields are already computed above.
     summary_for_site: buildPageSummary({

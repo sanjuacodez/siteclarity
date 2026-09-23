@@ -175,6 +175,17 @@ blockquote { background:var(--bg); border-left:2px solid var(--border); margin:0
   background:var(--bg); color:var(--text); border:1px solid var(--border);
   border-radius:9px; resize:vertical }
 .cvg .drow { grid-template-columns:minmax(0,1fr) auto; align-items:start }
+.plan { margin-bottom:20px }
+.planlist { list-style:none; margin:0; padding:0; counter-reset:none }
+.planitem { display:grid; grid-template-columns:auto minmax(0,1fr) auto; gap:14px;
+  align-items:start; padding:14px 0; border-top:1px solid var(--border) }
+.plann { display:grid; place-items:center; width:22px; height:22px; border-radius:7px;
+  background:var(--accent-soft); color:var(--accent); font-size:.72rem; font-weight:700 }
+.plantitle { font-size:.9rem; font-weight:620; margin:0 0 4px }
+.planwhy { font-size:.82rem; color:var(--muted); margin:0 }
+.planfrom { font-size:.7rem; color:var(--muted); margin:5px 0 0 }
+.planwhere { font-size:.7rem; color:var(--muted); white-space:nowrap }
+@media (max-width:620px) { .planitem { grid-template-columns:auto minmax(0,1fr) } .planwhere { display:none } }
 .cvg .qtext { font-size:.86rem }
 .cvg .qarea { font-size:.7rem; color:var(--muted); margin-top:3px }
 .cvg .qpages { font-size:.7rem; color:var(--muted); margin-top:3px }
@@ -805,7 +816,14 @@ async function analyseList(urls, metadata) {
     $('progress-title').textContent = 'Looking across all ' + inventory.length + ' pages…';
     $('progress-detail').textContent = 'Comparing what the pages do together.';
     try {
-      const sr = await fetch('/api/site', { method:'POST', headers:analyzeHeaders(), body:JSON.stringify({ summaries: inventory }) });
+      // Module 10 groups findings across pages and this browser is the only thing
+      // holding all of them. Only the part that carries grouping goes back — never the
+      // quotes or the copy, which the server already produced.
+      const grouping = results.flatMap(r => r.findings.map(f => ({
+        id: f.id, checkId: f.checkId, module: f.module,
+        pageUrl: (f.affects[0] && f.affects[0].pageUrl) || r.input.finalUrl,
+      }))).slice(0, 500);
+      const sr = await fetch('/api/site', { method:'POST', headers:analyzeHeaders(), body:JSON.stringify({ summaries: inventory, findings: grouping }) });
       if (sr.ok) site = await sr.json();
     } catch (err) {
       // A site-level failure must not lose the per-page report that already succeeded.
@@ -999,7 +1017,8 @@ function render(d) {
   const c = countFindings(d.findings);
   return reportHeading(d.input.title || 'Page audit', 'Review the highest-priority findings, then open each one for the evidence and next step.', 'Single page') +
     '<p class="page-link">' + pageLink(d.input.finalUrl) + '</p>' + modelNotice(d) + summaryCards(c) +
-    moduleStrip(d.findings) + profileCard(d) + coverageCard(d.coverage, 'page') +
+    moduleStrip(d.findings) + planCard(d.opportunities, 'page') + profileCard(d) +
+    coverageCard(d.coverage, 'page') +
     limitsCard(d) + '<div class="section-label"><h2>What to improve</h2><span>Open a finding to see the evidence</span></div>' +
     '<div class="filters" role="group" aria-label="Filter findings by priority">' +
     chip('all','All findings',c.count,true) + chip('high','Fix first',c.high,false) + chip('medium','Worth doing',c.medium,false) + chip('low','Minor',c.low,false) +
@@ -1069,6 +1088,36 @@ function coverageCard(rows, scope) {
     '<p class="sub">' + lead + '</p>' + body + '</section>';
 }
 
+/**
+ * Module 10's plan.
+ *
+ * A list sorted by severity is not a plan: the same four words appear on nine pages with
+ * nothing to say they are one job. Each item here is one piece of work with the number
+ * of findings behind it.
+ *
+ * Deliberately no number attached to an item. A ranked list is exactly the shape that
+ * invites "impact 8.4/10", and that number would be invented — the order says only do
+ * this before that, which is all the evidence supports.
+ */
+function planCard(items, scope) {
+  items = items || [];
+  if (!items.length) return '';
+  const body = items.map((o, i) => {
+    const where = scope === 'site' && o.pages.length > 1
+      ? '<span class="planwhere">' + o.pages.length + ' pages</span>' : '';
+    const n = o.fromFindings.length;
+    return '<li class="planitem"><span class="plann">' + (i + 1) + '</span>' +
+      '<div><p class="plantitle">' + esc(o.title) + '</p>' +
+      '<p class="planwhy">' + esc(o.rationale) + '</p>' +
+      '<p class="planfrom">From ' + n + (n === 1 ? ' finding' : ' findings') + ' below' + '</p></div>' +
+      where + '</li>';
+  }).join('');
+  return '<section class="card plan"><div class="section-label"><h2>Where to start</h2>' +
+    '<span>' + items.length + (items.length === 1 ? ' piece of work' : ' pieces of work') + '</span></div>' +
+    '<p class="sub">The findings below, grouped into jobs. In order — not scored.</p>' +
+    '<ol class="planlist">' + body + '</ol></section>';
+}
+
 function renderSite(results, sm, failures, partial, site) {
   activeReport = null;
   speedHtml = '';
@@ -1106,7 +1155,8 @@ function renderSite(results, sm, failures, partial, site) {
   if (!results.length) return h + '<div class="empty-result"><h3>No page reports are available</h3><p>Review the errors above and try again. No conclusion can be drawn about these pages.</p></div>';
   // Site-wide findings come before the table: they are about the site, not about any
   // one row in it.
-  h += summaryCards(c) + siteBlock + coverageCard(site && site.coverage, 'site') + '<div class="card tbl-card"><div class="table-title"><h2>Choose a page to work on</h2><p class="sub">Ordered by “Fix first” findings, then total findings. Open a page for its report and scope.</p></div>' +
+  h += summaryCards(c) + planCard(site && site.opportunities, 'site') + siteBlock +
+    coverageCard(site && site.coverage, 'site') + '<div class="card tbl-card"><div class="table-title"><h2>Choose a page to work on</h2><p class="sub">Ordered by “Fix first” findings, then total findings. Open a page for its report and scope.</p></div>' +
     '<div class="tscroll" role="region" aria-label="Page reports, scroll horizontally on small screens" tabindex="0"><table class="tbl"><thead><tr>' +
     '<th scope="col">Page</th><th scope="col" class="c-n">Fix first</th><th scope="col" class="c-n">Worth doing</th><th scope="col" class="c-n">Minor</th><th scope="col" class="c-n">Total</th>' +
     '</tr></thead><tbody>' + rows.map(pageRow).join('') + '</tbody></table></div></div>';

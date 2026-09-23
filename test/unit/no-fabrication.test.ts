@@ -197,6 +197,7 @@ describe('the README does not state numbers the code contradicts', () => {
       audience_coverage: 'audience coverage',
       buyer_journey: 'buyer journey',
       content_overlap: 'content overlap',
+      content_opportunity: 'grouped into pieces of work',
     }
     // Collapsed to one line first: the copy is hard-wrapped, so a phrase can straddle
     // a line break and a naive contains() would report it missing.
