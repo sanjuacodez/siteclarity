@@ -21,7 +21,8 @@ const BLOCKS_WHOLE_PAGE: Record<string, true> = {
   meta_noai: true,          // AI tools are told not to use it
   js_dependent: true,       // crawlers may see an almost empty page
   canonical_offsite: true,  // credit is handed to another domain
-  entity_unclear: true,     // nothing on the page can be attributed to a known subject
+  entity_unclear: true,
+  no_problem_stated: true,     // nothing on the page can be attributed to a known subject
 }
 
 /** Costs an entire section: the answer cannot be found or does not exist. */
@@ -51,6 +52,10 @@ const WEAKENS_CONTENT: Record<string, true> = {
   claim_without_evidence: true,
   evidence_irrelevant: true,
   evidence_too_far: true,
+  vague_cta: true,
+  audience_not_named: true,
+  no_differentiation: true,
+  no_clear_action: true,
 }
 
 export function impactTier(checkId: string): ImpactTier {

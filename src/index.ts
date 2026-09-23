@@ -16,6 +16,7 @@ import { extract } from './extract/extract'
 import { createBackend } from './provider'
 import { findClaims } from './static/evidence/markers'
 import { EVIDENCE_TEMPLATES } from './static/evidence/templates'
+import { MESSAGING_JUDGED } from './static/messaging/templates'
 import { makeEvidence, verifyAll } from './assemble/verify'
 import {
   buildClaimEvidenceStates,
@@ -32,6 +33,7 @@ import {
   SECTION_QUESTIONS,
   PASSAGE_QUESTIONS,
   EVIDENCE_QUESTIONS,
+  MESSAGING_QUESTIONS,
 } from './semantic/questions'
 import { runDecisions, isConfident } from './semantic/run'
 import { SCHEMA_VERSION, assertNoOverallScore, type Decision } from './contracts'
@@ -169,7 +171,9 @@ app.post('/api/analyze', async (c) => {
   const tDecide = Date.now()
 
   const [pageRun, sectionRun, passageRun, claimRun] = await Promise.all([
-    runDecisions(backend, [pageState], PAGE_QUESTIONS, 1),
+    // Module 3's dimensions are properties of the whole page's argument, so they ride
+    // with the page state rather than needing a call of their own.
+    runDecisions(backend, [pageState], { ...PAGE_QUESTIONS, ...MESSAGING_QUESTIONS }, 1),
     runDecisions(backend, sectionStates, SECTION_QUESTIONS, config.maxConcurrentDecisions),
     runDecisions(backend, passageStates, PASSAGE_QUESTIONS, config.maxConcurrentDecisions),
     runDecisions(backend, claimStates, EVIDENCE_QUESTIONS, config.maxConcurrentDecisions),
@@ -300,7 +304,38 @@ app.post('/api/analyze', async (c) => {
     })
   }
 
-  const withEvidence = [...merged, ...irrelevant]
+  // Module 3, judged half. A false answer is the finding; a true one means nothing to say.
+  const messaging: typeof merged = []
+  const MESSAGING_MAP: Record<string, string> = {
+    states_the_problem: 'no_problem_stated',
+    names_the_audience: 'audience_not_named',
+    states_differentiation: 'no_differentiation',
+  }
+  if (pageOutcome) {
+    for (const [question, checkId] of Object.entries(MESSAGING_MAP)) {
+      const answer = pageOutcome.answers[question]
+      if (!answer || !isConfident(answer, config.confidenceThreshold)) continue
+      if ((answer.noul ?? 1) >= 0.5) continue
+
+      const tpl = MESSAGING_JUDGED[checkId]!
+      messaging.push({
+        id: `${checkId}:page`,
+        module: 'messaging',
+        checkId,
+        observation: tpl.observation,
+        evidence: [],
+        whyItMatters: tpl.whyItMatters,
+        recommendedAction: tpl.recommendedAction,
+        affects: [{ pageUrl: fetched.value.finalUrl }],
+        priority: tpl.priority,
+        confidence: answer.confidence >= 0.85 ? 'high' : 'medium',
+        highlights: [],
+        copySource: 'template',
+      })
+    }
+  }
+
+  const withEvidence = [...merged, ...irrelevant, ...messaging]
   const findings = withEvidence.sort((a, b) =>
     compareByImpact(a, b, countOccurrences(withEvidence)),
   )

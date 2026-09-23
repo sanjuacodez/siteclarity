@@ -42,6 +42,44 @@ export const PAGE_QUESTIONS: Record<string, Question> = {
   },
 }
 
+/**
+ * Module 3 — Messaging Intelligence.
+ *
+ * Asked against page-scope state, because these are properties of the page's argument
+ * rather than of any one section. Three dimensions from the product brief; the rest of
+ * the list (benefit clarity, trust, evidence) is either already covered by modules 1
+ * and 2 or waits until these are calibrated.
+ */
+export const MESSAGING_QUESTIONS: Record<string, Question> = {
+  states_the_problem: {
+    type: 'noul',
+    instructions: 'The page says what problem it solves, not only what it offers.',
+    criteria: {
+      true: 'A reader learns which situation or difficulty this exists to address.',
+      false:
+        'It lists features, qualities or a description with no sense of what goes wrong without it.',
+    },
+  },
+  names_the_audience: {
+    type: 'noul',
+    instructions: 'The page says who it is for.',
+    criteria: {
+      true: 'A specific kind of person, role or business is named, so a reader can tell whether they qualify.',
+      false:
+        'It addresses "everyone", "teams", "businesses" or nobody in particular, so a reader cannot tell if it is meant for them.',
+    },
+  },
+  states_differentiation: {
+    type: 'noul',
+    instructions: 'The page says what makes this different from the alternatives.',
+    criteria: {
+      true: 'It names a specific difference — something it does that others do not, or a deliberate trade-off it makes.',
+      false:
+        'It only claims to be good. Being "powerful" or "easy" is not a difference, because every competitor says the same.',
+    },
+  },
+}
+
 /** Asked once per section, against section-scope state. */
 export const SECTION_QUESTIONS: Record<string, Question> = {
   /**

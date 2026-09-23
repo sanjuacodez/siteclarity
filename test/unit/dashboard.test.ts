@@ -377,6 +377,30 @@ describe('input modes and validation', () => {
 })
 
 describe('implemented check documentation', () => {
+  it('keeps module and trust copy outside the horizontal heading rows', async () => {
+    const headings: string[] = []
+    const headingChildren: string[] = []
+    const accordions = { modules: 0, trust: 0 }
+    const html = renderChecksPage()
+    const rewriter = new HTMLRewriter()
+      .on('.section-heading > *', { element(element) { headingChildren.push(element.tagName) } })
+      .on('section > .section-heading > h2', { text(chunk) { headings.push(chunk.text) } })
+      .on('#modules > details.check > summary', { element() { accordions.modules++ } })
+      .on('#trust > details.check > summary', { element() { accordions.trust++ } })
+    await rewriter.transform(new Response(html)).text()
+    expect(headingChildren.length).toBeGreaterThan(0)
+    expect(headingChildren.every(tag => tag === 'h2' || tag === 'span')).toBe(true)
+    expect(accordions).toEqual({ modules: 2, trust: 3 })
+    const text = headings.join(' ')
+    for (const heading of ['Modules', 'Evidence &amp; trust checks', 'Page structure']) {
+      expect(text).toContain(heading)
+    }
+    for (const id of ['modules', 'trust', 'structure']) {
+      expect(html).toContain('<section id="' + id + '">')
+      expect(html).toContain('href="#' + id + '"')
+    }
+  })
+
   it('documents exactly the implemented static, language and semantic catalogues', () => {
     const html = renderChecksPage()
     const rendered = Array.from(html.matchAll(/Check: <code>([^<]+)<\/code>/g), (match) => match[1]).sort()

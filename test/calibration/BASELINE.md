@@ -1,5 +1,44 @@
 # Decision-layer calibration baseline
 
+## 2026-09-23 · 58 cases · modules 1, 2 and 3
+
+```
+Agreement        50/58  (86%)
+False positives  0
+Overconfident    1
+Input tokens     25,268
+```
+
+New in module 3: `states_the_problem` 2/2, `states_differentiation` 3/3,
+`names_the_audience` 1/2.
+
+### One relabel, argued from the criteria
+
+`messaging/implicit-difference` was relabelled from ambiguous to `true`. The question's
+own criteria say true means "names a specific difference — something it does that others
+do not", and the text does exactly that. My original label penalised it for not *arguing*
+the difference, which is not what the question asks. **If I want that stricter bar it
+belongs in the criteria, not in a label** — moving the goalposts case by case is how a
+corpus stops measuring anything.
+
+### One known failure kept
+
+`messaging/audience-everyone` — "modern teams", "businesses of every size". The model
+agrees in direction (0.27) but only at 0.46 confidence, under the bar, so the finding is
+discarded and the page is never told. A missed finding rather than a wrong one, but a real
+gap: vague-audience copy is extremely common and this is precisely the case the question
+exists for.
+
+Worth noting this is the third question where the model is *directionally right but
+under-confident* — alongside `answers_heading/partial-answer` and
+`self_contained/numbered-step`, all landing between 0.46 and 0.52. The threshold sweep
+showed dropping the bar to 0.45 would recover them without adding false positives across
+58 cases. Still not taken: the sample is too small to certify that, and false positives
+cost more than silence.
+
+---
+
+
 ## 2026-09-23 · 51 cases · modules 1 and 2
 
 ```

@@ -504,6 +504,118 @@ export const DECISION_CASES: DecisionCase[] = [
       'Either answer is defensible, so the honest outcome is low confidence.',
   },
 
+  // ---- module 3: messaging (page scope) -------------------------------------
+  {
+    id: 'messaging/problem-stated',
+    question: 'states_the_problem',
+    state: {
+      url: 'https://acme.example/',
+      title: 'Acme Checkout — stop losing orders at checkout',
+      meta_description: 'Fix abandoned carts caused by a cluttered checkout.',
+      headings: ['# Stop losing orders at checkout', '## How it works'],
+      opening_text: 'Shoppers abandon carts when the checkout asks for information they ' +
+        'do not want to give. Acme Checkout lets you remove or delay those fields.',
+    },
+    expect: true,
+    why: 'Names the problem — abandonment caused by unnecessary fields — before the product.',
+  },
+  {
+    id: 'messaging/features-only',
+    question: 'states_the_problem',
+    state: {
+      url: 'https://acme.example/',
+      title: 'Acme Checkout — powerful checkout fields',
+      meta_description: 'Conditional fields, validation and more.',
+      headings: ['# Acme Checkout', '## Features'],
+      opening_text: 'Acme Checkout offers conditional fields, custom validation, drag and ' +
+        'drop ordering and full translation support.',
+    },
+    expect: false,
+    why: 'A feature list with no sense of what goes wrong without it.',
+  },
+  {
+    id: 'messaging/audience-named',
+    question: 'names_the_audience',
+    state: {
+      url: 'https://acme.example/',
+      title: 'Acme Checkout for WooCommerce stores',
+      meta_description: 'For stores with complex checkout rules.',
+      headings: ['# Built for WooCommerce stores with complex checkouts'],
+      opening_text: 'If you run a WooCommerce store selling made-to-order goods, your ' +
+        'checkout needs to ask questions a standard one cannot.',
+    },
+    expect: true,
+    why: 'A specific reader: WooCommerce stores selling made-to-order goods.',
+  },
+  {
+    id: 'messaging/audience-everyone',
+    question: 'names_the_audience',
+    state: {
+      url: 'https://acme.example/',
+      title: 'Acme — built for modern teams',
+      meta_description: 'For growing businesses everywhere.',
+      headings: ['# Built for modern teams', '## Why Acme'],
+      opening_text: 'Acme helps businesses of every size work faster and smarter. Teams ' +
+        'everywhere trust us to deliver.',
+    },
+    expect: false,
+    why:
+      '"Modern teams" and "businesses of every size" address nobody in particular. ' +
+      'KNOWN FAILURE: the model agrees in direction (0.27) but only at 0.46 confidence, ' +
+      'under the bar, so the finding is discarded and the page is not told. A missed ' +
+      'finding rather than a wrong one, but a real gap — vague-audience copy is common ' +
+      'and this is exactly the case the question exists for.',
+  },
+  {
+    id: 'messaging/difference-stated',
+    question: 'states_differentiation',
+    state: {
+      url: 'https://acme.example/',
+      title: 'Acme Checkout',
+      meta_description: 'Conditional checkout fields.',
+      headings: ['# Acme Checkout', '## How it differs'],
+      opening_text: 'Acme is the only checkout plugin that evaluates rules server-side, so ' +
+        'prices cannot be tampered with in the browser. It is slower to configure than ' +
+        'simpler plugins as a result.',
+    },
+    expect: true,
+    why: 'A concrete difference and the trade-off it costs — the strongest form.',
+  },
+  {
+    id: 'messaging/just-good',
+    question: 'states_differentiation',
+    state: {
+      url: 'https://acme.example/',
+      title: 'Acme Checkout — the best choice',
+      meta_description: 'Powerful and easy.',
+      headings: ['# The best checkout plugin', '## Why choose us'],
+      opening_text: 'Acme is powerful, flexible and easy to use. Merchants love how simple ' +
+        'it makes their checkout.',
+    },
+    expect: false,
+    why: 'Every competitor says this, so it distinguishes nothing.',
+  },
+  {
+    id: 'messaging/implicit-difference',
+    question: 'states_differentiation',
+    state: {
+      url: 'https://acme.example/',
+      title: 'Acme Checkout',
+      meta_description: 'Checkout fields for WooCommerce.',
+      headings: ['# Acme Checkout', '## Pricing'],
+      opening_text: 'Acme Checkout supports conditional fields, which most checkout ' +
+        'plugins do not handle.',
+    },
+    expect: true,
+    why:
+      'RELABELLED against the question\u2019s own criteria, not against the output. ' +
+      'The criteria say true means "names a specific difference \u2014 something it does ' +
+      'that others do not". The text does exactly that: conditional fields, which most ' +
+      'plugins do not handle. My original label penalised it for not ARGUING the ' +
+      'difference, which is not what the question asks. If I want that stricter bar it ' +
+      'belongs in the criteria, not in a label.',
+  },
+
   // ---- adversarial: near-misses that must NOT fire --------------------------
   //
   // Added to validate the per-primitive thresholds from F28. Lowering the Choice bar

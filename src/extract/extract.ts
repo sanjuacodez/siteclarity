@@ -93,8 +93,8 @@ export async function extract(html: string, baseUrl: string): Promise<ExtractedD
   let capturing: 'heading' | 'passage' | 'title' | 'jsonld' | 'link' | null = null
   let pendingKind: Passage['kind'] = 'paragraph'
   let pendingLevel = 0
-  let pendingLinkHref: string | null = null
-  let pendingLinkRel: string | null = null
+  let linkTextTarget: number | null = null
+  let linkTextBuf: string[] = []
   let suppressed = 0
 
   const flushPassage = () => {
@@ -241,21 +241,31 @@ export async function extract(html: string, baseUrl: string): Promise<ExtractedD
         }
       },
     })
+    /**
+     * Anchors. `text` used to be recorded as an empty string with a comment saying only
+     * the href mattered — which made the field quietly useless. Module 3 needs the text
+     * to tell a real call to action from a navigation link, so it is captured properly.
+     *
+     * Text inside an anchor still belongs to its enclosing passage as well; this is an
+     * additional read, not a diversion, so passage text is unaffected.
+     */
     .on('a[href]', {
       element(el) {
+        if (suppressed > 0) return
         const href = el.getAttribute('href')
         if (!href) return
-        pendingLinkHref = href
-        pendingLinkRel = el.getAttribute('rel')
-        const linkBuf: string[] = []
-        // Link text also belongs to whatever passage encloses it, so it is not
-        // captured here — only the href inventory matters at this stage.
-        links.push({
-          href: resolve(href, baseUrl),
-          text: normalizeText(linkBuf.join('')),
-          rel: pendingLinkRel,
+        const index = links.length
+        links.push({ href: resolve(href, baseUrl), text: '', rel: el.getAttribute('rel') })
+        linkTextTarget = index
+        el.onEndTag(() => {
+          const link = links[index]
+          if (link) link.text = normalizeText(linkTextBuf.join(''))
+          linkTextBuf = []
+          linkTextTarget = null
         })
-        pendingLinkHref = null
+      },
+      text(t) {
+        if (linkTextTarget !== null) linkTextBuf.push(t.text)
       },
     })
 

@@ -11,6 +11,8 @@ import { runLanguageSignals, LANGUAGE_TEMPLATES } from '../static/language/signa
 import { analyseBurial } from '../static/language/burial'
 import { findClaims, EVIDENCE_LABEL } from '../static/evidence/markers'
 import { EVIDENCE_TEMPLATES } from '../static/evidence/templates'
+import { analyseCtas } from '../static/messaging/cta'
+import { MESSAGING_TEMPLATES } from '../static/messaging/templates'
 import { excludedSections } from '../semantic/state'
 
 /**
@@ -148,6 +150,48 @@ export function assembleStaticFindings(doc: ExtractedDoc, pageUrl: string): Find
       priority: tpl.priority,
       confidence: 'high',
       highlights: claim.terms,
+      copySource: 'template',
+    })
+  }
+
+  // Module 3 — the deterministic slice: does the page offer a next step, and does its
+  // link text say what that step is. Both are visible in the anchor text.
+  const ctas = analyseCtas(doc)
+  if (ctas.vague.length > 0) {
+    const tpl = MESSAGING_TEMPLATES.vague_cta!
+    const slots = {
+      count: ctas.vague.length,
+      examples: ctas.vague.slice(0, 3).map((v) => `“${v.text}”`).join(', '),
+    }
+    out.push({
+      id: 'vague_cta:page',
+      module: 'messaging',
+      checkId: 'vague_cta',
+      observation: fill(tpl.observation, slots),
+      evidence: [],
+      whyItMatters: tpl.whyItMatters,
+      recommendedAction: tpl.recommendedAction,
+      affects: [{ pageUrl }],
+      priority: tpl.priority,
+      confidence: 'high',
+      highlights: ctas.vague.slice(0, 4).map((v) => v.text),
+      copySource: 'template',
+    })
+  }
+  if (ctas.noAction) {
+    const tpl = MESSAGING_TEMPLATES.no_clear_action!
+    out.push({
+      id: 'no_clear_action:page',
+      module: 'messaging',
+      checkId: 'no_clear_action',
+      observation: tpl.observation,
+      evidence: [],
+      whyItMatters: tpl.whyItMatters,
+      recommendedAction: tpl.recommendedAction,
+      affects: [{ pageUrl }],
+      priority: tpl.priority,
+      confidence: 'high',
+      highlights: [],
       copySource: 'template',
     })
   }

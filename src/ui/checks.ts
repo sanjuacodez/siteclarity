@@ -68,6 +68,7 @@ export function renderChecksPage(): string {
 @media(prefers-color-scheme:dark){:root{--bg:#141419;--surface:#1c1c24;--subtle:#23232e;--border:#34333f;--text:#f2f0fa;--muted:#aeabba;--accent:#aa96ff;--accent-soft:#2d2548;--warn:#e6ba70;--warn-soft:#342b1c;--bad:#f0a0a4;--bad-soft:#3a232c}}
 *{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:24px}body{margin:0;background:var(--bg);color:var(--text);font:15px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}a{color:var(--accent);text-underline-offset:3px}a:focus-visible,summary:focus-visible{outline:3px solid var(--accent);outline-offset:5px;border-radius:6px}.skip{position:fixed;top:-100px;left:16px;padding:10px 16px;background:var(--surface);z-index:5}.skip:focus{top:12px}.shell{max-width:1120px;margin:0 auto;padding:0 28px}.topbar{min-height:88px;display:flex;align-items:center;gap:36px;border-bottom:1px solid var(--border)}.brand{display:inline-flex;align-items:center;gap:10px;color:var(--text);text-decoration:none;font-size:20px;font-weight:750;letter-spacing:-.6px}.brand-icon{display:grid;place-items:center;width:32px;height:32px;border-radius:10px;background:var(--accent);color:var(--surface);font-size:20px;font-weight:700}.topnav{display:flex;gap:26px;margin-left:auto}.topnav a{color:var(--muted);text-decoration:none;font-size:14px;font-weight:550;padding:8px 0}.topnav a[aria-current]{color:var(--accent)}.oss{padding:4px 10px;border:1px solid var(--border);border-radius:99px;font-size:11px;font-weight:650;color:var(--muted);white-space:nowrap}.hero{max-width:740px;padding:58px 0 34px}.eyebrow{margin:0 0 12px;font-size:11px;font-weight:750;letter-spacing:.13em;text-transform:uppercase;color:var(--accent)}h1{font-size:clamp(30px,4vw,43px);line-height:1.16;letter-spacing:-1.5px;font-weight:700;margin:0 0 18px}.lede{font-size:17px;line-height:1.7;color:var(--muted);margin:0}.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:34px}.step{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px}.step-num{display:inline-grid;place-items:center;width:30px;height:30px;background:var(--accent-soft);color:var(--accent);border-radius:9px;font-size:12px;font-weight:750}.step h2{font-size:16px;margin:14px 0 7px;letter-spacing:-.2px}.step p{font-size:13px;color:var(--muted);margin:0}.content-layout{display:grid;grid-template-columns:195px minmax(0,1fr);gap:40px;padding:20px 0 72px}.contents{align-self:start;position:sticky;top:24px}.contents p{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;font-weight:700;margin:0 0 12px}.contents a{display:block;padding:8px 12px;color:var(--muted);text-decoration:none;font-size:13px;border-left:2px solid var(--border)}.contents a:hover{color:var(--accent);border-color:var(--accent);background:var(--accent-soft)}section{margin-bottom:42px}section:last-child{margin-bottom:0}.section-heading{display:flex;align-items:center;gap:12px;margin-bottom:9px}.section-heading h2{font-size:23px;line-height:1.3;letter-spacing:-.65px;margin:0}.count{font-size:11px;border:1px solid var(--border);border-radius:99px;padding:2px 9px;color:var(--muted);white-space:nowrap}.section-note{margin:0 0 18px;color:var(--muted);font-size:14px}h3{font-size:14px;letter-spacing:-.15px;margin:25px 0 5px}.scope-note{font-size:13px;color:var(--muted);margin:0 0 12px}.check,.question{background:var(--surface);border:1px solid var(--border);border-radius:12px;margin-bottom:8px;overflow:hidden}.check summary,.question summary{display:flex;align-items:center;gap:12px;list-style:none;cursor:pointer;padding:16px 18px;font-size:14px;font-weight:600}.check summary::-webkit-details-marker,.question summary::-webkit-details-marker{display:none}.check summary:after,.question summary:after{content:'+';font-size:20px;line-height:1;color:var(--muted);font-weight:400;margin-left:2px;flex:none}details[open]>summary:after{content:'−'}summary>span:first-child{flex:1}summary:hover{background:var(--subtle)}details[open]>summary{border-bottom:1px solid var(--border)}.tag{font-size:10px;font-weight:650;padding:3px 8px;border-radius:5px;white-space:nowrap}.tag.high{color:var(--bad);background:var(--bad-soft)}.tag.medium{color:var(--warn);background:var(--warn-soft)}.tag.low{color:var(--muted);background:var(--subtle)}.detail-body{padding:20px;font-size:13px}.detail-body p{margin:0 0 15px}.detail-body p:last-child{margin-bottom:0}.detail-body .detail-label{font-size:10px;font-weight:750;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:0 0 6px}.observation{font-weight:550}.action{background:var(--accent-soft);border-radius:10px;padding:15px;margin-bottom:16px}.detail-body .source{font-size:11px;color:var(--muted);overflow-wrap:anywhere}code{font:11px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;background:var(--subtle);padding:2px 5px;border-radius:4px;overflow-wrap:anywhere}.kind{font-size:10px;line-height:1.5;color:var(--muted);font-weight:500;flex:none;max-width:90px}.options{list-style:none;margin:0 0 18px;padding:0}.options li{margin:0;padding:8px 0;border-bottom:1px solid var(--border);color:var(--muted)}.options li:last-child{border-bottom:0}.options code{display:inline-block;margin-right:7px;color:var(--text)}.note{padding:18px 20px;border:1px solid var(--border);border-radius:12px;background:var(--surface);color:var(--muted);font-size:13px}.note strong{color:var(--text)}.note p{margin:0 0 8px}.note p:last-child{margin:0}.limitations{margin:0;padding:0;list-style:none}.limitations li{padding:15px 0;border-bottom:1px solid var(--border);font-size:13px;color:var(--muted)}.limitations li:first-child{padding-top:0}.limitations strong{display:block;color:var(--text);font-size:14px;margin-bottom:3px}.cta{display:inline-flex;align-items:center;gap:12px;border-radius:10px;background:var(--accent);color:#fff;font-size:13px;font-weight:650;padding:11px 17px;text-decoration:none;margin-top:20px}@media(prefers-color-scheme:dark){.cta{color:#1b1331}}footer{display:flex;justify-content:space-between;gap:20px;border-top:1px solid var(--border);padding:22px 0 30px;color:var(--muted);font-size:11px}footer p{margin:0}@media(max-width:760px){.shell{padding:0 20px}.topbar{min-height:76px;gap:18px}.topnav{gap:18px}.oss{display:none}.hero{padding-top:38px}.steps{grid-template-columns:1fr;gap:10px}.step{padding:20px}.step-num{float:left;margin-right:14px}.step h2{margin:2px 0 7px}.step p{margin-left:44px}.content-layout{grid-template-columns:1fr;gap:28px}.contents{position:static;display:flex;gap:8px;flex-wrap:wrap}.contents p{flex-basis:100%;margin-bottom:0}.contents a{border:1px solid var(--border);border-radius:8px;padding:6px 10px}.section-heading h2{font-size:21px}footer{flex-direction:column;gap:5px}}@media(max-width:420px){.shell{padding:0 16px}.brand{font-size:18px}.brand-icon{width:28px;height:28px}.topnav{gap:14px}.topnav a{font-size:12px}.check summary,.question summary{padding:14px;gap:8px;font-size:13px}.kind{max-width:58px}.detail-body{padding:16px}.section-heading{gap:8px}.section-heading h2{font-size:20px}.count{font-size:10px;padding:2px 7px}}@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
 .site-header{background:var(--surface);border-bottom:1px solid var(--border)}
+.section-heading{flex-wrap:wrap}
 .topbar{min-height:78px;border:0;gap:40px}.shell{padding-inline:32px}
 .brand{font-size:1.15rem;letter-spacing:-.035em}.brand-icon{width:30px;height:30px;border-radius:9px;color:#fff}.brand-icon svg{width:20px;height:20px}
 .topnav{margin-left:0;align-self:stretch;gap:28px}.topnav a{display:flex;align-items:center;border-bottom:2px solid transparent;font-size:.85rem;font-weight:400;padding:2px 0 0}.topnav a[aria-current]{border-bottom-color:var(--accent);font-weight:600}
@@ -92,39 +93,52 @@ export function renderChecksPage(): string {
       <article class="step"><span class="step-num" aria-hidden="true">03</span><h2>Make findings actionable</h2><p>Pair each observation with a next step and evidence verified against the extracted page.</p></article>
     </div>
     <div class="content-layout">
-      <nav class="contents" aria-label="On this page"><p>On this page</p><a href="#structure">Page structure</a><a href="#language">Language signals</a><a href="#decisions">Content understanding</a><a href="#questions">Model questions</a><a href="#limits">Scope &amp; limitations</a></nav>
+      <nav class="contents" aria-label="On this page"><p>On this page</p><a href="#modules">Modules</a><a href="#trust">Evidence &amp; trust</a><a href="#structure">Page structure</a><a href="#language">Language signals</a><a href="#decisions">Content understanding</a><a href="#questions">Model questions</a><a href="#limits">Scope &amp; limitations</a></nav>
       <div>
-        <section id="structure"><div class="section-heading"><h2>Modules</h2>
-<p class="scope-note">SiteClarity is planned as ten modules over one shared analysis. Two
+        <section id="modules"><div class="section-heading"><h2>Modules</h2><span class="count">2 modules</span></div>
+<p class="section-note">SiteClarity is planned as ten modules over one shared analysis. Two
 are built, and every finding in a report is tagged with the module that produced it.</p>
-<ul>
-<li><strong>Answer readiness</strong> — can a search engine or AI assistant find,
+<details class="check">
+<summary><span>Answer readiness</span></summary>
+<div class="detail-body"><p>Can a search engine or AI assistant find,
 understand and quote the answers on this page? Structured data, heading hierarchy,
-extractability, self-containment, promotional density, buried answers.</li>
-<li><strong>Evidence &amp; trust</strong> — does each marketing claim have proof beside
+extractability, self-containment, promotional density, buried answers.</p></div>
+</details>
+<details class="check">
+<summary><span>Evidence &amp; trust</span></summary>
+<div class="detail-body"><p>Does each marketing claim have proof beside
 it? Claims and evidence are both located deterministically and the distance between them
 is measured. Whether nearby proof is actually <em>about</em> the claim is the one
-judgement left to the model.</li>
-</ul>
+judgement left to the model.</p></div>
+</details>
 <p class="scope-note">Planned: messaging, website understanding, question coverage, buyer
 journey, audience coverage, product portfolio, content overlap, and an opportunity
 roll-up across all of them.</p>
+</section>
 
-<h2>Evidence &amp; trust checks</h2>
-<p class="scope-note">A passage counts as a claim only when it carries <em>both</em> a
+<section id="trust"><div class="section-heading"><h2>Evidence &amp; trust checks</h2><span class="count">3 checks</span></div>
+<p class="section-note">A passage counts as a claim only when it carries <em>both</em> a
 superlative and one of six claim families — performance, customer outcome, market
 position, ease, security, reliability. Either signal alone is too loose.</p>
-<ul>
-<li><strong>A claim with nothing behind it</strong> — no figure, source, documentation,
-certification or date anywhere near it.</li>
-<li><strong>Proof too far from the claim</strong> — the evidence exists but sits
-paragraphs away, so a quoted passage arrives without it.</li>
-<li><strong>Proof that is not about the claim</strong> — a real fact beside a claim it
+<details class="check">
+<summary><span>A claim with nothing behind it</span></summary>
+<div class="detail-body"><p>No figure, source, documentation,
+certification or date anywhere near it.</p></div>
+</details>
+<details class="check">
+<summary><span>Proof too far from the claim</span></summary>
+<div class="detail-body"><p>The evidence exists but sits
+paragraphs away, so a quoted passage arrives without it.</p></div>
+</details>
+<details class="check">
+<summary><span>Proof that is not about the claim</span></summary>
+<div class="detail-body"><p>A real fact beside a claim it
 does not support. "40,000 installs" proves popularity, not speed. This is worse than
-having no number at all, because the page looks evidenced when it is not.</li>
-</ul>
+having no number at all, because the page looks evidenced when it is not.</p></div>
+</details>
+</section>
 
-<h2>Page structure</h2><span class="count">${structureCount} checks</span></div>
+<section id="structure"><div class="section-heading"><h2>Page structure</h2><span class="count">${structureCount} checks</span></div>
           <p class="section-note">Implemented rules for headings, metadata, structured data and extractable content. These run even when the decision model is unavailable.</p>
           ${Object.entries(STATIC_TEMPLATES).map(([id, template]) => renderTemplate(id, template)).join('')}
           <p class="scope-note">Expand any check to read its finding template. Placeholders in braces are filled with page-specific values during an audit.</p>
